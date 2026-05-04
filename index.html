@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>SoufMarket</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  color:white;
+  text-align:center;
+}
+
+.container{
+  background:rgba(255,255,255,0.1);
+  padding:40px;
+  border-radius:20px;
+  backdrop-filter:blur(10px);
+}
+
+h1{
+  margin-bottom:10px;
+}
+
+p{
+  margin-bottom:30px;
+  opacity:0.9;
+}
+
+.btn{
+  display:block;
+  width:250px;
+  margin:10px auto;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  font-size:16px;
+}
+
+.login{
+  background:white;
+  color:#667eea;
+}
+
+.register{
+  background:#4cafef;
+  color:white;
+}
+
+.btn:hover{
+  opacity:0.9;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>🛍️ SoufMarket</h1>
+
+  <p>
+    Une nouvelle façon d’acheter et de vendre en toute simplicité  
+    <br>
+    طريقة جديدة للبيع والشراء بكل سهولة
+  </p>
+
+  <button class="btn login" onclick="goLogin()">
+    Se connecter
+  </button>
+
+  <button class="btn register" onclick="goRegister()">
+    Créer un compte
+  </button>
+
+</div>
+
+<script>
+
+function goLogin(){
+  window.location.href = "login/login.html";
+}
+
+function goRegister(){
+  window.location.href = "register/register.html";
+}
+
+</script>
+
+</body>
+</html>

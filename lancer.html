@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lancement Commandes - SoufStock ERP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen p-4">
+
+    <!-- Header: العنوان، زر العودة، واسم المستخدم -->
+    <header class="flex justify-between items-center bg-gray-800 p-4 rounded-lg border border-gray-700 shadow-md mb-6">
+        <div class="flex items-center gap-3">
+            <h1 class="text-xl font-bold text-gray-100"><i class="fa-solid fa-rocket mr-2 text-indigo-400"></i> Lancement Commande</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <a href="../commandes.html" class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded text-sm font-semibold transition">
+                <i class="fa-solid fa-list mr-1"></i> Page Commandes
+            </a>
+            <span class="font-semibold text-gray-300 text-sm bg-gray-900 px-3 py-1.5 rounded border border-gray-700">
+                <i class="fa-solid fa-user mr-1 text-indigo-400"></i> <span id="user-name">...</span>
+            </span>
+        </div>
+    </header>
+
+    <!-- Filter Dates par Checkboxes (J jusqu'à J+6) -->
+    <div class="bg-gray-800 p-4 rounded-lg shadow border border-gray-700 mb-6">
+        <span class="block text-xs font-bold text-indigo-400 mb-3 uppercase tracking-wider">
+            <i class="fa-solid fa-calendar-days mr-1"></i> Filtrer par Jours de Livraison (J à J+6)
+        </span>
+        <div id="days-checkbox-container" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
+            <!-- Les checkboxes غadi t-toulad hna otmatik -->
+        </div>
+    </div>
+
+    <!-- Stats Bar: الإحصائيات (En attente, Lancées, En Picking) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-gray-800 p-4 rounded-lg shadow border border-gray-700 border-l-4 border-l-yellow-500 text-center">
+            <span class="block text-xs text-gray-400 mb-1">En attente</span>
+            <span id="stat-attente" class="font-bold text-xl text-yellow-400">0</span>
+        </div>
+        <div class="bg-gray-800 p-4 rounded-lg shadow border border-gray-700 border-l-4 border-l-green-500 text-center">
+            <span class="block text-xs text-gray-400 mb-1">Lancées</span>
+            <span id="stat-lancee" class="font-bold text-xl text-green-400">0</span>
+        </div>
+        <div class="bg-gray-800 p-4 rounded-lg shadow border border-gray-700 border-l-4 border-l-blue-500 text-center">
+            <span class="block text-xs text-gray-400 mb-1">En Picking</span>
+            <span id="stat-picking" class="font-bold text-xl text-blue-400">0</span>
+        </div>
+    </div>
+
+    <!-- Mode Selector & Lancer tout Button -->
+    <div class="bg-gray-800 p-4 rounded-lg shadow border border-gray-700 mb-6 flex flex-wrap gap-6 items-center justify-between">
+        <div class="flex items-center gap-6">
+            <span class="text-sm font-bold text-gray-300">Mode d'affichage:</span>
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="mode" value="tournee" checked class="w-4 h-4 text-indigo-600 bg-gray-900 border-gray-700">
+                <span class="text-sm text-gray-300 font-medium">Par Tournée</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="mode" value="commande" class="w-4 h-4 text-indigo-600 bg-gray-900 border-gray-700">
+                <span class="text-sm text-gray-300 font-medium">Par Commande</span>
+            </label>
+        </div>
+        <div>
+            <button id="btn-lancer-tout" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded text-sm font-bold shadow transition">
+                <i class="fa-solid fa-play mr-1"></i> Lancer tout
+            </button>
+        </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="bg-gray-800 p-4 rounded-lg shadow border border-gray-700 overflow-hidden">
+        <table class="w-full text-sm border-collapse">
+            <thead id="table-head" class="bg-gray-900 text-gray-400 uppercase text-xs text-left border-b border-gray-700">
+                <!-- عناوين الجدول تتولد أوتوماتيكياً عبر JavaScript -->
+            </thead>
+            <tbody id="commandes-table-body" class="text-gray-300">
+                <tr>
+                    <td colspan="5" class="p-6 text-center text-gray-500">
+                        <i class="fa-solid fa-spinner fa-spin mr-2"></i> Chargement des données...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Script de logique -->
+    <script type="module" src="/assets/js/lancer.js"></script>
+</body>
+</html>

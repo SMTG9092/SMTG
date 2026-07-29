@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Commandes - SoufStock Enterprise ERP</title>
+    
+    <!-- External Stylesheets -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Application CSS (Nafs CSS System) -->
+    <link rel="stylesheet" href="../assets/css/variables.css">
+    <link rel="stylesheet" href="../assets/css/import_commandes.css">
+
+    <!-- SheetJS (XLSX) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+
+    <!-- Application Script -->
+    <script type="module" src="/assets/js/commandes-import.js" defer></script>
+</head>
+<body>
+
+    <!-- Loader Overlay -->
+    <div id="loaderOverlay" class="loader-overlay hidden">
+        <div class="spinner"></div>
+        <div id="loaderMessage" style="font-weight: 500; margin-bottom: 0.5rem;">Chargement...</div>
+        <div class="progress-container">
+            <div id="loaderBar" class="progress-bar"></div>
+        </div>
+        <div id="loaderPercent" style="font-size: 0.8125rem; color: #94a3b8; margin-top: 0.35rem;">0%</div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <div class="app-container">
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="import-container">
+
+                <!-- Header Section -->
+                <header class="import-header-section">
+                    <div class="import-header-content">
+                        <h1>Import Commandes</h1>
+                        <p>Importation et synchronisation des commandes SAP (KG &amp; Pièces)</p>
+                    </div>
+                    <div>
+                        <a href="../dashboard.html" class="btn btn-outline" style="color: #ffffff; border-color: rgba(255,255,255,0.2);">
+                            <i class="fas fa-arrow-left"></i> Retour au Tableau de Bord
+                        </a>
+                    </div>
+                </header>
+
+                <!-- Import Grids for KG & Pièces -->
+                <div class="import-grid">
+                    
+                    <!-- Commandes Excel (KG) -->
+                    <section class="import-card">
+                        <div>
+                            <div class="import-card-header">
+                                <div class="import-card-icon">
+                                    <i class="fas fa-weight-scale"></i>
+                                </div>
+                                <div class="import-card-titles">
+                                    <h3>Commandes Excel (KG)</h3>
+                                    <span>Importation des commandes SAP en kilogrammes.</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <input type="file" id="fileExcel" accept=".xlsx, .xls, .csv" class="hidden">
+                                <div class="file-dropzone-custom" id="btnSelectExcel">
+                                    <i class="fas fa-file-excel"></i>
+                                    <div>
+                                        <strong>Cliquez pour sélectionner</strong> ou glissez votre fichier KG ici
+                                    </div>
+                                </div>
+                                <div class="file-info-row">
+                                    <span class="file-name-display" id="excelFileName">Aucun fichier sélectionné</span>
+                                    <span class="badge badge-success" id="excelFileBadge">Prêt</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <button type="button" id="btnImportExcel" class="btn btn-primary" style="width: 100%;" disabled>
+                                <i class="fas fa-cloud-arrow-up"></i> Importer les Commandes KG
+                            </button>
+                        </div>
+                    </section>
+
+                    <!-- Commandes Pièces -->
+                    <section class="import-card">
+                        <div>
+                            <div class="import-card-header">
+                                <div class="import-card-icon">
+                                    <i class="fas fa-boxes-stacked"></i>
+                                </div>
+                                <div class="import-card-titles">
+                                    <h3>Commandes Pièces</h3>
+                                    <span>Importation des commandes SAP par nombre de pièces.</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <input type="file" id="filePieces" accept=".xlsx, .xls, .csv" class="hidden">
+                                <div class="file-dropzone-custom" id="btnSelectPieces">
+                                    <i class="fas fa-file-lines"></i>
+                                    <div>
+                                        <strong>Cliquez pour sélectionner</strong> ou glissez votre fichier Pièces ici
+                                    </div>
+                                </div>
+                                <div class="file-info-row">
+                                    <span class="file-name-display" id="piecesFileName">Aucun fichier sélectionné</span>
+                                    <span class="badge badge-success" id="piecesFileBadge">Prêt</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <button type="button" id="btnImportPieces" class="btn btn-primary" style="width: 100%;" disabled>
+                                <i class="fas fa-cloud-arrow-up"></i> Importer les Pièces
+                            </button>
+                        </div>
+                    </section>
+
+                </div>
+
+                <!-- Analysis & Synchronization Section -->
+                <section class="card">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Analyse des Commandes</h2>
+                            <p style="font-size: 0.875rem; color: var(--text-muted);">Comparaison entre les fichiers SAP et la base de données avant l'importation.</p>
+                        </div>
+                        <button type="button" id="btnAnalyse" class="btn btn-outline" disabled>
+                            <span class="spinner-border hidden" role="status"></span>
+                            <i class="fas fa-magnifying-glass-chart"></i> Lancer l'Analyse
+                        </button>
+                    </div>
+
+                    <div class="analyse-stats-grid">
+                        <div class="stat-box new">
+                            <div class="stat-value" id="analyseNew">0</div>
+                            <div class="stat-label">Nouvelles</div>
+                        </div>
+                        <div class="stat-box updated">
+                            <div class="stat-value" id="analyseUpdated">0</div>
+                            <div class="stat-label">Modifiées</div>
+                        </div>
+                        <div class="stat-box deleted">
+                            <div class="stat-value" id="analyseDeleted">0</div>
+                            <div class="stat-label">Supprimées</div>
+                        </div>
+                        <div class="stat-box same">
+                            <div class="stat-value" id="analyseSame">0</div>
+                            <div class="stat-label">Identiques</div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.875rem; color: var(--text-muted); background-color: #f8fafc; padding: 0.75rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                        <span id="currentStatus">Prêt pour l'analyse.</span>
+                        <span id="analyseStatus" style="font-weight: 500; color: var(--text-main);">En attente</span>
+                    </div>
+                </section>
+
+                <!-- Actions Toolbar -->
+                <div class="import-actions-toolbar">
+                    <div class="toolbar-group">
+                        <button type="button" id="btnStartImport" class="btn btn-primary" disabled>
+                            <i class="fas fa-database"></i> Démarrer l'Importation &amp; Synchro
+                        </button>
+                        <button type="button" id="btnResetImport" class="btn btn-outline">
+                            <i class="fas fa-rotate-left"></i> Réinitialiser
+                        </button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button type="button" id="btnRestoreDeleted" class="btn btn-outline">
+                            <i class="fas fa-trash-arrow-back"></i> Restaurer Supprimées
+                        </button>
+                        <button type="button" id="btnConfirmDelete" class="btn btn-danger">
+                            <i class="fas fa-triangle-exclamation"></i> Vider Corbeille SAP
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Logs Terminal Box -->
+                <section class="card" style="margin-top: 1.5rem;">
+                    <div class="card-header">
+                        <h3 class="card-title" style="font-size: 1rem;"><i class="fas fa-terminal"></i> Journal des Opérations</h3>
+                        <button type="button" class="btn btn-outline" style="padding: 0.25rem 0.75rem; font-size: 0.75rem;" onclick="ImportCommandes.clearLog()">Effacer</button>
+                    </div>
+                    <div id="importLog" class="import-log">
+                        <div class="log-line info"><strong>Système</strong> - Module d'importation initialisé avec succès.</div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+</body>
+</html>

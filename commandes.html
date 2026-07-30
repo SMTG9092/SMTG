@@ -75,9 +75,6 @@
                     <span id="currentDate" class="text-xs font-medium text-slate-300 block">Jeudi 30 juillet 2026</span>
                     <span id="currentTime" class="text-[10px] text-emerald-400 font-mono block">15:51:00</span>
                 </div>
-                <button id="logoutBtn" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 p-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center" title="Déconnexion">
-                    <i class="fas fa-sign-out-alt text-sm"></i>
-                </button>
             </div>
         </header>
 
@@ -86,24 +83,32 @@
             <div class="w-full mx-auto flex flex-col gap-6">
                 
                 <!-- FILTER & CONTROLS BAR -->
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-                    <div>
-                        <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
-                            <i class="fas fa-layer-group text-emerald-400"></i> Suivi Global par Document de Vente
-                        </h2>
-                        <p class="text-xs text-slate-400 mt-1">
-                            Synthèse consolidée des réceptionnaires, itinéraires, articles, quantités globales et pièces.
-                        </p>
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col gap-4">
+                    <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                                <i class="fas fa-layer-group text-emerald-400"></i> Suivi Global par Document de Vente
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-1">
+                                Synthèse consolidée des réceptionnaires, itinéraires, articles, quantités globales et pièces.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- HORIZONTAL DATES BAR (أزرار التواريخ السريعة) -->
+                    <div class="flex items-center gap-2 overflow-x-auto pb-2 pt-1 scrollbar-thin" id="datesQuickBar">
+                        <!-- Kay-tgenerer dynamiquement b Javascript (Aujourd'hui + Ayyam li jayya) -->
                     </div>
                     
-                    <div class="flex items-center gap-3 flex-wrap">
+                    <!-- Search & Filter Controls Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-2 border-t border-slate-800/80">
                         <div class="relative flex items-center">
                             <i class="fas fa-search absolute left-3.5 text-slate-500 text-sm"></i>
                             <input type="text" id="searchInput" placeholder="N° Document / Réceptionnaire..." 
-                                class="bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-64 transition shadow-inner">
+                                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition shadow-inner">
                         </div>
 
-                        <select id="statusFilter" class="bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500 transition shadow-inner cursor-pointer">
+                        <select id="statusFilter" class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500 transition shadow-inner cursor-pointer">
                             <option value="">Tous les statuts</option>
                             <option value="IMPORTEE">IMPORTEE</option>
                             <option value="CONTROLEE">CONTROLEE</option>
@@ -115,9 +120,26 @@
                             <option value="ANNULEE">ANNULEE</option>
                         </select>
 
-                        <button id="searchBtn" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs transition flex items-center gap-2 shadow-sm cursor-pointer">
-                            <i class="fas fa-filter"></i> Filtrer
-                        </button>
+                        <!-- Date Début -->
+                        <div class="relative flex items-center">
+                            <span class="absolute left-3 text-[10px] text-slate-400 font-semibold uppercase">Du:</span>
+                            <input type="date" id="dateDebut" class="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition shadow-inner cursor-pointer font-mono">
+                        </div>
+
+                        <!-- Date Fin -->
+                        <div class="relative flex items-center">
+                            <span class="absolute left-3 text-[10px] text-slate-400 font-semibold uppercase">Au:</span>
+                            <input type="date" id="dateFin" class="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition shadow-inner cursor-pointer font-mono">
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button id="searchBtn" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-sm cursor-pointer">
+                                <i class="fas fa-filter"></i> Filtrer
+                            </button>
+                            <button id="resetBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2.5 rounded-xl text-xs transition flex items-center justify-center cursor-pointer" title="Réinitialiser les filtres">
+                                <i class="fas fa-redo-alt"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -169,21 +191,36 @@
         const pageSize = 50;
 
         document.addEventListener("DOMContentLoaded", async () => {
-            const logoutBtn = document.getElementById("logoutBtn");
-            if (logoutBtn) {
-                logoutBtn.addEventListener("click", async () => {
-                    await supabase.auth.signOut();
-                    window.location.href = "login.html";
-                });
-            }
+            initQuickDatesBar();
 
             const searchBtn = document.getElementById("searchBtn");
+            const resetBtn = document.getElementById("resetBtn");
             const searchInput = document.getElementById("searchInput");
             const statusFilter = document.getElementById("statusFilter");
+            const dateDebut = document.getElementById("dateDebut");
+            const dateFin = document.getElementById("dateFin");
 
             if (searchBtn) searchBtn.addEventListener("click", () => { currentPage = 1; loadOrders(); });
             if (searchInput) searchInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { currentPage = 1; loadOrders(); } });
             if (statusFilter) statusFilter.addEventListener("change", () => { currentPage = 1; loadOrders(); });
+            if (dateDebut) dateDebut.addEventListener("change", () => { currentPage = 1; loadOrders(); });
+            if (dateFin) dateFin.addEventListener("change", () => { currentPage = 1; loadOrders(); });
+
+            if (resetBtn) {
+                resetBtn.addEventListener("click", () => {
+                    searchInput.value = "";
+                    statusFilter.value = "";
+                    dateDebut.value = "";
+                    dateFin.value = "";
+                    // Unselect all date buttons
+                    document.querySelectorAll('.date-quick-btn').forEach(b => {
+                        b.classList.remove('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
+                        b.classList.add('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
+                    });
+                    currentPage = 1;
+                    loadOrders();
+                });
+            }
 
             document.getElementById("prevPageBtn").addEventListener("click", () => {
                 if (currentPage > 1) {
@@ -200,10 +237,67 @@
             loadOrders();
         });
 
+        // Function to generate horizontal quick dates selector (e.g. 30/07/2026, 31/07/2026...)
+        function initQuickDatesBar() {
+            const bar = document.getElementById("datesQuickBar");
+            if (!bar) return;
+
+            let html = `
+                <button type="button" data-date="" class="date-quick-btn shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500 text-slate-950 border border-emerald-400 transition shadow-sm cursor-pointer">
+                    <i class="fas fa-globe mr-1"></i> Tous les jours
+                </button>
+            `;
+
+            // Generate next 14 days starting from today (or current system context)
+            let today = new Date();
+            for (let i = 0; i < 15; i++) {
+                let d = new Date(today);
+                d.setDate(today.getDate() + i);
+                
+                let yyyy = d.getFullYear();
+                let mm = String(d.getMonth() + 1).padStart(2, '0');
+                let dd = String(d.getDate()).padStart(2, '0');
+                let dateStr = `${yyyy}-${mm}-${dd}`;
+                let displayStr = `${dd}/${mm}/${yyyy}`;
+
+                let label = i === 0 ? `Aujourd'hui (${displayStr})` : (i === 1 ? `Demain (${displayStr})` : displayStr);
+
+                html += `
+                    <button type="button" data-date="${dateStr}" class="date-quick-btn shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-950/80 hover:bg-slate-800 text-slate-300 border border-slate-800 transition shadow-inner cursor-pointer font-mono">
+                        ${label}
+                    </button>
+                `;
+            }
+
+            bar.innerHTML = html;
+
+            // Add click events to quick date buttons
+            document.querySelectorAll('.date-quick-btn').forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    document.querySelectorAll('.date-quick-btn').forEach(b => {
+                        b.classList.remove('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
+                        b.classList.add('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
+                    });
+                    
+                    btn.classList.remove('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
+                    btn.classList.add('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
+
+                    const selectedDate = btn.getAttribute('data-date');
+                    document.getElementById("dateDebut").value = selectedDate;
+                    document.getElementById("dateFin").value = selectedDate;
+                    
+                    currentPage = 1;
+                    loadOrders();
+                });
+            });
+        }
+
         async function loadOrders() {
             const tbody = document.getElementById("ordersTableBody");
             const searchVal = document.getElementById("searchInput").value.trim();
             const statusVal = document.getElementById("statusFilter").value;
+            const dDebut = document.getElementById("dateDebut").value;
+            const dFin = document.getElementById("dateFin").value;
 
             tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400 text-xs"><i class="fas fa-spinner fa-spin mr-2 text-emerald-500"></i> Synthèse en cours...</td></tr>`;
 
@@ -217,12 +311,18 @@
                 if (statusVal) {
                     query = query.eq('statut', statusVal);
                 }
+                if (dDebut) {
+                    query = query.gte('date_livraison', dDebut);
+                }
+                if (dFin) {
+                    query = query.lte('date_livraison', dFin);
+                }
 
                 const { data: excelData, error: excelError } = await query;
                 if (excelError) throw excelError;
 
                 if (!excelData || excelData.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400 text-xs">Aucune commande trouvée.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400 text-xs">Aucune commande trouvée pour cette période.</td></tr>`;
                     document.getElementById("rowCount").textContent = "Affichage de 0 éléments";
                     document.getElementById("pageIndicator").textContent = "Page 1 / 1";
                     return;

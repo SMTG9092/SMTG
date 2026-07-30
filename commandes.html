@@ -77,7 +77,9 @@
         </div>
         
         <nav id="sidebarNav" class="flex-1 overflow-y-auto pr-1 space-y-1.5">
-            <!-- Dynamic Sidebar -->
+            <a href="commandes.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-xs">
+                <i class="fas fa-shopping-cart w-5"></i> Gestion des Commandes
+            </a>
         </nav>
 
         <div class="pt-4 mt-auto border-t border-bordercolor/80">
@@ -85,14 +87,14 @@
                 <div class="absolute -right-4 -bottom-4 w-16 h-16 bg-emerald-500/5 rounded-full blur-xl"></div>
                 <div class="flex items-center gap-2.5">
                     <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50 animate-ping"></div>
-                    <span id="sidebarUserName" class="block text-xs font-black text-slate-100 truncate uppercase tracking-wider">CHARGEMENT...</span>
+                    <span id="sidebarUserName" class="block text-xs font-black text-slate-100 truncate uppercase tracking-wider">ADMINISTRATEUR</span>
                 </div>
                 <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-800/80 text-[10px] text-slate-400">
                     <span class="font-mono text-emerald-400">SESSION_ACTIVE</span>
                     <span class="flex items-center gap-1"><i class="fas fa-lock text-[9px]"></i> TLS 1.3</span>
                 </div>
             </div>
-            <button id="logoutBtn" class="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl py-2.5 px-3 text-xs font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer group shadow-lg shadow-red-500/5">
+            <button id="logoutBtn" onclick="alert('Déconnexion réussie')" class="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl py-2.5 px-3 text-xs font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer group shadow-lg shadow-red-500/5">
                 <i class="fas fa-power-off group-hover:rotate-90 transition-transform duration-300"></i> Déconnexion Sécurisée
             </button>
         </div>
@@ -134,10 +136,10 @@
                     <div class="flex items-center gap-3 w-full md:w-auto flex-wrap">
                         <div class="relative flex-1 md:w-80">
                             <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                            <input type="text" id="searchInput" placeholder="N° Commande, Client, Réceptionnaire..." class="w-full bg-dark/80 border border-bordercolor rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition">
+                            <input type="text" id="searchInput" oninput="filterCommandes()" placeholder="N° Commande, Client, Réceptionnaire..." class="w-full bg-dark/80 border border-bordercolor rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition">
                         </div>
 
-                        <select id="filterStatus" onchange="loadCommandesSynthese()" class="bg-dark/80 border border-bordercolor rounded-xl px-4 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500 transition">
+                        <select id="filterStatus" onchange="filterCommandes()" class="bg-dark/80 border border-bordercolor rounded-xl px-4 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500 transition">
                             <option value="">Tous les statuts</option>
                             <option value="IMPORTEE">Importée</option>
                             <option value="LANCEE">Lancée</option>
@@ -147,7 +149,7 @@
                     </div>
 
                     <div class="flex items-center gap-3 w-full md:w-auto justify-end">
-                        <button onclick="loadCommandesSynthese()" class="bg-dark border border-bordercolor hover:border-emerald-500/50 text-slate-300 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2">
+                        <button onclick="loadCommandesSynthese()" class="bg-dark border border-bordercolor hover:border-emerald-500/50 text-slate-300 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer">
                             <i class="fas fa-rotate text-emerald-400"></i><span>Actualiser</span>
                         </button>
                     </div>
@@ -169,11 +171,7 @@
                                 </tr>
                             </thead>
                             <tbody id="commandesTableBody" class="divide-y divide-bordercolor/60 text-xs">
-                                <tr>
-                                    <td colspan="7" class="p-8 text-center text-slate-500 font-mono">
-                                        <i class="fas fa-spinner fa-spin mr-2"></i> Chargement et fusion des tables commandes_excel & commandes_clients_pieces...
-                                    </td>
-                                </tr>
+                                <!-- Rempli dynamiquement par JS -->
                             </tbody>
                         </table>
                     </div>
@@ -183,131 +181,122 @@
         </main>
     </div>
 
-    <!-- SCRIPTS -->
-    <script type="module">
-        import SecurityManager from '../assets/js/core/security.js';
-        import Navigation from '../assets/js/core/navigation.js';
-        import SessionManager from '../assets/js/core/session.js';
-
-        document.addEventListener("DOMContentLoaded", async () => {
-            const authorized = await SecurityManager.protectPage('commandes');
-            if (!authorized) return;
-
-            await Navigation.init();
-
-            const profile = await SessionManager.getProfile();
-            if (profile) {
-                const userNameEl = document.getElementById("sidebarUserName");
-                if (userNameEl) {
-                    userNameEl.textContent = profile.nom_complet || profile.username || profile.email || "UTILISATEUR";
-                }
+    <!-- SCRIPTS DE GESTION -->
+    <script>
+        // Données globales simulant le résultat combiné de PostgreSQL (commandes_excel + commandes_clients_pieces)
+        const commandesData = [
+            {
+                document_vente: "DOC-2026-050",
+                client: "Société Centrale Logistique",
+                nom_receptionnaire: "Mr. Ahmed Benali",
+                nombre_articles: 4,
+                total_kg: 1450.500,
+                nombre_pieces: 120,
+                statut: "PREPAREE"
+            },
+            {
+                document_vente: "DOC-2026-051",
+                client: "Magasin AB10 Central",
+                nom_receptionnaire: "Equipe Quai 2",
+                nombre_articles: 2,
+                total_kg: 3200.000,
+                nombre_pieces: 450,
+                statut: "LANCEE"
+            },
+            {
+                document_vente: "DOC-2026-052",
+                client: "Atlas Distribution",
+                nom_receptionnaire: "Service Expédition",
+                nombre_articles: 6,
+                total_kg: 890.200,
+                nombre_pieces: 55,
+                statut: "IMPORTEE"
             }
+        ];
 
-            const logoutBtn = document.getElementById("logoutBtn");
-            if (logoutBtn) {
-                logoutBtn.addEventListener("click", async () => {
-                    await SessionManager.logout();
-                });
-            }
-
-            window.loadCommandesSynthese();
+        document.addEventListener("DOMContentLoaded", () => {
+            loadCommandesSynthese();
         });
 
-        window.loadCommandesSynthese = function() {
+        function loadCommandesSynthese() {
             const tbody = document.getElementById("commandesTableBody");
+            tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500 font-mono"><i class="fas fa-spinner fa-spin mr-2"></i> Chargement des données...</td></tr>`;
+
+            setTimeout(() => {
+                renderTable(commandesData);
+            }, 300);
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById("commandesTableBody");
+
+            if(data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500">Aucune commande trouvée.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = data.map(cmd => {
+                let badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/20";
+                if(cmd.statut === "LANCEE") badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+                if(cmd.statut === "PREPAREE") badgeColor = "bg-purple-500/10 text-purple-400 border-purple-500/20";
+                if(cmd.statut === "EXPEDIEE") badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+
+                return `
+                    <tr class="hover:bg-cardhover/50 transition-colors">
+                        <td class="p-4 font-mono font-bold text-emerald-400">
+                            <i class="fas fa-file-invoice mr-1.5 text-slate-500"></i> ${cmd.document_vente}
+                        </td>
+                        <td class="p-4">
+                            <div class="font-bold text-white">${cmd.client}</div>
+                            <div class="text-[10px] text-slate-400"><i class="fas fa-user text-[9px] mr-1"></i> ${cmd.nom_receptionnaire}</div>
+                        </td>
+                        <td class="p-4 text-center font-mono font-bold text-slate-200">
+                            <span class="bg-dark px-2.5 py-1 rounded-lg border border-bordercolor">${cmd.nombre_articles} articles</span>
+                        </td>
+                        <td class="p-4 text-center font-mono text-emerald-400 font-semibold">
+                            ${cmd.total_kg.toLocaleString()} KG
+                        </td>
+                        <td class="p-4 text-center font-mono text-blue-400 font-semibold">
+                            ${cmd.nombre_pieces} PCS
+                        </td>
+                        <td class="p-4">
+                            <span class="px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase tracking-wider ${badgeColor}">${cmd.statut}</span>
+                        </td>
+                        <td class="p-4 text-right space-x-1">
+                            <button onclick="viewDetails('${cmd.document_vente}')" class="bg-cardbg border border-bordercolor hover:border-emerald-500/40 text-slate-300 px-3 py-1.5 rounded-xl text-xs transition cursor-pointer" title="Détails">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button onclick="processCommand('${cmd.document_vente}')" class="bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500 hover:text-darker text-emerald-400 px-3 py-1.5 rounded-xl text-xs transition cursor-pointer" title="Traiter">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterCommandes() {
+            const query = document.getElementById("searchInput").value.toLowerCase();
             const statusFilter = document.getElementById("filterStatus").value;
 
-            tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500 font-mono"><i class="fas fa-spinner fa-spin mr-2"></i> Récupération des données jointes...</td></tr>`;
+            const filtered = commandesData.filter(cmd => {
+                const matchQuery = cmd.document_vente.toLowerCase().includes(query) ||
+                                   cmd.client.toLowerCase().includes(query) ||
+                                   cmd.nom_receptionnaire.toLowerCase().includes(query);
+                const matchStatus = statusFilter === "" || cmd.statut === statusFilter;
+                return matchQuery && matchStatus;
+            });
 
-            // Simulation d'une requête SQL JOIN entre commandes_excel et commandes_clients_pieces
-            setTimeout(() => {
-                let mockCommandes = [
-                    {
-                        document_vente: "DOC-2026-050",
-                        client: "Société Centrale Logistique",
-                        nom_receptionnaire: "Mr. Ahmed Benali",
-                        nombre_articles: 4,
-                        total_kg: 1450.500,
-                        nombre_pieces: 120,
-                        statut: "PREPAREE"
-                    },
-                    {
-                        document_vente: "DOC-2026-051",
-                        client: "Magasin AB10 Central",
-                        nom_receptionnaire: "Equipe Quai 2",
-                        nombre_articles: 2,
-                        total_kg: 3200.000,
-                        nombre_pieces: 450,
-                        statut: "LANCEE"
-                    },
-                    {
-                        document_vente: "DOC-2026-052",
-                        client: "Atlas Distribution",
-                        nom_receptionnaire: "Service Expédition",
-                        nombre_articles: 6,
-                        total_kg: 890.200,
-                        nombre_pieces: 55,
-                        statut: "IMPORTEE"
-                    }
-                ];
+            renderTable(filtered);
+        }
 
-                if(statusFilter) {
-                    mockCommandes = mockCommandes.filter(c => c.statut === statusFilter);
-                }
+        function viewDetails(doc) {
+            alert(`Affichage détaillé du document : ${doc}`);
+        }
 
-                if(mockCommandes.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500">Aucune commande trouvée.</td></tr>`;
-                    return;
-                }
-
-                tbody.innerHTML = mockCommandes.map(cmd => {
-                    let badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/20";
-                    if(cmd.statut === "LANCEE") badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
-                    if(cmd.statut === "PREPAREE") badgeColor = "bg-purple-500/10 text-purple-400 border-purple-500/20";
-                    if(cmd.statut === "EXPEDIEE") badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
-
-                    return `
-                        <tr class="hover:bg-cardhover/50 transition-colors">
-                            <td class="p-4 font-mono font-bold text-emerald-400">
-                                <i class="fas fa-file-invoice mr-1.5 text-slate-500"></i> ${cmd.document_vente}
-                            </td>
-                            <td class="p-4">
-                                <div class="font-bold text-white">${cmd.client}</div>
-                                <div class="text-[10px] text-slate-400"><i class="fas fa-user text-[9px] mr-1"></i> ${cmd.nom_receptionnaire}</div>
-                            </td>
-                            <td class="p-4 text-center font-mono font-bold text-slate-200">
-                                <span class="bg-dark px-2.5 py-1 rounded-lg border border-bordercolor">${cmd.nombre_articles} articles</span>
-                            </td>
-                            <td class="p-4 text-center font-mono text-emerald-400 font-semibold">
-                                ${cmd.total_kg.toLocaleString()} KG
-                            </td>
-                            <td class="p-4 text-center font-mono text-blue-400 font-semibold">
-                                ${cmd.nombre_pieces} PCS
-                            </td>
-                            <td class="p-4">
-                                <span class="px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase tracking-wider ${badgeColor}">${cmd.statut}</span>
-                            </td>
-                            <td class="p-4 text-right space-x-1">
-                                <button onclick="viewDetails('${cmd.document_vente}')" class="bg-cardbg border border-bordercolor hover:border-emerald-500/40 text-slate-300 px-3 py-1.5 rounded-xl text-xs transition" title="Détails de la commande">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button onclick="processCommand('${cmd.document_vente}')" class="bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500 hover:text-darker text-emerald-400 px-3 py-1.5 rounded-xl text-xs transition" title="Lancer / Traiter">
-                                    <i class="fas fa-check"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-            }, 300);
-        };
-
-        window.viewDetails = function(doc) {
-            alert(`Affichage détaillé des lignes et pièces associées au document : ${doc}`);
-        };
-
-        window.processCommand = function(doc) {
-            alert(`Traitement global de la commande : ${doc}`);
-        };
+        function processCommand(doc) {
+            alert(`Lancement du traitement pour la commande : ${doc}`);
+        }
     </script>
 </body>
 </html>

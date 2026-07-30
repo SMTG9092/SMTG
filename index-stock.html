@@ -161,62 +161,82 @@
                     </p>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- GRID DES OPTIONS (4 Options دابا) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     
                     <!-- OPTION 1: STOCK PAR EMPLACEMENT -->
-                    <a href="stock/stock_emplacements.html" class="pro-card rounded-3xl p-8 transition-all duration-300 group flex flex-col items-center text-center cursor-pointer">
+                    <a href="stock/stock_emplacements.html" class="pro-card rounded-3xl p-6 transition-all duration-300 group flex flex-col items-center text-center cursor-pointer">
                         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         
-                        <div class="w-18 h-18 w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-2xl mb-6 group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-darker transition-all duration-300 shadow-xl shadow-emerald-500/5">
+                        <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-2xl mb-5 group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-darker transition-all duration-300 shadow-xl shadow-emerald-500/5">
                             <i class="fas fa-map-location-dot"></i>
                         </div>
                         
-                        <h3 class="text-lg font-black text-white group-hover:text-emerald-400 transition-colors">Stock par Emplacement</h3>
-                        <p class="text-xs text-slate-400 mt-3 leading-relaxed">
-                            Cartographie physique complète de l'entrepôt : suivez chaque article par blasa, rayon et emplacement exact.
+                        <h3 class="text-base font-black text-white group-hover:text-emerald-400 transition-colors">Stock par Emplacement</h3>
+                        <p class="text-[11px] text-slate-400 mt-2 leading-relaxed">
+                            Cartographie physique complète de l'entrepôt : suivez chaque article par blasa et rayon.
                         </p>
                         
-                        <div class="mt-8 inline-flex items-center gap-2.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-5 py-2.5 rounded-xl group-hover:bg-emerald-500 group-hover:text-darker transition-all duration-300 shadow-md">
-                            <span>Lancer la vue</span>
-                            <i class="fas fa-arrow-right group-hover:translate-x-1.5 transition-transform"></i>
+                        <div class="mt-6 inline-flex items-center gap-2 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-xl group-hover:bg-emerald-500 group-hover:text-darker transition-all duration-300 shadow-md">
+                            <span>Lancer</span>
+                            <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                         </div>
                     </a>
 
                     <!-- OPTION 2: STOCK GLOBAL -->
-                    <a href="stock/stock.html" class="pro-card rounded-3xl p-8 transition-all duration-300 group flex flex-col items-center text-center cursor-pointer">
+                    <a href="stock/stock.html" class="pro-card rounded-3xl p-6 transition-all duration-300 group flex flex-col items-center text-center cursor-pointer">
                         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         
-                        <div class="w-18 h-18 w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 text-2xl mb-6 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-darker transition-all duration-300 shadow-xl shadow-blue-500/5">
+                        <div class="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 text-2xl mb-5 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-darker transition-all duration-300 shadow-xl shadow-blue-500/5">
                             <i class="fas fa-boxes-stacked"></i>
                         </div>
                         
-                        <h3 class="text-lg font-black text-white group-hover:text-blue-400 transition-colors">Stock Global</h3>
-                        <p class="text-xs text-slate-400 mt-3 leading-relaxed">
-                            Vue centralisée et unifiée des réserves, cumul instantané des quantités et contrôle global des flux d'inventaire.
+                        <h3 class="text-base font-black text-white group-hover:text-blue-400 transition-colors">Stock Global</h3>
+                        <p class="text-[11px] text-slate-400 mt-2 leading-relaxed">
+                            Vue centralisée et unifiée des réserves, cumul instantané des quantités et contrôle global.
                         </p>
                         
-                        <div class="mt-8 inline-flex items-center gap-2.5 text-xs font-bold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-5 py-2.5 rounded-xl group-hover:bg-blue-500 group-hover:text-darker transition-all duration-300 shadow-md">
-                            <span>Lancer la vue</span>
-                            <i class="fas fa-arrow-right group-hover:translate-x-1.5 transition-transform"></i>
+                        <div class="mt-6 inline-flex items-center gap-2 text-xs font-bold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-4 py-2 rounded-xl group-hover:bg-blue-500 group-hover:text-darker transition-all duration-300 shadow-md">
+                            <span>Lancer</span>
+                            <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                         </div>
                     </a>
 
                     <!-- OPTION 3: SUIVI DES DLC -->
-                    <a href="stock/suivi-dlc.html" class="pro-card rounded-3xl p-8 transition-all duration-300 group flex flex-col items-center text-center cursor-pointer">
+                    <a href="stock/suivi-dlc.html" class="pro-card rounded-3xl p-6 transition-all duration-300 group flex flex-col items-center text-center cursor-pointer">
                         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 to-orange-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         
-                        <div class="w-18 h-18 w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-2xl mb-6 group-hover:scale-110 group-hover:bg-amber-500 group-hover:text-darker transition-all duration-300 shadow-xl shadow-amber-500/5">
+                        <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-2xl mb-5 group-hover:scale-110 group-hover:bg-amber-500 group-hover:text-darker transition-all duration-300 shadow-xl shadow-amber-500/5">
                             <i class="fas fa-clock-rotate-left"></i>
                         </div>
                         
-                        <h3 class="text-lg font-black text-white group-hover:text-amber-400 transition-colors">Suivi des DLC</h3>
-                        <p class="text-xs text-slate-400 mt-3 leading-relaxed">
-                            Gestion rigoureuse des dates de péremption, alertes FIFO automatisées et détection des lots proches d'expiration.
+                        <h3 class="text-base font-black text-white group-hover:text-amber-400 transition-colors">Suivi des DLC</h3>
+                        <p class="text-[11px] text-slate-400 mt-2 leading-relaxed">
+                            Gestion rigoureuse des dates de péremption, alertes FIFO et détection des lots proches d'expiration.
                         </p>
                         
-                        <div class="mt-8 inline-flex items-center gap-2.5 text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-5 py-2.5 rounded-xl group-hover:bg-amber-500 group-hover:text-darker transition-all duration-300 shadow-md">
-                            <span>Lancer la vue</span>
-                            <i class="fas fa-arrow-right group-hover:translate-x-1.5 transition-transform"></i>
+                        <div class="mt-6 inline-flex items-center gap-2 text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-4 py-2 rounded-xl group-hover:bg-amber-500 group-hover:text-darker transition-all duration-300 shadow-md">
+                            <span>Lancer</span>
+                            <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </a>
+
+                    <!-- OPTION 4: GESTION DES RÉSERVATIONS (NEW) -->
+                    <a href="stock/reservations.html" class="pro-card rounded-3xl p-6 transition-all duration-300 group flex flex-col items-center text-center cursor-pointer">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-pink-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        
+                        <div class="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 text-2xl mb-5 group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-darker transition-all duration-300 shadow-xl shadow-purple-500/5">
+                            <i class="fas fa-list-check"></i>
+                        </div>
+                        
+                        <h3 class="text-base font-black text-white group-hover:text-purple-400 transition-colors">Réservations Stock</h3>
+                        <p class="text-[11px] text-slate-400 mt-2 leading-relaxed">
+                            Suivi des lignes réservées, filtrage par date et traitement des lots validés vers AB10 en un clic.
+                        </p>
+                        
+                        <div class="mt-6 inline-flex items-center gap-2 text-xs font-bold text-purple-400 bg-purple-500/10 border border-purple-500/20 px-4 py-2 rounded-xl group-hover:bg-purple-500 group-hover:text-darker transition-all duration-300 shadow-md">
+                            <span>Lancer</span>
+                            <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                         </div>
                     </a>
 

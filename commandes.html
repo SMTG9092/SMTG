@@ -97,11 +97,11 @@
 
                     <!-- HORIZONTAL DATES BAR (أزرار التواريخ السريعة) -->
                     <div class="flex items-center gap-2 overflow-x-auto pb-2 pt-1 scrollbar-thin" id="datesQuickBar">
-                        <!-- Kay-tgenerer dynamiquement b Javascript (Aujourd'hui + Ayyam li jayya) -->
+                        <!-- Kay-tgenerer dynamiquement b Javascript -->
                     </div>
                     
                     <!-- Search & Filter Controls Grid -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-2 border-t border-slate-800/80">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-slate-800/80">
                         <div class="relative flex items-center">
                             <i class="fas fa-search absolute left-3.5 text-slate-500 text-sm"></i>
                             <input type="text" id="searchInput" placeholder="N° Document / Réceptionnaire..." 
@@ -120,24 +120,12 @@
                             <option value="ANNULEE">ANNULEE</option>
                         </select>
 
-                        <!-- Date Début -->
-                        <div class="relative flex items-center">
-                            <span class="absolute left-3 text-[10px] text-slate-400 font-semibold uppercase">Du:</span>
-                            <input type="date" id="dateDebut" class="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition shadow-inner cursor-pointer font-mono">
-                        </div>
-
-                        <!-- Date Fin -->
-                        <div class="relative flex items-center">
-                            <span class="absolute left-3 text-[10px] text-slate-400 font-semibold uppercase">Au:</span>
-                            <input type="date" id="dateFin" class="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition shadow-inner cursor-pointer font-mono">
-                        </div>
-
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 col-span-1 sm:col-span-2 lg:col-span-2">
                             <button id="searchBtn" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-sm cursor-pointer">
                                 <i class="fas fa-filter"></i> Filtrer
                             </button>
-                            <button id="resetBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2.5 rounded-xl text-xs transition flex items-center justify-center cursor-pointer" title="Réinitialiser les filtres">
-                                <i class="fas fa-redo-alt"></i>
+                            <button id="resetBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2 cursor-pointer" title="Réinitialiser les filtres">
+                                <i class="fas fa-redo-alt"></i> Réinitialiser
                             </button>
                         </div>
                     </div>
@@ -189,6 +177,7 @@
 
         let currentPage = 1;
         const pageSize = 50;
+        let selectedFilterDate = ""; // Variable lli kat-stocker la date selectionnée
 
         document.addEventListener("DOMContentLoaded", async () => {
             initQuickDatesBar();
@@ -197,26 +186,27 @@
             const resetBtn = document.getElementById("resetBtn");
             const searchInput = document.getElementById("searchInput");
             const statusFilter = document.getElementById("statusFilter");
-            const dateDebut = document.getElementById("dateDebut");
-            const dateFin = document.getElementById("dateFin");
 
             if (searchBtn) searchBtn.addEventListener("click", () => { currentPage = 1; loadOrders(); });
             if (searchInput) searchInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { currentPage = 1; loadOrders(); } });
             if (statusFilter) statusFilter.addEventListener("change", () => { currentPage = 1; loadOrders(); });
-            if (dateDebut) dateDebut.addEventListener("change", () => { currentPage = 1; loadOrders(); });
-            if (dateFin) dateFin.addEventListener("change", () => { currentPage = 1; loadOrders(); });
 
             if (resetBtn) {
                 resetBtn.addEventListener("click", () => {
                     searchInput.value = "";
                     statusFilter.value = "";
-                    dateDebut.value = "";
-                    dateFin.value = "";
-                    // Unselect all date buttons
-                    document.querySelectorAll('.date-quick-btn').forEach(b => {
-                        b.classList.remove('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
-                        b.classList.add('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
+                    selectedFilterDate = "";
+                    
+                    document.querySelectorAll('.date-quick-btn').forEach((b, idx) => {
+                        if (idx === 0) {
+                            b.classList.remove('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
+                            b.classList.add('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
+                        } else {
+                            b.classList.remove('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
+                            b.classList.add('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
+                        }
                     });
+
                     currentPage = 1;
                     loadOrders();
                 });
@@ -237,18 +227,17 @@
             loadOrders();
         });
 
-        // Function to generate horizontal quick dates selector (e.g. 30/07/2026, 31/07/2026...)
         function initQuickDatesBar() {
             const bar = document.getElementById("datesQuickBar");
             if (!bar) return;
 
+            // "Tous les jours" active par defaut
             let html = `
                 <button type="button" data-date="" class="date-quick-btn shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500 text-slate-950 border border-emerald-400 transition shadow-sm cursor-pointer">
                     <i class="fas fa-globe mr-1"></i> Tous les jours
                 </button>
             `;
 
-            // Generate next 14 days starting from today (or current system context)
             let today = new Date();
             for (let i = 0; i < 15; i++) {
                 let d = new Date(today);
@@ -271,7 +260,6 @@
 
             bar.innerHTML = html;
 
-            // Add click events to quick date buttons
             document.querySelectorAll('.date-quick-btn').forEach(btn => {
                 btn.addEventListener("click", (e) => {
                     document.querySelectorAll('.date-quick-btn').forEach(b => {
@@ -282,10 +270,7 @@
                     btn.classList.remove('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
                     btn.classList.add('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
 
-                    const selectedDate = btn.getAttribute('data-date');
-                    document.getElementById("dateDebut").value = selectedDate;
-                    document.getElementById("dateFin").value = selectedDate;
-                    
+                    selectedFilterDate = btn.getAttribute('data-date');
                     currentPage = 1;
                     loadOrders();
                 });
@@ -296,13 +281,10 @@
             const tbody = document.getElementById("ordersTableBody");
             const searchVal = document.getElementById("searchInput").value.trim();
             const statusVal = document.getElementById("statusFilter").value;
-            const dDebut = document.getElementById("dateDebut").value;
-            const dFin = document.getElementById("dateFin").value;
 
             tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400 text-xs"><i class="fas fa-spinner fa-spin mr-2 text-emerald-500"></i> Synthèse en cours...</td></tr>`;
 
             try {
-                // 1. Fetch from commandes_excel
                 let query = supabase.from('commandes_excel').select('*');
 
                 if (searchVal) {
@@ -311,24 +293,20 @@
                 if (statusVal) {
                     query = query.eq('statut', statusVal);
                 }
-                if (dDebut) {
-                    query = query.gte('date_livraison', dDebut);
-                }
-                if (dFin) {
-                    query = query.lte('date_livraison', dFin);
+                if (selectedFilterDate) {
+                    query = query.eq('date_livraison', selectedFilterDate);
                 }
 
                 const { data: excelData, error: excelError } = await query;
                 if (excelError) throw excelError;
 
                 if (!excelData || excelData.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400 text-xs">Aucune commande trouvée pour cette période.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400 text-xs">Aucune commande trouvée pour cette date.</td></tr>`;
                     document.getElementById("rowCount").textContent = "Affichage de 0 éléments";
                     document.getElementById("pageIndicator").textContent = "Page 1 / 1";
                     return;
                 }
 
-                // 2. Fetch matching pieces from commandes_clients_pieces
                 const docNumbers = [...new Set(excelData.map(item => item.document_vente))];
                 const { data: piecesData } = await supabase
                     .from('commandes_clients_pieces')
@@ -344,7 +322,6 @@
                     });
                 }
 
-                // 3. Group by document_vente
                 let groupedMap = new Map();
                 excelData.forEach(item => {
                     const doc = item.document_vente;

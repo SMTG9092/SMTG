@@ -29,7 +29,8 @@ class NavigationManager {
             'expeditions': { name: 'Expéditions', icon: 'fas fa-truck-fast' },
             'utilisateurs': { name: 'Utilisateurs', icon: 'fas fa-users-cog' },
             'parametres': { name: 'Paramètres', icon: 'fas fa-sliders' },
-            'roles': { name: 'Rôles & Permissions', icon: 'fas fa-shield-alt' }
+            'roles': { name: 'Rôles & Permissions', icon: 'fas fa-shield-alt' },
+            'permissions': { name: 'Permissions', icon: 'fas fa-key' }
         };
     }
 
@@ -87,10 +88,12 @@ class NavigationManager {
         if (!navContainer) return;
 
         try {
+            // Zidna .eq('show_in_menu', true) bach tjib gha les pages li mamsouhinch mn menu
             const { data: pages, error } = await supabase
                 .from('pages')
                 .select('code, url')
-                .eq('actif', true);
+                .eq('actif', true)
+                .eq('show_in_menu', true);
 
             if (error) {
                 console.error("Erreur chargement sidebar:", error);

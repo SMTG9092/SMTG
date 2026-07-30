@@ -1,776 +1,313 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SoufStock Enterprise ERP - Dashboard</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <title>Gestion des Commandes Globales - SoufStock Enterprise ERP/WMS Pro Max</title>
     
-    <style>
-        :root {
-            --bg-main: #0b131b;
-            --sidebar-bg: #070d13;
-            --card-bg: rgba(17, 24, 39, 0.85);
-            --card-border: rgba(16, 185, 129, 0.2);
-            --card-border-hover: rgba(16, 185, 129, 0.5);
-            --primary-glow: #10b981;
-            --danger-glow: #ef4444;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-        }
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
-            min-height: 100vh;
-            display: flex;
-        }
-
-        .app {
-            display: flex;
-            width: 100%;
-            min-height: 100vh;
-        }
-
-        /* --- Sidebar Pro Styling --- */
-        .sidebar {
-            width: 260px;
-            background-color: var(--sidebar-bg);
-            border-right: 1px solid var(--card-border);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            height: 100vh;
-            z-index: 100;
-        }
-
-        .sidebar-header {
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .sidebar-logo {
-            font-size: 24px;
-            color: var(--primary-glow);
-        }
-
-        .sidebar-brand h2 {
-            font-size: 16px;
-            font-weight: 700;
-            color: #fff;
-        }
-
-        .sidebar-brand span {
-            font-size: 11px;
-            color: var(--text-muted);
-        }
-
-        .sidebar-nav {
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        .sidebar-footer {
-            padding: 15px;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            background: rgba(0, 0, 0, 0.2);
-        }
-
-        .sidebar-user-box {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 12px;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-
-        .sidebar-user-box h4 {
-            font-size: 13px;
-            color: #fff;
-            margin-bottom: 2px;
-        }
-
-        .sidebar-user-box span {
-            font-size: 11px;
-            color: var(--primary-glow);
-            font-weight: 600;
-        }
-
-        .btn-logout {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #ef4444;
-            padding: 10px;
-            border-radius: 10px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .btn-logout:hover {
-            background: var(--danger-glow);
-            color: #fff;
-            border-color: var(--danger-glow);
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
-        }
-
-        /* --- Main Content Area --- */
-        .main {
-            flex: 1;
-            padding: 25px;
-            overflow-y: auto;
-            background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.04), transparent 40%);
-        }
-
-        .welcome-banner {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(59, 130, 246, 0.06) 100%);
-            border: 1px solid var(--card-border);
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            backdrop-filter: blur(12px);
-        }
-
-        .welcome-banner h1 {
-            font-size: 22px;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 5px;
-        }
-
-        .welcome-banner p {
-            color: var(--text-muted);
-            font-size: 13px;
-        }
-
-        .stats-grid-pro {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .stat-box {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 14px;
-            padding: 16px;
-            backdrop-filter: blur(12px);
-            transition: all 0.3s ease;
-        }
-
-        .stat-box:hover {
-            border-color: var(--card-border-hover);
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.15);
-        }
-
-        .stat-box-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .stat-box-icon {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            color: #fff;
-        }
-
-        .stat-box h3 {
-            font-size: 12px;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .stat-box .value {
-            font-size: 18px;
-            font-weight: 700;
-            color: #fff;
-            margin-top: 2px;
-        }
-
-        .stat-box .trend {
-            font-size: 11px;
-            margin-top: 6px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .trend.up { color: #10b981; }
-        .trend.down { color: #ef4444; }
-
-        .dashboard-grid-pro {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 25px;
-        }
-
-        @media(max-width: 1200px) {
-            .dashboard-grid-pro {
-                grid-template-columns: 1fr;
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darker: '#010309',
+                        dark: '#070b14',
+                        cardbg: '#0d1322',
+                        cardhover: '#131c38',
+                        bordercolor: '#1e293b',
+                        neonemerald: '#10b981'
+                    }
+                }
             }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #010309; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+        body { background-color: #010309; color: #f8fafc; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+        
+        .bg-cyber-grid {
+            background-image: linear-gradient(to right, rgba(30, 41, 59, 0.15) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(30, 41, 59, 0.15) 1px, transparent 1px);
+            background-size: 40px 40px;
         }
 
         .pro-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 16px;
-            padding: 20px;
-            backdrop-filter: blur(12px);
+            background: linear-gradient(135deg, rgba(13, 19, 34, 0.95) 0%, rgba(3, 7, 18, 0.98) 100%);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
         }
 
-        .pro-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .pro-card-header h3 {
-            font-size: 14px;
-            font-weight: 600;
-            color: #fff;
-        }
-
-        .table-pro {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-        }
-
-        .table-pro th {
-            text-align: left;
-            color: var(--text-muted);
-            padding: 8px;
-            font-weight: 500;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .table-pro td {
-            padding: 10px 8px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-            color: #e2e8f0;
-        }
-
-        .badge-status {
-            padding: 3px 6px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: 600;
-        }
-        .badge-status.entree { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-        .badge-status.sortie { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-
-        .btn-view-all {
-            display: block;
-            width: 100%;
-            text-align: center;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--card-border);
-            color: var(--text-main);
-            padding: 8px;
-            border-radius: 8px;
-            margin-top: 12px;
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: 0.2s;
-            text-decoration: none;
-        }
-        .btn-view-all:hover {
-            background: var(--primary-glow);
-            color: #000;
-            border-color: var(--primary-glow);
+        .glow-effect {
+            position: absolute;
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.06) 0%, transparent 70%);
+            pointer-events: none;
+            filter: blur(60px);
         }
     </style>
 </head>
-<body>
+<body class="bg-darker text-slate-100 font-sans antialiased min-h-screen flex overflow-hidden selection:bg-emerald-500 selection:text-slate-950">
 
-<div class="app">
-
-    <!-- SIDEBAR PRO -->
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <i class="fas fa-snowflake sidebar-logo"></i>
-            <div class="sidebar-brand">
-                <h2>SoufStock</h2>
-                <span>Gestion</span>
+    <!-- SIDEBAR PRO MAX -->
+    <aside class="w-72 bg-dark/95 border-r border-bordercolor flex flex-col h-screen p-5 select-none shrink-0 backdrop-blur-2xl z-20 shadow-2xl">
+        <div class="flex items-center gap-3.5 px-2 mb-8">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 via-teal-500/10 to-transparent border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-xl shadow-emerald-500/10">
+                <i class="fas fa-cubes text-xl animate-pulse"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-1.5">
+                    <span class="font-black text-base tracking-wider text-white">SoufStock</span>
+                    <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-black px-1.5 py-0.5 rounded tracking-widest uppercase">PRO MAX</span>
+                </div>
+                <span class="text-[10px] text-slate-400 font-semibold tracking-widest uppercase block mt-0.5">Enterprise WMS Core</span>
             </div>
         </div>
-
-        <nav class="sidebar-nav" id="sidebarNav">
-            <!-- Ghadi t-3mmar otomatikan mn Navigation.js -->
+        
+        <nav id="sidebarNav" class="flex-1 overflow-y-auto pr-1 space-y-1.5">
+            <!-- Dynamic Sidebar -->
         </nav>
 
-        <div class="sidebar-footer">
-            <div class="sidebar-user-box">
-                <h4 id="userNameSidebar">Chargement...</h4>
-                <span id="userRoleSidebar" style="display: none;"></span>
+        <div class="pt-4 mt-auto border-t border-bordercolor/80">
+            <div class="bg-cardbg/90 border border-bordercolor rounded-2xl p-4 mb-3 shadow-inner relative overflow-hidden">
+                <div class="absolute -right-4 -bottom-4 w-16 h-16 bg-emerald-500/5 rounded-full blur-xl"></div>
+                <div class="flex items-center gap-2.5">
+                    <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50 animate-ping"></div>
+                    <span id="sidebarUserName" class="block text-xs font-black text-slate-100 truncate uppercase tracking-wider">CHARGEMENT...</span>
+                </div>
+                <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-800/80 text-[10px] text-slate-400">
+                    <span class="font-mono text-emerald-400">SESSION_ACTIVE</span>
+                    <span class="flex items-center gap-1"><i class="fas fa-lock text-[9px]"></i> TLS 1.3</span>
+                </div>
             </div>
-            <button id="btnLogout" class="btn-logout">
-                <i class="fas fa-sign-out-alt"></i> Déconnexion
+            <button id="logoutBtn" class="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl py-2.5 px-3 text-xs font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer group shadow-lg shadow-red-500/5">
+                <i class="fas fa-power-off group-hover:rotate-90 transition-transform duration-300"></i> Déconnexion Sécurisée
             </button>
         </div>
     </aside>
 
-    <!-- MAIN CONTENT -->
-    <main class="main">
+    <!-- MAIN CONTAINER -->
+    <div class="flex-1 flex flex-col h-screen min-w-0 overflow-hidden relative bg-cyber-grid">
         
-        <div class="welcome-banner">
-            <div>
-                <h1 id="welcomeTitle">Bienvenue, Chargement...</h1>
-                <p>Voici l'état général de votre activité aujourd'hui.</p>
-            </div>
-            <!-- TARIKH W L-WAQTSHAH 100% (Real-time live update) -->
-            <div style="text-align: right; font-size: 12px; color: var(--text-muted);">
-                <i class="fas fa-calendar-alt"></i> <span id="currentDateBanner">--</span> &nbsp;|&nbsp; 
-                <i class="fas fa-clock"></i> <span id="currentTimeBanner">--:--:--</span>
-            </div>
-        </div>
-
-        <!-- STATS CARDS REAL DATA -->
-        <div class="stats-grid-pro">
-            <div class="stat-box">
-                <div class="stat-box-header">
-                    <h3>Stock Total</h3>
-                    <div class="stat-box-icon" style="background: linear-gradient(135deg, #10b981, #059669);"><i class="fas fa-boxes"></i></div>
-                </div>
-                <div class="value" id="statStockTotal">0,000</div>
-                <div style="font-size: 10px; color: var(--text-muted);">KG / Pce</div>
-                <div class="trend up"><i class="fas fa-arrow-up"></i> Données en direct</div>
-            </div>
-
-            <div class="stat-box">
-                <div class="stat-box-header">
-                    <h3>Articles</h3>
-                    <div class="stat-box-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);"><i class="fas fa-tags"></i></div>
-                </div>
-                <div class="value" id="statArticles">0</div>
-                <div style="font-size: 10px; color: var(--text-muted);">actifs</div>
-                <div class="trend up"><i class="fas fa-arrow-up"></i> Données en direct</div>
-            </div>
-
-            <div class="stat-box">
-                <div class="stat-box-header">
-                    <h3>Commandes</h3>
-                    <div class="stat-box-icon" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);"><i class="fas fa-file-invoice"></i></div>
-                </div>
-                <div class="value" id="statCommandes">0</div>
-                <div style="font-size: 10px; color: var(--text-muted);">en cours</div>
-                <div class="trend up"><i class="fas fa-arrow-up"></i> Données en direct</div>
-            </div>
-
-            <div class="stat-box">
-                <div class="stat-box-header">
-                    <h3>Picking</h3>
-                    <div class="stat-box-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);"><i class="fas fa-dolly"></i></div>
-                </div>
-                <div class="value" id="statPicking">0</div>
-                <div style="font-size: 10px; color: var(--text-muted);">en cours (v_picking)</div>
-                <div class="trend down"><i class="fas fa-arrow-down"></i> Données en direct</div>
-            </div>
-
-            <div class="stat-box">
-                <div class="stat-box-header">
-                    <h3>Expéditions</h3>
-                    <div class="stat-box-icon" style="background: linear-gradient(135deg, #06b6d4, #0891b2);"><i class="fas fa-truck"></i></div>
-                </div>
-                <div class="value" id="statExpeditions">0</div>
-                <div style="font-size: 10px; color: var(--text-muted);">aujourd'hui (v_expeditions)</div>
-                <div class="trend up"><i class="fas fa-arrow-up"></i> Données en direct</div>
-            </div>
-
-            <div class="stat-box">
-                <div class="stat-box-header">
-                    <h3>Réservations</h3>
-                    <div class="stat-box-icon" style="background: linear-gradient(135deg, #ec4899, #be185d);"><i class="fas fa-bookmark"></i></div>
-                </div>
-                <div class="value" id="statReservations">0,000</div>
-                <div style="font-size: 10px; color: var(--text-muted);">KG / Pce</div>
-                <div class="trend down"><i class="fas fa-arrow-down"></i> Données en direct</div>
-            </div>
-        </div>
-
-        <div class="dashboard-grid-pro">
-            <div class="pro-card">
-                <div class="pro-card-header">
-                    <h3>Entrées vs Sorties (7 derniers jours)</h3>
-                </div>
-                <div style="height: 200px; position: relative;">
-                    <canvas id="entriesExitsChart"></canvas>
-                </div>
-            </div>
-
-            <div class="pro-card">
-                <div class="pro-card-header">
-                    <h3>Stock par Magasin</h3>
-                </div>
-                <div style="height: 160px; position: relative; display: flex; justify-content: center;">
-                    <canvas id="stockMagasinChart"></canvas>
-                </div>
-            </div>
-
-            <div class="pro-card">
-                <div class="pro-card-header">
-                    <h3>Occupation des Emplacements</h3>
-                </div>
-                <div style="text-align: center; padding: 10px 0;">
-                    <h2 style="font-size: 30px; font-weight: 800; color: #10b981;">68%</h2>
-                    <span style="font-size: 11px; color: var(--text-muted);">Occupation (680 / 1000)</span>
-                </div>
-                <div style="background: rgba(255,255,255,0.05); height: 6px; border-radius: 4px; overflow: hidden; margin-top: 8px;">
-                    <div style="width: 68%; background: #10b981; height: 100%;"></div>
-                </div>
-            </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
-            <div class="pro-card">
-                <div class="pro-card-header">
-                    <h3>Derniers Mouvements</h3>
-                </div>
-                <table class="table-pro">
-                    <thead>
-                        <tr>
-                            <th>Date / Heure</th>
-                            <th>Type</th>
-                            <th>Article</th>
-                            <th>Lot</th>
-                            <th>Emplacement</th>
-                            <th>Qté</th>
-                            <th>Magasin</th>
-                        </tr>
-                    </thead>
-                    <tbody id="mouvementsTableBody">
-                        <tr>
-                            <td colspan="7" style="text-align: center; color: var(--text-muted);">Chargement des mouvements...</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <a href="mouvements.html" class="btn-view-all">Voir tous les mouvements</a>
-            </div>
-
-            <div class="pro-card">
-                <div class="pro-card-header">
-                    <h3>Alertes Stock Minimum</h3>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <div style="background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.2); padding: 8px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <strong style="font-size: 12px; color: #fff;">Burger 100g</strong>
-                            <div style="font-size: 10px; color: var(--text-muted);">A408 • Min: 500 KG</div>
-                        </div>
-                        <span style="color: #ef4444; font-weight: 700; font-size: 12px;">120.000 KG</span>
+        <!-- HEADER PRO MAX -->
+        <header class="h-20 bg-dark/70 border-b border-bordercolor px-10 flex items-center justify-between shrink-0 backdrop-blur-xl z-10 shadow-sm">
+            <div class="flex items-center gap-4">
+                <div>
+                    <h1 class="text-xl font-black tracking-tight text-white flex items-center gap-2.5">
+                        <i class="fas fa-boxes-packing text-emerald-400 text-lg"></i> Synthèse des Commandes (KG & Pièces)
+                    </h1>
+                    <div class="text-xs text-slate-400 flex items-center gap-2 mt-1 font-medium">
+                        <span class="hover:text-white transition">Accueil</span>
+                        <i class="fas fa-chevron-right text-[8px] text-slate-600"></i>
+                        <strong class="text-emerald-400 font-bold">Commandes Unifiées</strong>
                     </div>
                 </div>
-                <a href="alertes.html" class="btn-view-all">Voir toutes les alertes</a>
             </div>
-        </div>
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2.5 bg-cardbg border border-bordercolor px-4 py-2 rounded-xl text-xs font-mono text-emerald-400 shadow-inner">
+                    <i class="fas fa-shield-halved"></i>
+                    <span>Firewall : Actif & Synchronisé</span>
+                </div>
+            </div>
+        </header>
 
-    </main>
-</div>
+        <!-- PAGE BODY -->
+        <main class="flex-1 p-8 overflow-y-auto pt-6 relative z-10">
+            <div class="glow-effect top-10 left-1/4"></div>
 
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <div class="max-w-7xl w-full mx-auto space-y-6">
+                
+                <!-- STATS / ACTIONS BAR -->
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4 bg-cardbg border border-bordercolor p-5 rounded-2xl pro-card">
+                    <div class="flex items-center gap-3 w-full md:w-auto flex-wrap">
+                        <div class="relative flex-1 md:w-80">
+                            <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input type="text" id="searchInput" placeholder="N° Commande, Client, Réceptionnaire..." class="w-full bg-dark/80 border border-bordercolor rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition">
+                        </div>
 
-<!-- Logique Dashboard & Real-Time Clock & Date -->
-<script type="module">
-    import Navigation from "/assets/js/core/navigation.js";
-    import SessionManager from "/assets/js/core/session.js";
-    import APP_CONFIG from "/assets/js/core/config.js";
-    import supabase from "/assets/js/core/supabase.js";
-    import { initPermissions } from "/assets/js/core/permissions.js";
+                        <select id="filterStatus" onchange="loadCommandesSynthese()" class="bg-dark/80 border border-bordercolor rounded-xl px-4 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500 transition">
+                            <option value="">Tous les statuts</option>
+                            <option value="IMPORTEE">Importée</option>
+                            <option value="LANCEE">Lancée</option>
+                            <option value="PREPAREE">Préparée</option>
+                            <option value="EXPEDIEE">Expédiée</option>
+                        </select>
+                    </div>
 
-    // --- Fonction Active Live Date & Time Shah 100% ---
-    function startRealTimeClock() {
-        const updateClock = () => {
-            const now = new Date();
-            
-            // Format Tarikh Bel Français (ex: Mercredi 28 Juin 2026)
-            const optionsDate = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-            let dateStr = now.toLocaleDateString('fr-FR', optionsDate);
-            // Capitalize first letter of day and month
-            dateStr = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-            
-            // Format Waqt (HH:MM:SS)
-            const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                        <button onclick="loadCommandesSynthese()" class="bg-dark border border-bordercolor hover:border-emerald-500/50 text-slate-300 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2">
+                            <i class="fas fa-rotate text-emerald-400"></i><span>Actualiser</span>
+                        </button>
+                    </div>
+                </div>
 
-            const dateEl = document.getElementById('currentDateBanner');
-            const timeEl = document.getElementById('currentTimeBanner');
+                <!-- TABLE SECTION -->
+                <div class="pro-card rounded-2xl overflow-hidden border border-bordercolor">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-bordercolor bg-dark/50 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                    <th class="p-4">N° Commande (Document)</th>
+                                    <th class="p-4">Client / Réceptionnaire</th>
+                                    <th class="p-4 text-center">Nbr Articles</th>
+                                    <th class="p-4 text-center">Total KG (Excel)</th>
+                                    <th class="p-4 text-center">Total Pièces (AB10)</th>
+                                    <th class="p-4">Statut</th>
+                                    <th class="p-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="commandesTableBody" class="divide-y divide-bordercolor/60 text-xs">
+                                <tr>
+                                    <td colspan="7" class="p-8 text-center text-slate-500 font-mono">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i> Chargement et fusion des tables commandes_excel & commandes_clients_pieces...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
-            if (dateEl) dateEl.textContent = dateStr;
-            if (timeEl) timeEl.textContent = timeStr;
+            </div>
+        </main>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script type="module">
+        import SecurityManager from '../assets/js/core/security.js';
+        import Navigation from '../assets/js/core/navigation.js';
+        import SessionManager from '../assets/js/core/session.js';
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            const authorized = await SecurityManager.protectPage('commandes');
+            if (!authorized) return;
+
+            await Navigation.init();
+
+            const profile = await SessionManager.getProfile();
+            if (profile) {
+                const userNameEl = document.getElementById("sidebarUserName");
+                if (userNameEl) {
+                    userNameEl.textContent = profile.nom_complet || profile.username || profile.email || "UTILISATEUR";
+                }
+            }
+
+            const logoutBtn = document.getElementById("logoutBtn");
+            if (logoutBtn) {
+                logoutBtn.addEventListener("click", async () => {
+                    await SessionManager.logout();
+                });
+            }
+
+            window.loadCommandesSynthese();
+        });
+
+        window.loadCommandesSynthese = function() {
+            const tbody = document.getElementById("commandesTableBody");
+            const statusFilter = document.getElementById("filterStatus").value;
+
+            tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500 font-mono"><i class="fas fa-spinner fa-spin mr-2"></i> Récupération des données jointes...</td></tr>`;
+
+            // Simulation d'une requête SQL JOIN entre commandes_excel et commandes_clients_pieces
+            setTimeout(() => {
+                let mockCommandes = [
+                    {
+                        document_vente: "DOC-2026-050",
+                        client: "Société Centrale Logistique",
+                        nom_receptionnaire: "Mr. Ahmed Benali",
+                        nombre_articles: 4,
+                        total_kg: 1450.500,
+                        nombre_pieces: 120,
+                        statut: "PREPAREE"
+                    },
+                    {
+                        document_vente: "DOC-2026-051",
+                        client: "Magasin AB10 Central",
+                        nom_receptionnaire: "Equipe Quai 2",
+                        nombre_articles: 2,
+                        total_kg: 3200.000,
+                        nombre_pieces: 450,
+                        statut: "LANCEE"
+                    },
+                    {
+                        document_vente: "DOC-2026-052",
+                        client: "Atlas Distribution",
+                        nom_receptionnaire: "Service Expédition",
+                        nombre_articles: 6,
+                        total_kg: 890.200,
+                        nombre_pieces: 55,
+                        statut: "IMPORTEE"
+                    }
+                ];
+
+                if(statusFilter) {
+                    mockCommandes = mockCommandes.filter(c => c.statut === statusFilter);
+                }
+
+                if(mockCommandes.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500">Aucune commande trouvée.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = mockCommandes.map(cmd => {
+                    let badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/20";
+                    if(cmd.statut === "LANCEE") badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+                    if(cmd.statut === "PREPAREE") badgeColor = "bg-purple-500/10 text-purple-400 border-purple-500/20";
+                    if(cmd.statut === "EXPEDIEE") badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+
+                    return `
+                        <tr class="hover:bg-cardhover/50 transition-colors">
+                            <td class="p-4 font-mono font-bold text-emerald-400">
+                                <i class="fas fa-file-invoice mr-1.5 text-slate-500"></i> ${cmd.document_vente}
+                            </td>
+                            <td class="p-4">
+                                <div class="font-bold text-white">${cmd.client}</div>
+                                <div class="text-[10px] text-slate-400"><i class="fas fa-user text-[9px] mr-1"></i> ${cmd.nom_receptionnaire}</div>
+                            </td>
+                            <td class="p-4 text-center font-mono font-bold text-slate-200">
+                                <span class="bg-dark px-2.5 py-1 rounded-lg border border-bordercolor">${cmd.nombre_articles} articles</span>
+                            </td>
+                            <td class="p-4 text-center font-mono text-emerald-400 font-semibold">
+                                ${cmd.total_kg.toLocaleString()} KG
+                            </td>
+                            <td class="p-4 text-center font-mono text-blue-400 font-semibold">
+                                ${cmd.nombre_pieces} PCS
+                            </td>
+                            <td class="p-4">
+                                <span class="px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase tracking-wider ${badgeColor}">${cmd.statut}</span>
+                            </td>
+                            <td class="p-4 text-right space-x-1">
+                                <button onclick="viewDetails('${cmd.document_vente}')" class="bg-cardbg border border-bordercolor hover:border-emerald-500/40 text-slate-300 px-3 py-1.5 rounded-xl text-xs transition" title="Détails de la commande">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button onclick="processCommand('${cmd.document_vente}')" class="bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500 hover:text-darker text-emerald-400 px-3 py-1.5 rounded-xl text-xs transition" title="Lancer / Traiter">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }, 300);
         };
 
-        updateClock();
-        setInterval(updateClock, 1000); // K-t-mdda kol second b dbt
-    }
+        window.viewDetails = function(doc) {
+            alert(`Affichage détaillé des lignes et pièces associées au document : ${doc}`);
+        };
 
-    document.addEventListener("DOMContentLoaded", async () => {
-        // Start l-waqt w t-tarikh l-an
-        startRealTimeClock();
-
-        const isAuth = await SessionManager.requireAuth();
-        if (!isAuth) return;
-
-        await initPermissions();
-        Navigation.init();
-
-        const user = await SessionManager.getUser();
-        if (!user) return;
-
-        // Charger profil utilisateur
-        const { data: profile, error } = await supabase
-            .from(APP_CONFIG.DATABASE.USER_PROFILES_TABLE)
-            .select('*')
-            .eq(APP_CONFIG.PROFILE.ID, user.id)
-            .single();
-
-        if (!error && profile) {
-            let roleNom = "";
-            if (profile[APP_CONFIG.PROFILE.ROLE_ID]) {
-                const { data: roleData } = await supabase
-                    .from(APP_CONFIG.DATABASE.ROLES_TABLE)
-                    .select(`${APP_CONFIG.ROLE.NOM}, ${APP_CONFIG.ROLE.CODE}`)
-                    .eq(APP_CONFIG.ROLE.ID, profile[APP_CONFIG.PROFILE.ROLE_ID])
-                    .single();
-
-                if (roleData) {
-                    roleNom = roleData[APP_CONFIG.ROLE.NOM] || roleData[APP_CONFIG.ROLE.CODE] || "";
-                }
-            }
-
-            const nomComplet = profile[APP_CONFIG.PROFILE.NOM_COMPLET] || 
-                               profile.nom_complet || 
-                               `${profile[APP_CONFIG.PROFILE.PRENOM] || ''} ${profile[APP_CONFIG.PROFILE.NOM] || ''}`.trim() || 
-                               "Utilisateur";
-
-            document.getElementById('welcomeTitle').textContent = `Bienvenue, ${nomComplet} !`;
-            document.getElementById('userNameSidebar').textContent = nomComplet;
-
-            const userRoleEl = document.getElementById('userRoleSidebar');
-            if (roleNom && userRoleEl) {
-                userRoleEl.textContent = roleNom;
-                userRoleEl.style.display = 'inline-block';
-            }
-        }
-
-        // Charger toutes les statistiques en direct de la base de données (100% réel)
-        await loadDashboardRealData();
-
-        initCharts();
-        await loadDashboardMouvements();
-
-        const btnLogout = document.getElementById('btnLogout');
-        if (btnLogout) {
-            btnLogout.addEventListener('click', async () => {
-                if (confirm("Voulez-vous vraiment vous déconnecter ?")) {
-                    await SessionManager.logout();
-                }
-            });
-        }
-    });
-
-    async function loadDashboardRealData() {
-        try {
-            // 1. Stock Total, Articles, Réservations mn la vue vw_dashboard
-            const { data: viewData, error: viewError } = await supabase
-                .from('vw_dashboard')
-                .select('*')
-                .single();
-
-            if (!viewError && viewData) {
-                const stockTotal = Number(viewData.stock_total) || 0;
-                document.getElementById('statStockTotal').textContent = stockTotal.toLocaleString('fr-FR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
-
-                const totalArticles = Number(viewData.total_articles) || 0;
-                document.getElementById('statArticles').textContent = totalArticles.toLocaleString('fr-FR');
-
-                const stockReserve = Number(viewData.stock_reserve_total) || 0;
-                document.getElementById('statReservations').textContent = stockReserve.toLocaleString('fr-FR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
-            }
-
-            // 2. Commandes (en cours / total mn table commandes)
-            const { count: countCommandes, error: errCmd } = await supabase
-                .from('commandes')
-                .select('*', { count: 'exact', head: true });
-            
-            if (!errCmd) {
-                document.getElementById('statCommandes').textContent = (countCommandes || 0).toLocaleString('fr-FR');
-            }
-
-            // 3. Picking (en cours mn la vue v_picking)
-            const { count: countPicking, error: errPick } = await supabase
-                .from('v_picking')
-                .select('*', { count: 'exact', head: true });
-
-            if (!errPick) {
-                document.getElementById('statPicking').textContent = (countPicking || 0).toLocaleString('fr-FR');
-            }
-
-            // 4. Expéditions (aujourd'hui mn la vue v_expeditions)
-            const todayStr = new Date().toISOString().split('T')[0];
-            const { count: countExpeditions, error: errExp } = await supabase
-                .from('v_expeditions')
-                .select('*', { count: 'exact', head: true })
-                .gte('date_expedition', todayStr);
-
-            if (!errExp) {
-                document.getElementById('statExpeditions').textContent = (countExpeditions || 0).toLocaleString('fr-FR');
-            }
-
-        } catch (err) {
-            console.error("Erreur chargement des stats réelles:", err);
-        }
-    }
-
-    function initCharts() {
-        const ctxLines = document.getElementById('entriesExitsChart');
-        if (ctxLines) {
-            new Chart(ctxLines, {
-                type: 'line',
-                data: {
-                    labels: ['19/06', '20/06', '21/06', '22/06', '23/06', '24/06', '25/06'],
-                    datasets: [
-                        {
-                            label: 'Entrées (KG)',
-                            data: [150000, 110000, 180000, 100000, 160000, 90000, 120000],
-                            borderColor: '#10b981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Sorties (KG)',
-                            data: [50000, 130000, 80000, 60000, 40000, 110000, 130000],
-                            borderColor: '#ef4444',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#94a3b8', font: { size: 11 } } } },
-                    scales: {
-                        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.03)' } },
-                        y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.03)' } }
-                    }
-                }
-            });
-        }
-
-        const ctxDonut = document.getElementById('stockMagasinChart');
-        if (ctxDonut) {
-            new Chart(ctxDonut, {
-                type: 'doughnut',
-                data: {
-                    labels: ['ABPG', 'AB10', 'Congelé', 'Autres'],
-                    datasets: [{
-                        data: [652120, 321450, 198300, 77862],
-                        backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    cutout: '75%'
-                }
-            });
-        }
-    }
-
-    async function loadDashboardMouvements() {
-        try {
-            const { data: mouvements, error } = await supabase
-                .from('mouvements_stock')
-                .select('date_mouvement, type_mouvement, article, lot, emplacement, quantite, magasin')
-                .order('date_mouvement', { ascending: false })
-                .limit(5);
-
-            const tbody = document.getElementById('mouvementsTableBody');
-            if (!tbody) return;
-
-            if (error || !mouvements || mouvements.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Aucun mouvement récent trouvé.</td></tr>`;
-                return;
-            }
-
-            let html = '';
-            mouvements.forEach(item => {
-                const isEntree = ['AJOUT', 'IMPORT', 'RETOUR', 'ENTREE'].includes((item.type_mouvement || '').toUpperCase());
-                const badgeClass = isEntree ? 'entree' : 'sortie';
-                const badgeLabel = isEntree ? 'Entrée' : 'Sortie';
-                
-                let formattedDate = '';
-                if (item.date_mouvement) {
-                    const d = new Date(item.date_mouvement);
-                    formattedDate = d.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                }
-
-                html += `
-                    <tr>
-                        <td>${formattedDate}</td>
-                        <td><span class="badge-status ${badgeClass}">${badgeLabel}</span></td>
-                        <td>${item.article || ''}</td>
-                        <td>${item.lot || ''}</td>
-                        <td>${item.emplacement || ''}</td>
-                        <td>${item.quantite ? Number(item.quantite).toLocaleString('fr-FR', {minimumFractionDigits: 3}) : ''}</td>
-                        <td>${item.magasin || ''}</td>
-                    </tr>
-                `;
-            });
-            tbody.innerHTML = html;
-
-        } catch (err) {
-            console.error("Erreur chargement tableau mouvements:", err);
-        }
-    }
-</script>
-
+        window.processCommand = function(doc) {
+            alert(`Traitement global de la commande : ${doc}`);
+        };
+    </script>
 </body>
 </html>

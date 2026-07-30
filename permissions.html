@@ -54,9 +54,9 @@
 
     <!-- VERIFICATION SECURITY MANAGER -->
     <script type="module">
-         import SecurityManager from '../assets/js/core/security.js';
+        import SecurityManager from '../assets/js/core/security.js';
         
-        window.alert = function(msg) {};
+        window.alert = function(msg) { console.log(msg); };
 
         try {
             const authorized = await SecurityManager.protectPage('permissions');
@@ -141,9 +141,10 @@
                     <div class="p-5 border-b border-bordercolor flex items-center justify-between bg-dark/50">
                         <div>
                             <h3 class="text-sm font-black text-white uppercase tracking-wider">Droits d'accès par Page et Action</h3>
-                            <p class="text-[11px] text-slate-400 mt-0.5">Tout est coché par défaut. Décochez les cases des actions que vous souhaitez interdire à cet utilisateur.</p>
+                            <p id="permissionsSubtitle" class="text-[11px] text-slate-400 mt-0.5">Vérification de vos privilèges de modification en cours...</p>
                         </div>
-                        <button id="saveBtn" class="bg-emerald-500 hover:bg-emerald-600 text-darker font-black text-xs px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 cursor-pointer">
+                        <!-- Save Button (Will be locked/hidden if user lacks modify permission) -->
+                        <button id="saveBtn" class="hidden bg-emerald-500 hover:bg-emerald-600 text-darker font-black text-xs px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 cursor-pointer">
                             <i class="fas fa-save"></i> Enregistrer les Modifications
                         </button>
                     </div>
@@ -181,10 +182,11 @@
     <script type="module">
         import Navigation from '../assets/js/core/navigation.js';
         import SessionManager from '../assets/js/core/session.js';
-        import { supabase } from '../assets/js/core/supabase.js';
+        import supabase from '../assets/js/core/supabase.js';
 
         let currentUserId = null;
         let permissionsData = {}; 
+        let canModifyPermissions = false; // واش الـ User الحالي عنده صلاحية تعديل الصلاحيات؟
 
         document.addEventListener("DOMContentLoaded", async () => {
             await Navigation.init();
@@ -195,6 +197,9 @@
                 if (userNameEl) {
                     userNameEl.textContent = profile.nom_complet || profile.username || profile.email || "UTILISATEUR";
                 }
+
+                // 1. التحقق واش الـ User الحالي عنده صلاحية 'modifier' على صفحة 'permissions'
+                await checkCurrentuserModifyRight(profile.id);
             }
 
             document.getElementById("logoutBtn").addEventListener("click", async () => {
@@ -214,6 +219,10 @@
             });
 
             document.getElementById("saveBtn").addEventListener("click", async () => {
+                if (!canModifyPermissions) {
+                    showAlert("Action interdite : Vous n'avez pas la permission de modifier les accès.", "error");
+                    return;
+                }
                 if (!currentUserId) {
                     showAlert("Veuillez d'abord sélectionner un utilisateur.", "error");
                     return;
@@ -221,6 +230,67 @@
                 await savePermissions();
             });
         });
+
+        // دالة للتحقق واش الـ Connected User عندو حق التعديل (modifier) في هذه الصفحة
+        async function checkCurrentuserModifyRight(userId) {
+            try {
+                // واش هو Admin (role_id = 1)؟
+                const { data: userRec } = await supabase
+                    .from('user_profiles')
+                    .select('role_id')
+                    .eq('id', userId)
+                    .maybeSingle();
+
+                if (userRec && Number(userRec.role_id) === 1) {
+                    canModifyPermissions = true;
+                } else {
+                    // الاستعلام عبر الـ RPC واش عندو action code 'modifier' لصفحة 'permissions'
+                    const { data: hasMod } = await supabase.rpc('check_user_page_access', {
+                        p_user_id: userId,
+                        p_page_code: 'permissions'
+                    });
+                    
+                    // نتحقق أيضاً بشكل دقيق من action الـ modifier عبر الجداول المرتبطة
+                    const { data: modCheck } = await supabase
+                        .from('pages')
+                        .select(`
+                            page_actions!inner(
+                                id,
+                                action_id,
+                                actions!inner(code),
+                                user_page_actions(autorise, user_id)
+                            )
+                        `)
+                        .eq('code', 'permissions')
+                        .eq('page_actions.actions.code', 'modifier')
+                        .single();
+
+                    if (modCheck && modCheck.page_actions) {
+                        const pa = modCheck.page_actions[0];
+                        const userActionRow = pa.user_page_actions.find(ua => ua.user_id === userId);
+                        // إذا كانت مسجلة تكون بالقيمة ديالها، وإلا فهي True افتراضياً
+                        canModifyPermissions = userActionRow ? userActionRow.autorise : true;
+                    } else {
+                        canModifyPermissions = false;
+                    }
+                }
+
+                const saveBtn = document.getElementById("saveBtn");
+                const subtitle = document.getElementById("permissionsSubtitle");
+
+                if (canModifyPermissions) {
+                    saveBtn.classList.remove("hidden");
+                    subtitle.textContent = "Tout est coché par défaut. Cochez ou décochez, puis enregistrez les modifications.";
+                } else {
+                    saveBtn.classList.add("hidden");
+                    subtitle.textContent = "Mode lecture seule : Vous pouvez consulter les permissions mais vous n'avez pas le droit de les modifier.";
+                }
+
+            } catch (err) {
+                console.error("Erreur verification droit modifier:", err);
+                canModifyPermissions = false;
+            }
+        }
 
         async function loadUsers() {
             try {
@@ -247,7 +317,7 @@
             }
         }
 
-        async function loadUserPermissions(userId) {
+        async function loadUserPermissions(targetUserId) {
             try {
                 document.getElementById("permissionsTableBody").innerHTML = `
                     <tr><td colspan="8" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Chargement des permissions...</td></tr>`;
@@ -272,7 +342,7 @@
                 const { data: userActions, error: errUA } = await supabase
                     .from('user_page_actions')
                     .select('*')
-                    .eq('user_id', userId);
+                    .eq('user_id', targetUserId);
                 if (errUA) throw errUA;
 
                 permissionsData = {};
@@ -285,7 +355,6 @@
                     if (!paMap[pa.page_id]) paMap[pa.page_id] = {};
                     const act = actions.find(a => a.id === pa.action_id);
                     if (act) {
-                        // Ila makantch enregistrée f database g3, n-consideriwaha TRUE (Kolchi m-cté by default)
                         const isAuth = permissionsData[pa.id] !== undefined ? permissionsData[pa.id] : true;
                         paMap[pa.page_id][act.code] = {
                             page_action_id: pa.id,
@@ -313,10 +382,14 @@
                         const actionObj = paMap[page.id] ? paMap[page.id][code] : null;
                         if (actionObj) {
                             const isChecked = actionObj.autorise ? 'checked' : '';
+                            // إذا كان المستخدم لا يملك صلاحية التعديل، نجعل الـ Checkboxes معطلة (disabled)
+                            const disabledAttr = canModifyPermissions ? '' : 'disabled';
+                            const cursorClass = canModifyPermissions ? 'cursor-permission accent-emerald-500' : 'cursor-not-allowed opacity-50';
+
                             html += `
                                 <td class="p-4 text-center">
-                                    <input type="checkbox" data-pa-id="${actionObj.page_action_id}" ${isChecked} 
-                                        class="w-4 h-4 rounded bg-dark border-bordercolor text-emerald-500 focus:ring-emerald-500/20 focus:ring-offset-dark cursor-permission permission-checkbox accent-emerald-500">
+                                    <input type="checkbox" data-pa-id="${actionObj.page_action_id}" ${isChecked} ${disabledAttr}
+                                        class="w-4 h-4 rounded bg-dark border-bordercolor text-emerald-500 focus:ring-emerald-500/20 focus:ring-offset-dark permission-checkbox ${cursorClass}">
                                 </td>
                             `;
                         } else {

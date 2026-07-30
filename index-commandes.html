@@ -34,7 +34,7 @@
         ::-webkit-scrollbar-track { background: #010309; }
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
         ::-webkit-scrollbar-thumb:hover { background: #334155; }
-        body { background-color: #010309; color: #f8fafc; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+        body { background-color: #010309; color: #f8fafc; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; display: none; }
         
         .bg-cyber-grid {
             background-image: linear-gradient(to right, rgba(30, 41, 59, 0.15) 1px, transparent 1px),
@@ -76,6 +76,22 @@
             filter: blur(60px);
         }
     </style>
+
+    <!-- Verification w Redirection omatiki l dashboard.html f nafs l-lahda -->
+    <script type="module">
+        import SecurityManager from '../assets/js/core/security.js';
+        
+        window.alert = function(msg) {};
+
+        (async () => {
+            const authorized = await SecurityManager.protectPage('index_commandes');
+            if (!authorized) {
+                window.location.replace('dashboard.html'); // Omatiki l dashboard.html bla mayt3ettal
+            } else {
+                document.documentElement.style.display = 'block';
+            }
+        })();
+    </script>
 </head>
 <body class="bg-darker text-slate-100 font-sans antialiased min-h-screen flex overflow-hidden selection:bg-emerald-500 selection:text-slate-950">
 
@@ -178,50 +194,12 @@
         </main>
     </div>
 
-    <!-- MODAL CUSTOM SECURITE (INSTANTANÉ) -->
-    <div id="securityModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md hidden">
-        <div class="bg-dark border border-red-500/30 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 text-center relative animate-in fade-in zoom-in-95 duration-150">
-            <div class="absolute -top-12 -right-12 w-32 h-32 bg-red-500/10 rounded-full blur-2xl"></div>
-            
-            <div class="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 text-2xl mx-auto mb-4 shadow-lg shadow-red-500/10">
-                <i class="fas fa-shield-cat"></i>
-            </div>
-            
-            <h3 class="text-base font-black text-white tracking-wider uppercase">Alerte Sécurité Système</h3>
-            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
-                Accès non autorisé détecté par le firewall WMS Core. Vous n'avez pas les permissions requises pour accéder à cette console.
-            </p>
-
-            <div class="mt-6 flex justify-center">
-                <button id="securityOkBtn" class="bg-red-500 hover:bg-red-600 text-slate-950 font-black px-6 py-2.5 rounded-xl text-xs transition shadow-lg shadow-red-500/20 cursor-pointer uppercase tracking-wider">
-                    Compris / Retour Immédiat
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- SCRIPTS -->
     <script type="module">
-        import SecurityManager from '../assets/js/core/security.js';
         import Navigation from '../assets/js/core/navigation.js';
         import SessionManager from '../assets/js/core/session.js';
 
-        // Intercept native alert immediately before anything else
-        window.alert = function(msg) {
-            if (msg && (msg.includes('Sécurité') || msg.includes('autorisation'))) {
-                const modal = document.getElementById('securityModal');
-                if (modal) modal.classList.remove('hidden');
-            }
-        };
-
         document.addEventListener("DOMContentLoaded", async () => {
-            const authorized = await SecurityManager.protectPage('index_commandes');
-            if (!authorized) {
-                const modal = document.getElementById('securityModal');
-                if (modal) modal.classList.remove('hidden');
-                return; // Stop execution instantly
-            }
-
             await Navigation.init();
 
             const profile = await SessionManager.getProfile();
@@ -236,13 +214,6 @@
             if (logoutBtn) {
                 logoutBtn.addEventListener("click", async () => {
                     await SessionManager.logout();
-                });
-            }
-
-            const securityOkBtn = document.getElementById("securityOkBtn");
-            if (securityOkBtn) {
-                securityOkBtn.addEventListener("click", () => {
-                    window.location.href = '../index-stock.html';
                 });
             }
         });

@@ -94,7 +94,7 @@
             <div class="flex items-center gap-4 bg-slate-900/80 border border-slate-800 px-4 py-2 rounded-xl">
                 <div class="text-right">
                     <span id="currentDate" class="text-xs font-medium text-slate-300 block">Jeudi 30 juillet 2026</span>
-                    <span id="currentTime" class="text-[10px] text-emerald-400 font-mono block">15:33:41</span>
+                    <span id="currentTime" class="text-[10px] text-emerald-400 font-mono block">15:44:13</span>
                 </div>
             </div>
         </header>
@@ -107,20 +107,20 @@
                 <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                     <div>
                         <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
-                            <i class="fas fa-shipping-fast text-emerald-400"></i> Suivi des Commandes Clients
+                            <i class="fas fa-shipping-fast text-emerald-400"></i> Suivi des Commandes Clients & Pièces
                         </h2>
                         <p class="text-xs text-slate-400 mt-1">
-                            Filtrez, recherchez et suivez l'état d'avancement des commandes (Poids / Pièces).
+                            Analyse croisée entre commandes Excel et les pièces associées par document de vente.
                         </p>
                     </div>
                     
                     <div class="flex items-center gap-3 flex-wrap">
                         <div class="flex bg-slate-950 border border-slate-800 rounded-xl p-1 text-xs">
                             <button id="tabExcel" onclick="switchTable('excel')" class="px-3 py-1.5 rounded-lg font-semibold bg-emerald-500 text-slate-950 transition shadow-sm">
-                                Commandes Poids (Excel)
+                                Commandes Excel & Pièces
                             </button>
                             <button id="tabPieces" onclick="switchTable('pieces')" class="px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-slate-200 transition">
-                                Commandes Pièces
+                                Commandes Pièces Seules
                             </button>
                         </div>
 
@@ -252,7 +252,6 @@
 
             const tableName = currentMode === 'excel' ? 'commandes_excel' : 'commandes_clients_pieces';
 
-            // Render Table Headers accordingly
             if (currentMode === 'excel') {
                 thead.innerHTML = `
                     <th class="p-4">N° Document</th>
@@ -260,14 +259,14 @@
                     <th class="p-4">Article / Désignation</th>
                     <th class="p-4 text-center">Qté Cmd</th>
                     <th class="p-4 text-center">Qté Prép</th>
-                    <th class="p-4 text-center">Poids Total</th>
+                    <th class="p-4 text-center">Nbr Pièces (Matching)</th>
                     <th class="p-4 text-center">Date Livraison</th>
                     <th class="p-4 text-center">Statut</th>
                 `;
             } else {
                 thead.innerHTML = `
                     <th class="p-4">N° Document</th>
-                    <th class="p-4">Client</th>
+                    <th class="p-4">Client (Réceptionnaire)</th>
                     <th class="p-4">Article / Désignation</th>
                     <th class="p-4 text-center">Qté Cmd</th>
                     <th class="p-4 text-center">Qté Prép</th>
@@ -306,11 +305,36 @@
                     return;
                 }
 
+                // Ila kunna f mode excel، njibo matching dyal nombre_pieces mn commandes_clients_pieces b nafs document_vente o article
+                let piecesMap = new Map();
+                if (currentMode === 'excel') {
+                    const docNumbers = [...new Set(data.map(item => item.document_vente))];
+                    const { data: piecesData } = await supabase
+                        .from('commandes_clients_pieces')
+                        .select('document_vente, article, nombre_pieces')
+                        .in('document_vente', docNumbers);
+
+                    if (piecesData) {
+                        piecesData.forEach(p => {
+                            const key = `${p.document_vente}_${p.article}`;
+                            piecesMap.set(key, Number(p.nombre_pieces || 0));
+                        });
+                    }
+                }
+
                 let html = "";
                 data.forEach(item => {
                     const qteCmd = Number(item.quantite_commandee || 0);
                     const qtePrep = Number(item.quantite_preparee || 0);
-                    const secondaryMetric = currentMode === 'excel' ? `${Number(item.poids_total || 0).toLocaleString()} kg` : `${item.nombre_pieces || 0} pcs`;
+                    
+                    let secondaryMetric = "";
+                    if (currentMode === 'excel') {
+                        const matchKey = `${item.document_vente}_${item.article}`;
+                        const matchedPieces = piecesMap.get(matchKey) || 0;
+                        secondaryMetric = `<span class="text-emerald-400 font-bold">${matchedPieces} pcs</span>`;
+                    } else {
+                        secondaryMetric = `<span class="text-slate-300 font-semibold">${item.nombre_pieces || 0} pcs</span>`;
+                    }
                     
                     let badgeColor = "bg-slate-500/10 text-slate-400 border-slate-500/20";
                     const st = (item.statut || "").toUpperCase();
@@ -323,14 +347,14 @@
                     html += `
                         <tr class="hover:bg-slate-800/35 transition">
                             <td class="p-4 font-mono font-semibold text-emerald-400 text-xs">${item.document_vente || '-'}</td>
-                            <td class="p-4 font-semibold text-slate-200 text-xs">${item.client || '-'}</td>
+                            <td class="p-4 font-semibold text-slate-200 text-xs">${item.client || item.nom_receptionnaire || '-'}</td>
                             <td class="p-4">
                                 <span class="font-semibold text-slate-200 text-xs block">${item.article || '-'}</span>
                                 <span class="text-slate-400 text-[11px] block mt-0.5 truncate max-w-xs">${item.designation_article || '-'}</span>
                             </td>
                             <td class="p-4 text-center font-bold text-slate-200 text-xs">${qteCmd.toLocaleString()} ${item.unite || ''}</td>
                             <td class="p-4 text-center font-mono text-sky-400 text-xs">${qtePrep.toLocaleString()}</td>
-                            <td class="p-4 text-center font-mono font-semibold text-slate-300 text-xs">${secondaryMetric}</td>
+                            <td class="p-4 text-center font-mono text-xs">${secondaryMetric}</td>
                             <td class="p-4 text-center font-mono text-slate-300 text-xs">${item.date_livraison || '-'}</td>
                             <td class="p-4 text-center">
                                 <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold border ${badgeColor}">${item.statut || 'IMPORTEE'}</span>

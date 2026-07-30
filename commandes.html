@@ -94,7 +94,7 @@
             <div class="flex items-center gap-4 bg-slate-900/80 border border-slate-800 px-4 py-2 rounded-xl">
                 <div class="text-right">
                     <span id="currentDate" class="text-xs font-medium text-slate-300 block">Jeudi 30 juillet 2026</span>
-                    <span id="currentTime" class="text-[10px] text-emerald-400 font-mono block">15:47:04</span>
+                    <span id="currentTime" class="text-[10px] text-emerald-400 font-mono block">15:51:00</span>
                 </div>
             </div>
         </header>
@@ -110,14 +110,14 @@
                             <i class="fas fa-layer-group text-emerald-400"></i> Suivi Global par Document de Vente
                         </h2>
                         <p class="text-xs text-slate-400 mt-1">
-                            Synthèse consolidée des articles, quantités globales et pièces par commande.
+                            Synthèse consolidée des réceptionnaires, itinéraires, articles, quantités globales et pièces.
                         </p>
                     </div>
                     
                     <div class="flex items-center gap-3 flex-wrap">
                         <div class="relative flex items-center">
                             <i class="fas fa-search absolute left-3.5 text-slate-500 text-sm"></i>
-                            <input type="text" id="searchInput" placeholder="N° Document / Client..." 
+                            <input type="text" id="searchInput" placeholder="N° Document / Réceptionnaire..." 
                                 class="bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-64 transition shadow-inner">
                         </div>
 
@@ -146,7 +146,8 @@
                             <thead>
                                 <tr class="bg-slate-950/60 text-slate-400 uppercase text-[11px] tracking-wider border-b border-slate-800 font-semibold">
                                     <th class="p-4">N° Document</th>
-                                    <th class="p-4">Client</th>
+                                    <th class="p-4">Réceptionnaire</th>
+                                    <th class="p-4">Itinéraire</th>
                                     <th class="p-4 text-center">Nbr Articles</th>
                                     <th class="p-4 text-center">Qté Globale (Cmd)</th>
                                     <th class="p-4 text-center">Total Pièces</th>
@@ -156,7 +157,7 @@
                             </thead>
                             <tbody id="ordersTableBody" class="divide-y divide-slate-800/50">
                                 <tr>
-                                    <td colspan="7" class="p-12 text-center text-slate-400 text-xs">
+                                    <td colspan="8" class="p-12 text-center text-slate-400 text-xs">
                                         <i class="fas fa-spinner fa-spin mr-2 text-emerald-500 text-base"></i> Chargement des données...
                                     </td>
                                 </tr>
@@ -225,14 +226,14 @@
             const searchVal = document.getElementById("searchInput").value.trim();
             const statusVal = document.getElementById("statusFilter").value;
 
-            tbody.innerHTML = `<tr><td colspan="7" class="p-12 text-center text-slate-400 text-xs"><i class="fas fa-spinner fa-spin mr-2 text-emerald-500"></i> Synthèse en cours...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400 text-xs"><i class="fas fa-spinner fa-spin mr-2 text-emerald-500"></i> Synthèse en cours...</td></tr>`;
 
             try {
                 // 1. Fetch from commandes_excel
                 let query = supabase.from('commandes_excel').select('*');
 
                 if (searchVal) {
-                    query = query.or(`document_vente.ilike.%${searchVal}%,client.ilike.%${searchVal}%`);
+                    query = query.or(`document_vente.ilike.%${searchVal}%,nom_receptionnaire.ilike.%${searchVal}%`);
                 }
                 if (statusVal) {
                     query = query.eq('statut', statusVal);
@@ -242,7 +243,7 @@
                 if (excelError) throw excelError;
 
                 if (!excelData || excelData.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="p-12 text-center text-slate-400 text-xs">Aucune commande trouvée.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400 text-xs">Aucune commande trouvée.</td></tr>`;
                     document.getElementById("rowCount").textContent = "Affichage de 0 éléments";
                     document.getElementById("pageIndicator").textContent = "Page 1 / 1";
                     return;
@@ -255,7 +256,6 @@
                     .select('document_vente, nombre_pieces')
                     .in('document_vente', docNumbers);
 
-                // Map pieces per document
                 let piecesMap = new Map();
                 if (piecesData) {
                     piecesData.forEach(p => {
@@ -265,14 +265,15 @@
                     });
                 }
 
-                // 3. Group by document_vente (Aggregating articles, quantities)
+                // 3. Group by document_vente
                 let groupedMap = new Map();
                 excelData.forEach(item => {
                     const doc = item.document_vente;
                     if (!groupedMap.has(doc)) {
                         groupedMap.set(doc, {
                             document_vente: doc,
-                            client: item.client || '-',
+                            nom_receptionnaire: item.nom_receptionnaire || '-',
+                            itineraire: item.itineraire || '-',
                             date_livraison: item.date_livraison || '-',
                             statut: item.statut || 'IMPORTEE',
                             articlesCount: 0,
@@ -286,7 +287,6 @@
 
                 let groupedArray = Array.from(groupedMap.values());
 
-                // Pagination logic
                 const totalCount = groupedArray.length;
                 const totalPages = Math.ceil(totalCount / pageSize) || 1;
                 const fromRange = (currentPage - 1) * pageSize;
@@ -307,7 +307,8 @@
                     html += `
                         <tr class="hover:bg-slate-800/35 transition">
                             <td class="p-4 font-mono font-bold text-emerald-400 text-xs">${group.document_vente}</td>
-                            <td class="p-4 font-semibold text-slate-200 text-xs">${group.client}</td>
+                            <td class="p-4 font-semibold text-slate-200 text-xs">${group.nom_receptionnaire}</td>
+                            <td class="p-4 text-slate-300 text-xs">${group.itineraire}</td>
                             <td class="p-4 text-center font-mono font-semibold text-sky-400 text-xs">${group.articlesCount} article(s)</td>
                             <td class="p-4 text-center font-mono font-bold text-slate-200 text-xs">${group.totalQty.toLocaleString()}</td>
                             <td class="p-4 text-center font-mono font-bold text-emerald-400 text-xs">${totalPieces.toLocaleString()} pcs</td>
@@ -329,7 +330,7 @@
 
             } catch (err) {
                 console.error("Erreur synthèse commandes:", err);
-                tbody.innerHTML = `<tr><td colspan="7" class="p-12 text-center text-red-400 text-xs">Erreur lors de la génération de la synthèse.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-red-400 text-xs">Erreur lors de la génération de la synthèse.</td></tr>`;
             }
         }
     </script>

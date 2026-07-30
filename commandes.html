@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des Commandes Globales - SoufStock Enterprise ERP/WMS Pro Max</title>
+    <title>Gestion des Commandes - SoufStock Enterprise ERP/WMS</title>
     
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -17,12 +17,21 @@
             theme: {
                 extend: {
                     colors: {
-                        darker: '#010309',
-                        dark: '#070b14',
-                        cardbg: '#0d1322',
-                        cardhover: '#131c38',
-                        bordercolor: '#1e293b',
-                        neonemerald: '#10b981'
+                        slate: {
+                            950: '#020617',
+                            900: '#0f172a',
+                            800: '#1e293b',
+                            700: '#334155',
+                            400: '#94a3b8',
+                            300: '#cbd5e1',
+                            100: '#f1f5f9'
+                        },
+                        emerald: {
+                            500: '#10b981',
+                            600: '#059669',
+                            400: '#34d399',
+                            300: '#6ee7b7'
+                        }
                     }
                 }
             }
@@ -30,150 +39,141 @@
     </script>
 
     <style>
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: #010309; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #090d16; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #334155; }
-        body { background-color: #010309; color: #f8fafc; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
-        
-        .bg-cyber-grid {
-            background-image: linear-gradient(to right, rgba(30, 41, 59, 0.15) 1px, transparent 1px),
-                              linear-gradient(to bottom, rgba(30, 41, 59, 0.15) 1px, transparent 1px);
-            background-size: 40px 40px;
-        }
-
-        .pro-card {
-            background: linear-gradient(135deg, rgba(13, 19, 34, 0.95) 0%, rgba(3, 7, 18, 0.98) 100%);
-            backdrop-filter: blur(30px);
-            border: 1px solid rgba(255, 255, 255, 0.07);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-        }
-
-        .glow-effect {
-            position: absolute;
-            width: 450px;
-            height: 450px;
-            background: radial-gradient(circle, rgba(16, 185, 129, 0.06) 0%, transparent 70%);
-            pointer-events: none;
-            filter: blur(60px);
-        }
+        body { background-color: #020617; color: #f1f5f9; font-family: ui-sans-serif, system-ui, sans-serif; }
     </style>
 </head>
-<body class="bg-darker text-slate-100 font-sans antialiased min-h-screen flex overflow-hidden selection:bg-emerald-500 selection:text-slate-950">
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex overflow-hidden">
 
-    <!-- SIDEBAR PRO MAX -->
-    <aside class="w-72 bg-dark/95 border-r border-bordercolor flex flex-col h-screen p-5 select-none shrink-0 backdrop-blur-2xl z-20 shadow-2xl">
-        <div class="flex items-center gap-3.5 px-2 mb-8">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 via-teal-500/10 to-transparent border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-xl shadow-emerald-500/10">
-                <i class="fas fa-cubes text-xl animate-pulse"></i>
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-screen p-4 select-none shrink-0">
+        <div class="flex items-center gap-3 px-2 mb-6">
+            <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                <i class="fas fa-snowflake text-lg"></i>
             </div>
             <div>
-                <div class="flex items-center gap-1.5">
-                    <span class="font-black text-base tracking-wider text-white">SoufStock</span>
-                    <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-black px-1.5 py-0.5 rounded tracking-widest uppercase">PRO MAX</span>
-                </div>
-                <span class="text-[10px] text-slate-400 font-semibold tracking-widest uppercase block mt-0.5">Enterprise WMS Core</span>
+                <span class="font-bold text-base tracking-wide block text-slate-100">SoufStock</span>
+                <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Gestion</span>
             </div>
         </div>
         
-        <nav id="sidebarNav" class="flex-1 overflow-y-auto pr-1 space-y-1.5">
-            <a href="commandes.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-xs">
-                <i class="fas fa-shopping-cart w-5"></i> Gestion des Commandes
-            </a>
+        <nav id="sidebarNav" class="flex-1 overflow-y-auto pr-1">
+            <!-- Dynamic Sidebar -->
         </nav>
 
-        <div class="pt-4 mt-auto border-t border-bordercolor/80">
-            <div class="bg-cardbg/90 border border-bordercolor rounded-2xl p-4 mb-3 shadow-inner relative overflow-hidden">
-                <div class="absolute -right-4 -bottom-4 w-16 h-16 bg-emerald-500/5 rounded-full blur-xl"></div>
-                <div class="flex items-center gap-2.5">
-                    <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50 animate-ping"></div>
-                    <span id="sidebarUserName" class="block text-xs font-black text-slate-100 truncate uppercase tracking-wider">ADMINISTRATEUR</span>
-                </div>
-                <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-800/80 text-[10px] text-slate-400">
-                    <span class="font-mono text-emerald-400">SESSION_ACTIVE</span>
-                    <span class="flex items-center gap-1"><i class="fas fa-lock text-[9px]"></i> TLS 1.3</span>
-                </div>
+        <div class="pt-4 mt-auto border-t border-slate-800/80">
+            <div class="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3 mb-2">
+                <span id="sidebarUserName" class="block text-xs font-bold text-slate-200 truncate uppercase">YAHYA SOUFIANE</span>
+                <span class="block text-[10px] text-emerald-400 font-medium mt-0.5">Administrateur</span>
             </div>
-            <button id="logoutBtn" onclick="alert('Déconnexion réussie')" class="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl py-2.5 px-3 text-xs font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer group shadow-lg shadow-red-500/5">
-                <i class="fas fa-power-off group-hover:rotate-90 transition-transform duration-300"></i> Déconnexion Sécurisée
+            <button id="logoutBtn" class="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl py-2 px-3 text-xs font-semibold transition flex items-center justify-center gap-2">
+                <i class="fas fa-sign-out-alt"></i> Déconnexion
             </button>
         </div>
     </aside>
 
     <!-- MAIN CONTAINER -->
-    <div class="flex-1 flex flex-col h-screen min-w-0 overflow-hidden relative bg-cyber-grid">
+    <div class="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">
         
-        <!-- HEADER PRO MAX -->
-        <header class="h-20 bg-dark/70 border-b border-bordercolor px-10 flex items-center justify-between shrink-0 backdrop-blur-xl z-10 shadow-sm">
+        <!-- HEADER -->
+        <header class="h-20 bg-slate-900/40 border-b border-slate-800/80 px-8 flex items-center justify-between shrink-0">
             <div class="flex items-center gap-4">
                 <div>
-                    <h1 class="text-xl font-black tracking-tight text-white flex items-center gap-2.5">
-                        <i class="fas fa-boxes-packing text-emerald-400 text-lg"></i> Synthèse des Commandes (KG & Pièces)
-                    </h1>
-                    <div class="text-xs text-slate-400 flex items-center gap-2 mt-1 font-medium">
-                        <span class="hover:text-white transition">Accueil</span>
-                        <i class="fas fa-chevron-right text-[8px] text-slate-600"></i>
-                        <strong class="text-emerald-400 font-bold">Commandes Unifiées</strong>
+                    <h1 id="pageTitle" class="text-xl font-bold tracking-tight text-slate-100">Consultation des Commandes</h1>
+                    <div id="breadcrumb" class="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
+                        <span>Accueil</span>
+                        <span>/</span>
+                        <strong class="text-slate-300">Commandes</strong>
                     </div>
                 </div>
             </div>
-            <div class="flex items-center gap-3">
-                <div class="flex items-center gap-2.5 bg-cardbg border border-bordercolor px-4 py-2 rounded-xl text-xs font-mono text-emerald-400 shadow-inner">
-                    <i class="fas fa-shield-halved"></i>
-                    <span>Firewall : Actif & Synchronisé</span>
+            
+            <div class="flex items-center gap-4 bg-slate-900/80 border border-slate-800 px-4 py-2 rounded-xl">
+                <div class="text-right">
+                    <span id="currentDate" class="text-xs font-medium text-slate-300 block">Jeudi 30 juillet 2026</span>
+                    <span id="currentTime" class="text-[10px] text-emerald-400 font-mono block">15:33:41</span>
                 </div>
             </div>
         </header>
 
         <!-- PAGE BODY -->
-        <main class="flex-1 p-8 overflow-y-auto pt-6 relative z-10">
-            <div class="glow-effect top-10 left-1/4"></div>
-
-            <div class="max-w-7xl w-full mx-auto space-y-6">
+        <main class="flex-1 p-8 overflow-y-auto">
+            <div class="max-w-7xl mx-auto flex flex-col gap-6">
                 
-                <!-- STATS / ACTIONS BAR -->
-                <div class="flex flex-col md:flex-row items-center justify-between gap-4 bg-cardbg border border-bordercolor p-5 rounded-2xl pro-card">
-                    <div class="flex items-center gap-3 w-full md:w-auto flex-wrap">
-                        <div class="relative flex-1 md:w-80">
-                            <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                            <input type="text" id="searchInput" oninput="filterCommandes()" placeholder="N° Commande, Client, Réceptionnaire..." class="w-full bg-dark/80 border border-bordercolor rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition">
+                <!-- FILTER & CONTROLS BAR -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                            <i class="fas fa-shipping-fast text-emerald-400"></i> Suivi des Commandes Clients
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">
+                            Filtrez, recherchez et suivez l'état d'avancement des commandes (Poids / Pièces).
+                        </p>
+                    </div>
+                    
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <div class="flex bg-slate-950 border border-slate-800 rounded-xl p-1 text-xs">
+                            <button id="tabExcel" onclick="switchTable('excel')" class="px-3 py-1.5 rounded-lg font-semibold bg-emerald-500 text-slate-950 transition shadow-sm">
+                                Commandes Poids (Excel)
+                            </button>
+                            <button id="tabPieces" onclick="switchTable('pieces')" class="px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-slate-200 transition">
+                                Commandes Pièces
+                            </button>
                         </div>
 
-                        <select id="filterStatus" onchange="filterCommandes()" class="bg-dark/80 border border-bordercolor rounded-xl px-4 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500 transition">
-                            <option value="">Tous les statuts</option>
-                            <option value="IMPORTEE">Importée</option>
-                            <option value="LANCEE">Lancée</option>
-                            <option value="PREPAREE">Préparée</option>
-                            <option value="EXPEDIEE">Expédiée</option>
-                        </select>
-                    </div>
+                        <div class="relative flex items-center">
+                            <i class="fas fa-search absolute left-3.5 text-slate-500 text-sm"></i>
+                            <input type="text" id="searchInput" placeholder="N° Document / Client / Article..." 
+                                class="bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-64 transition shadow-inner">
+                        </div>
 
-                    <div class="flex items-center gap-3 w-full md:w-auto justify-end">
-                        <button onclick="loadCommandesSynthese()" class="bg-dark border border-bordercolor hover:border-emerald-500/50 text-slate-300 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer">
-                            <i class="fas fa-rotate text-emerald-400"></i><span>Actualiser</span>
+                        <select id="statusFilter" class="bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500 transition shadow-inner">
+                            <option value="">Tous les statuts</option>
+                            <option value="IMPORTEE">IMPORTEE</option>
+                            <option value="CONTROLEE">CONTROLEE</option>
+                            <option value="LANCEE">LANCEE</option>
+                            <option value="EN_PICKING">EN_PICKING</option>
+                            <option value="PREPAREE">PREPAREE</option>
+                            <option value="EN_AB10">EN_AB10</option>
+                            <option value="EXPEDIEE">EXPEDIEE</option>
+                            <option value="ANNULEE">ANNULEE</option>
+                        </select>
+
+                        <button id="searchBtn" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs transition flex items-center gap-2 shadow-sm">
+                            <i class="fas fa-filter"></i> Filtrer
                         </button>
                     </div>
                 </div>
 
-                <!-- TABLE SECTION -->
-                <div class="pro-card rounded-2xl overflow-hidden border border-bordercolor">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
+                <!-- TABLE CONTAINER -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+                    <div class="overflow-x-auto flex-1">
+                        <table class="w-full text-left border-collapse text-sm">
                             <thead>
-                                <tr class="border-b border-bordercolor bg-dark/50 text-[10px] font-black uppercase tracking-wider text-slate-400">
-                                    <th class="p-4">N° Commande (Document)</th>
-                                    <th class="p-4">Client / Réceptionnaire</th>
-                                    <th class="p-4 text-center">Nbr Articles</th>
-                                    <th class="p-4 text-center">Total KG (Excel)</th>
-                                    <th class="p-4 text-center">Total Pièces (AB10)</th>
-                                    <th class="p-4">Statut</th>
-                                    <th class="p-4 text-right">Actions</th>
+                                <tr id="tableHeader" class="bg-slate-950/60 text-slate-400 uppercase text-[11px] tracking-wider border-b border-slate-800 font-semibold">
+                                    <!-- Dynamic Headers -->
                                 </tr>
                             </thead>
-                            <tbody id="commandesTableBody" class="divide-y divide-bordercolor/60 text-xs">
-                                <!-- Rempli dynamiquement par JS -->
+                            <tbody id="ordersTableBody" class="divide-y divide-slate-800/50">
+                                <tr>
+                                    <td colspan="8" class="p-12 text-center text-slate-400 text-xs">
+                                        <i class="fas fa-spinner fa-spin mr-2 text-emerald-500 text-base"></i> Chargement des données...
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
+                    </div>
+                    <!-- Pagination / Footer info -->
+                    <div class="bg-slate-950/40 border-t border-slate-800 px-6 py-3 flex items-center justify-between text-xs text-slate-400">
+                        <span id="rowCount">Affichage de 0 éléments</span>
+                        <div class="flex items-center gap-2">
+                            <button id="prevPageBtn" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition disabled:opacity-50">Précédent</button>
+                            <span id="pageIndicator" class="font-mono text-slate-300">Page 1 / 1</span>
+                            <button id="nextPageBtn" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition disabled:opacity-50">Suivant</button>
+                        </div>
                     </div>
                 </div>
 
@@ -181,121 +181,177 @@
         </main>
     </div>
 
-    <!-- SCRIPTS DE GESTION -->
-    <script>
-        // Données globales simulant le résultat combiné de PostgreSQL (commandes_excel + commandes_clients_pieces)
-        const commandesData = [
-            {
-                document_vente: "DOC-2026-050",
-                client: "Société Centrale Logistique",
-                nom_receptionnaire: "Mr. Ahmed Benali",
-                nombre_articles: 4,
-                total_kg: 1450.500,
-                nombre_pieces: 120,
-                statut: "PREPAREE"
-            },
-            {
-                document_vente: "DOC-2026-051",
-                client: "Magasin AB10 Central",
-                nom_receptionnaire: "Equipe Quai 2",
-                nombre_articles: 2,
-                total_kg: 3200.000,
-                nombre_pieces: 450,
-                statut: "LANCEE"
-            },
-            {
-                document_vente: "DOC-2026-052",
-                client: "Atlas Distribution",
-                nom_receptionnaire: "Service Expédition",
-                nombre_articles: 6,
-                total_kg: 890.200,
-                nombre_pieces: 55,
-                statut: "IMPORTEE"
-            }
-        ];
+    <!-- SCRIPTS -->
+    <script type="module">
+        import Navigation from '../assets/js/core/navigation.js';
+        import supabase from '../assets/js/core/supabase.js';
 
-        document.addEventListener("DOMContentLoaded", () => {
-            loadCommandesSynthese();
-        });
+        let currentMode = 'excel'; // 'excel' or 'pieces'
+        let currentPage = 1;
+        const pageSize = 50;
 
-        function loadCommandesSynthese() {
-            const tbody = document.getElementById("commandesTableBody");
-            tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500 font-mono"><i class="fas fa-spinner fa-spin mr-2"></i> Chargement des données...</td></tr>`;
+        document.addEventListener("DOMContentLoaded", async () => {
+            await Navigation.init();
 
-            setTimeout(() => {
-                renderTable(commandesData);
-            }, 300);
-        }
-
-        function renderTable(data) {
-            const tbody = document.getElementById("commandesTableBody");
-
-            if(data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500">Aucune commande trouvée.</td></tr>`;
-                return;
+            const logoutBtn = document.getElementById("logoutBtn");
+            if (logoutBtn) {
+                logoutBtn.addEventListener("click", async () => {
+                    await supabase.auth.signOut();
+                    window.location.href = "login.html";
+                });
             }
 
-            tbody.innerHTML = data.map(cmd => {
-                let badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/20";
-                if(cmd.statut === "LANCEE") badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
-                if(cmd.statut === "PREPAREE") badgeColor = "bg-purple-500/10 text-purple-400 border-purple-500/20";
-                if(cmd.statut === "EXPEDIEE") badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+            const searchBtn = document.getElementById("searchBtn");
+            const searchInput = document.getElementById("searchInput");
+            const statusFilter = document.getElementById("statusFilter");
 
-                return `
-                    <tr class="hover:bg-cardhover/50 transition-colors">
-                        <td class="p-4 font-mono font-bold text-emerald-400">
-                            <i class="fas fa-file-invoice mr-1.5 text-slate-500"></i> ${cmd.document_vente}
-                        </td>
-                        <td class="p-4">
-                            <div class="font-bold text-white">${cmd.client}</div>
-                            <div class="text-[10px] text-slate-400"><i class="fas fa-user text-[9px] mr-1"></i> ${cmd.nom_receptionnaire}</div>
-                        </td>
-                        <td class="p-4 text-center font-mono font-bold text-slate-200">
-                            <span class="bg-dark px-2.5 py-1 rounded-lg border border-bordercolor">${cmd.nombre_articles} articles</span>
-                        </td>
-                        <td class="p-4 text-center font-mono text-emerald-400 font-semibold">
-                            ${cmd.total_kg.toLocaleString()} KG
-                        </td>
-                        <td class="p-4 text-center font-mono text-blue-400 font-semibold">
-                            ${cmd.nombre_pieces} PCS
-                        </td>
-                        <td class="p-4">
-                            <span class="px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase tracking-wider ${badgeColor}">${cmd.statut}</span>
-                        </td>
-                        <td class="p-4 text-right space-x-1">
-                            <button onclick="viewDetails('${cmd.document_vente}')" class="bg-cardbg border border-bordercolor hover:border-emerald-500/40 text-slate-300 px-3 py-1.5 rounded-xl text-xs transition cursor-pointer" title="Détails">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button onclick="processCommand('${cmd.document_vente}')" class="bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500 hover:text-darker text-emerald-400 px-3 py-1.5 rounded-xl text-xs transition cursor-pointer" title="Traiter">
-                                <i class="fas fa-check"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
+            if (searchBtn) searchBtn.addEventListener("click", () => { currentPage = 1; loadOrders(); });
+            if (searchInput) searchInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { currentPage = 1; loadOrders(); } });
+            if (statusFilter) statusFilter.addEventListener("change", () => { currentPage = 1; loadOrders(); });
 
-        function filterCommandes() {
-            const query = document.getElementById("searchInput").value.toLowerCase();
-            const statusFilter = document.getElementById("filterStatus").value;
-
-            const filtered = commandesData.filter(cmd => {
-                const matchQuery = cmd.document_vente.toLowerCase().includes(query) ||
-                                   cmd.client.toLowerCase().includes(query) ||
-                                   cmd.nom_receptionnaire.toLowerCase().includes(query);
-                const matchStatus = statusFilter === "" || cmd.statut === statusFilter;
-                return matchQuery && matchStatus;
+            document.getElementById("prevPageBtn").addEventListener("click", () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    loadOrders();
+                }
             });
 
-            renderTable(filtered);
+            document.getElementById("nextPageBtn").addEventListener("click", () => {
+                currentPage++;
+                loadOrders();
+            });
+
+            loadOrders();
+        });
+
+        window.switchTable = function(mode) {
+            currentMode = mode;
+            currentPage = 1;
+            
+            const btnExcel = document.getElementById("tabExcel");
+            const btnPieces = document.getElementById("tabPieces");
+
+            if (mode === 'excel') {
+                btnExcel.className = "px-3 py-1.5 rounded-lg font-semibold bg-emerald-500 text-slate-950 transition shadow-sm";
+                btnPieces.className = "px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-slate-200 transition";
+            } else {
+                btnPieces.className = "px-3 py-1.5 rounded-lg font-semibold bg-emerald-500 text-slate-950 transition shadow-sm";
+                btnExcel.className = "px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-slate-200 transition";
+            }
+
+            loadOrders();
         }
 
-        function viewDetails(doc) {
-            alert(`Affichage détaillé du document : ${doc}`);
-        }
+        async function loadOrders() {
+            const tbody = document.getElementById("ordersTableBody");
+            const thead = document.getElementById("tableHeader");
+            const searchVal = document.getElementById("searchInput").value.trim();
+            const statusVal = document.getElementById("statusFilter").value;
 
-        function processCommand(doc) {
-            alert(`Lancement du traitement pour la commande : ${doc}`);
+            tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400 text-xs"><i class="fas fa-spinner fa-spin mr-2 text-emerald-500"></i> Chargement des données...</td></tr>`;
+
+            const tableName = currentMode === 'excel' ? 'commandes_excel' : 'commandes_clients_pieces';
+
+            // Render Table Headers accordingly
+            if (currentMode === 'excel') {
+                thead.innerHTML = `
+                    <th class="p-4">N° Document</th>
+                    <th class="p-4">Client</th>
+                    <th class="p-4">Article / Désignation</th>
+                    <th class="p-4 text-center">Qté Cmd</th>
+                    <th class="p-4 text-center">Qté Prép</th>
+                    <th class="p-4 text-center">Poids Total</th>
+                    <th class="p-4 text-center">Date Livraison</th>
+                    <th class="p-4 text-center">Statut</th>
+                `;
+            } else {
+                thead.innerHTML = `
+                    <th class="p-4">N° Document</th>
+                    <th class="p-4">Client</th>
+                    <th class="p-4">Article / Désignation</th>
+                    <th class="p-4 text-center">Qté Cmd</th>
+                    <th class="p-4 text-center">Qté Prép</th>
+                    <th class="p-4 text-center">Nbr Pièces</th>
+                    <th class="p-4 text-center">Date Livraison</th>
+                    <th class="p-4 text-center">Statut</th>
+                `;
+            }
+
+            try {
+                let query = supabase
+                    .from(tableName)
+                    .select('*', { count: 'exact' });
+
+                if (searchVal) {
+                    query = query.or(`document_vente.ilike.%${searchVal}%,client.ilike.%${searchVal}%,article.ilike.%${searchVal}%`);
+                }
+
+                if (statusVal) {
+                    query = query.eq('statut', statusVal);
+                }
+
+                const fromRange = (currentPage - 1) * pageSize;
+                const toRange = fromRange + pageSize - 1;
+
+                const { data, error, count } = await query
+                    .order('date_livraison', { ascending: false, nullsFirst: false })
+                    .range(fromRange, toRange);
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400 text-xs">Aucune commande trouvée.</td></tr>`;
+                    document.getElementById("rowCount").textContent = "Affichage de 0 éléments";
+                    document.getElementById("pageIndicator").textContent = "Page 1 / 1";
+                    return;
+                }
+
+                let html = "";
+                data.forEach(item => {
+                    const qteCmd = Number(item.quantite_commandee || 0);
+                    const qtePrep = Number(item.quantite_preparee || 0);
+                    const secondaryMetric = currentMode === 'excel' ? `${Number(item.poids_total || 0).toLocaleString()} kg` : `${item.nombre_pieces || 0} pcs`;
+                    
+                    let badgeColor = "bg-slate-500/10 text-slate-400 border-slate-500/20";
+                    const st = (item.statut || "").toUpperCase();
+                    if (st === 'IMPORTEE') badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/20";
+                    else if (st === 'LANCEE' || st === 'EN_PICKING') badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+                    else if (st === 'PREPAREE' || st === 'CONTROLEE') badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+                    else if (st === 'EXPEDIEE') badgeColor = "bg-sky-500/10 text-sky-400 border-sky-500/20";
+                    else if (st === 'ANNULEE') badgeColor = "bg-red-500/10 text-red-400 border-red-500/20";
+
+                    html += `
+                        <tr class="hover:bg-slate-800/35 transition">
+                            <td class="p-4 font-mono font-semibold text-emerald-400 text-xs">${item.document_vente || '-'}</td>
+                            <td class="p-4 font-semibold text-slate-200 text-xs">${item.client || '-'}</td>
+                            <td class="p-4">
+                                <span class="font-semibold text-slate-200 text-xs block">${item.article || '-'}</span>
+                                <span class="text-slate-400 text-[11px] block mt-0.5 truncate max-w-xs">${item.designation_article || '-'}</span>
+                            </td>
+                            <td class="p-4 text-center font-bold text-slate-200 text-xs">${qteCmd.toLocaleString()} ${item.unite || ''}</td>
+                            <td class="p-4 text-center font-mono text-sky-400 text-xs">${qtePrep.toLocaleString()}</td>
+                            <td class="p-4 text-center font-mono font-semibold text-slate-300 text-xs">${secondaryMetric}</td>
+                            <td class="p-4 text-center font-mono text-slate-300 text-xs">${item.date_livraison || '-'}</td>
+                            <td class="p-4 text-center">
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold border ${badgeColor}">${item.statut || 'IMPORTEE'}</span>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                tbody.innerHTML = html;
+
+                const totalPages = Math.ceil((count || 0) / pageSize) || 1;
+                document.getElementById("rowCount").textContent = `Affichage de ${data.length} sur ${count || 0} éléments`;
+                document.getElementById("pageIndicator").textContent = `Page ${currentPage} / ${totalPages}`;
+                
+                document.getElementById("prevPageBtn").disabled = currentPage <= 1;
+                document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
+
+            } catch (err) {
+                console.error("Erreur chargement commandes:", err);
+                tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-red-400 text-xs">Erreur lors du chargement des commandes.</td></tr>`;
+            }
         }
     </script>
 </body>

@@ -554,6 +554,7 @@
             modal.classList.remove('hidden');
 
             try {
+                // Fetch articles for this document from commandes_excel
                 const { data: articlesData, error: artError } = await supabase
                     .from('commandes_excel')
                     .select('*')
@@ -561,6 +562,7 @@
 
                 if (artError) throw artError;
 
+                // Fetch pieces info for this document from commandes_clients_pieces
                 const { data: piecesData, error: pieceError } = await supabase
                     .from('commandes_clients_pieces')
                     .select('*')
@@ -584,28 +586,27 @@
                     modalStatutBadge.innerHTML = `<span class="px-2.5 py-1 rounded-full text-[10px] font-semibold border ${badgeColor}">${first.statut}</span>`;
                     modalDocSubtitle.textContent = `${articlesData.length} article(s) trouvé(s) pour ce document`;
 
+                    // Create a map for pieces by code_article if available
                     let piecesMap = new Map();
                     if (piecesData) {
                         piecesData.forEach(p => {
-                            const pCode = p.code_article || p.article_code || p.sku || p.reference || '';
-                            if (pCode) piecesMap.set(String(pCode).trim(), Number(p.nombre_pieces || 0));
+                            piecesMap.set(p.code_article, Number(p.nombre_pieces || 0));
                         });
                     }
 
                     let rowsHtml = "";
                     articlesData.forEach(art => {
-                        // Chercher le code article à travers tous les noms possibles de colonnes
-                        const codeArt = art.code_article || art.article_code || art.sku || art.reference || art.code || '-';
-                        const designation = art.designation_article || art.libelle_article || art.designation || art.libelle || 'Article sans désignation';
-                        const qteCmd = Number(art.quantite_commandee || art.quantite || art.qty || 0);
-                        const nbrPcs = piecesMap.get(String(codeArt).trim()) ?? '-';
+                        const codeArt = art.code_article || '-';
+                        const designation = art.designation_article || art.libelle_article || 'Article sans désignation';
+                        const qteCmd = Number(art.quantite_commandee || 0);
+                        const nbrPcs = piecesMap.get(codeArt) ?? '-';
 
                         rowsHtml += `
                             <tr class="hover:bg-slate-800/30 transition">
                                 <td class="p-3 font-mono font-bold text-emerald-400">${codeArt}</td>
                                 <td class="p-3 text-slate-200">${designation}</td>
                                 <td class="p-3 text-center font-mono font-semibold text-slate-100">${qteCmd.toLocaleString()}</td>
-                                <td class="p-3 text-center font-mono font-bold text-sky-400">${nbrPcs !== '-' ? Number(nbrPcs).toLocaleString() + ' pcs' : '-'}</td>
+                                <td class="p-3 text-center font-mono font-bold text-sky-400">${nbrPcs !== '-' ? nbrPcs.toLocaleString() + ' pcs' : '-'}</td>
                             </tr>
                         `;
                     });

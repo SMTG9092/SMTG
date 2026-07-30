@@ -61,7 +61,6 @@
         <!-- HEADER -->
         <header class="h-20 bg-slate-900/40 border-b border-slate-800/80 px-8 flex items-center justify-between shrink-0">
             <div class="flex items-center gap-6">
-                <!-- زر الرجوع السريع إلى index-stock.html -->
                 <a href="index-stock.html" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow-sm group">
                     <i class="fas fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
                     <span>Retour au Hub</span>
@@ -72,7 +71,7 @@
                     <div class="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
                         <span>Accueil</span>
                         <span>/</span>
-                        <strong class="text-slate-300">Réservations Stock</strong>
+                        <strong class="text-slate-300">Réservations Stock & AB10</strong>
                     </div>
                 </div>
             </div>
@@ -96,11 +95,16 @@
                             <i class="fas fa-list-check text-emerald-400"></i> Suivi des Réservations & Lots
                         </h2>
                         <p class="text-xs text-slate-400 mt-1">
-                            Visualisez les documents de vente, articles, lots, magasins, quantités et statuts associés.
+                            Sélectionnez manuellement les lignes avec un statut Picking 'VALIDE' pour les traiter et transférer vers AB10.
                         </p>
                     </div>
                     
                     <div class="flex items-center gap-3 flex-wrap">
+                        <!-- PROCESS SELECTED BUTTON -->
+                        <button onclick="processSelectedReservations()" class="bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500/30 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg cursor-pointer">
+                            <i class="fas fa-check-double"></i> <span>Traiter la Sélection (AB10)</span>
+                        </button>
+
                         <!-- EXPORT BUTTONS -->
                         <button onclick="exportToExcel()" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow-sm cursor-pointer">
                             <i class="fas fa-file-excel"></i> <span>Excel</span>
@@ -158,6 +162,9 @@
                         <table class="w-full text-left border-collapse text-sm">
                             <thead>
                                 <tr class="bg-slate-950/60 text-slate-400 uppercase text-[11px] tracking-wider border-b border-slate-800 font-semibold">
+                                    <th class="p-4 w-12 text-center">
+                                        <input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)" class="rounded bg-slate-950 border-slate-700 text-emerald-500 focus:ring-emerald-500 cursor-pointer w-4 h-4">
+                                    </th>
                                     <th class="p-4">Document Vente</th>
                                     <th class="p-4">Article / Désignation</th>
                                     <th class="p-4">Lot</th>
@@ -169,7 +176,7 @@
                             </thead>
                             <tbody id="reservationsTableBody" class="divide-y divide-slate-800/50">
                                 <tr>
-                                    <td colspan="7" class="p-10 text-center text-slate-400 text-xs">
+                                    <td colspan="8" class="p-10 text-center text-slate-400 text-xs">
                                         <i class="fas fa-spinner fa-spin mr-2 text-emerald-500 text-base"></i> Chargement des données...
                                     </td>
                                 </tr>
@@ -205,6 +212,7 @@
         let totalRecords = 0;
         let currentSearch = "";
         let allExportData = [];
+        let currentTableData = [];
 
         window.changePage = async function(direction) {
             currentPage += direction;
@@ -253,11 +261,14 @@
             const tbody = document.getElementById("reservationsTableBody");
 
             try {
-                // استعلام مع جلب معلومات جدول picking المرتبط
                 let query = supabase
                     .from('reservations_stock')
                     .select(`
                         id,
+                        stock_id,
+                        picking_id,
+                        picking_detail_id,
+                        suivi_id,
                         document_vente,
                         article,
                         designation_article,
@@ -266,7 +277,7 @@
                         quantite_reservee,
                         unite,
                         statut,
-                        picking:picking_id ( statut )
+                        picking:picking_id ( id, statut )
                     `, { count: 'exact' });
 
                 query = applyFilters(query);
@@ -279,24 +290,25 @@
 
                 if (error) {
                     console.error("Erreur:", error);
-                    tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-400 text-xs"><i class="fas fa-exclamation-triangle mr-2"></i> Erreur lors du chargement des données.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-red-400 text-xs"><i class="fas fa-exclamation-triangle mr-2"></i> Erreur lors du chargement des données.</td></tr>`;
                     return;
                 }
 
                 totalRecords = count || 0;
-                renderTable(data || []);
+                currentTableData = data || [];
+                renderTable(currentTableData);
                 updatePagination();
                 await fetchGlobalStats();
 
             } catch (err) {
                 console.error("Erreur technique:", err);
-                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-400 text-xs">Erreur de connexion.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-red-400 text-xs">Erreur de connexion.</td></tr>`;
             }
         }
 
         async function fetchGlobalStats() {
             try {
-                let q = supabase.from('reservations_stock').select('quantite_reservee, statut, document_vente, article, lot');
+                let q = supabase.from('reservations_stock').select('id, stock_id, picking_id, picking_detail_id, suivi_id, quantite_reservee, statut, document_vente, article, designation_article, lot, magasin, picking:picking_id(id, statut)');
                 q = applyFilters(q);
                 const { data, error } = await q.limit(10000);
                 if (error || !data) return;
@@ -307,7 +319,7 @@
 
                 data.forEach(item => {
                     totalQty += Number(item.quantite_reservee || 0);
-                    if (item.statut === 'RESERVEE' || item.statut === 'VALIDEE') activeCount++;
+                    if (item.statut === 'RESERVEE') activeCount++;
                 });
 
                 document.getElementById("totalLinesBadge").textContent = data.length.toLocaleString();
@@ -322,28 +334,31 @@
         function renderTable(data) {
             const tbody = document.getElementById("reservationsTableBody");
             if (!data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 text-xs"><i class="fas fa-folder-open mr-2"></i> Aucune réservation de stock trouvée.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400 text-xs"><i class="fas fa-folder-open mr-2"></i> Aucune réservation de stock trouvée.</td></tr>`;
                 return;
             }
 
             let html = "";
             data.forEach(item => {
-                // couleurs des badges de statut reservation
                 let badgeResColor = 'bg-slate-500/10 text-slate-400 border-slate-500/20';
-                if (item.statut === 'VALIDEE') badgeResColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                if (item.statut === 'TRANSFEREE_AB10' || item.statut === 'VALIDEE') badgeResColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
                 if (item.statut === 'RESERVEE') badgeResColor = 'bg-sky-500/10 text-sky-400 border-sky-500/20';
-                if (item.statut === 'TRANSFEREE_AB10') badgeResColor = 'bg-purple-500/10 text-purple-400 border-purple-500/20';
-                if (item.statut === 'ANNULEE' || item.statut === 'LIBEREE') badgeResColor = 'bg-red-500/10 text-red-400 border-red-500/20';
 
-                // statut picking relation
                 let pickingStatut = item.picking ? item.picking.statut : 'NON_ASSOCIE';
                 let badgePickColor = 'bg-slate-500/10 text-slate-400 border-slate-500/20';
-                if (pickingStatut === 'VALIDE' || pickingStatut === 'TERMINE') badgePickColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                if (pickingStatut === 'TERMINE' || pickingStatut === 'VALIDE') badgePickColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
                 if (pickingStatut === 'EN_COURS' || pickingStatut === 'PICKING') badgePickColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-                if (pickingStatut === 'ANNULE') badgePickColor = 'bg-red-500/10 text-red-400 border-red-500/20';
+
+                let isValidPicking = (pickingStatut === 'VALIDE');
+                let checkboxDisabled = !isValidPicking ? 'disabled' : '';
+                let checkboxClass = !isValidPicking ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer';
 
                 html += `
                     <tr class="hover:bg-slate-800/35 transition">
+                        <td class="p-4 text-center">
+                            <input type="checkbox" class="row-checkbox rounded bg-slate-950 border-slate-700 text-emerald-500 focus:ring-emerald-500 w-4 h-4 ${checkboxClass}" 
+                                data-id="${item.id}" ${checkboxDisabled} ${!isValidPicking ? 'title="Le Picking doit être VALIDE pour pouvoir être sélectionné"' : ''}>
+                        </td>
                         <td class="p-4 font-mono font-semibold text-emerald-400 text-xs">${item.document_vente || '-'}</td>
                         <td class="p-4 text-slate-100 text-xs">
                             <span class="font-mono font-bold text-slate-200">${item.article || ''}</span>
@@ -370,6 +385,11 @@
             tbody.innerHTML = html;
         }
 
+        window.toggleSelectAll = function(master) {
+            const checkboxes = document.querySelectorAll('.row-checkbox:not(:disabled)');
+            checkboxes.forEach(cb => cb.checked = master.checked);
+        }
+
         function updatePagination() {
             const totalPages = Math.ceil(totalRecords / pageSize) || 1;
             if (currentPage > totalPages) currentPage = totalPages;
@@ -380,6 +400,98 @@
             document.getElementById("pageIndicator").textContent = `Page ${currentPage} / ${totalPages}`;
             document.getElementById("prevPageBtn").disabled = currentPage <= 1;
             document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
+        }
+
+        window.processSelectedReservations = async function() {
+            try {
+                const selectedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
+                if (selectedCheckboxes.length === 0) {
+                    alert("Veuillez sélectionner au moins une ligne valide à traiter.");
+                    return;
+                }
+
+                const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.getAttribute('data-id'));
+                const targetRows = currentTableData.filter(item => selectedIds.includes(item.id));
+
+                if (targetRows.length === 0) {
+                    alert("Aucune ligne valide sélectionnée.");
+                    return;
+                }
+
+                const validIds = targetRows.map(i => i.id);
+
+                const { error: errRes } = await supabase
+                    .from('reservations_stock')
+                    .update({ statut: 'TRANSFEREE_AB10' })
+                    .in('id', validIds);
+
+                if (errRes) throw errRes;
+
+                const pickingIds = [...new Set(targetRows.map(i => i.picking_id).filter(Boolean))];
+                if (pickingIds.length > 0) {
+                    const { error: errPick } = await supabase
+                        .from('picking')
+                        .update({ statut: 'TERMINE' })
+                        .in('id', pickingIds);
+                    if (errPick) throw errPick;
+                }
+
+                const ab10Payloads = targetRows.map(item => ({
+                    reservation_id: item.id,
+                    picking_id: item.picking_id,
+                    picking_detail_id: item.picking_detail_id,
+                    suivi_id: item.suivi_id,
+                    stock_id: item.stock_id,
+                    document_vente: item.document_vente,
+                    article: item.article,
+                    designation_article: item.designation_article,
+                    lot: item.lot,
+                    magasin_origine: item.magasin,
+                    magasin_destination: 'AB10',
+                    quantite: item.quantite_reservee,
+                    unite: item.unite || 'KG',
+                    statut: 'EN_AB10'
+                }));
+
+                const { error: errAb10 } = await supabase.from('ab10_stock').insert(ab10Payloads);
+                if (errAb10) {
+                    console.error("Erreur insertion AB10:", errAb10);
+                }
+
+                const aggregatedMap = new Map();
+
+                targetRows.forEach(item => {
+                    const key = `${item.article}_${item.lot}_${item.magasin}`;
+                    const qty = Number(item.quantite_reservee || 0);
+
+                    if (aggregatedMap.has(key)) {
+                        let existing = aggregatedMap.get(key);
+                        existing.Quantité += qty;
+                    } else {
+                        aggregatedMap.set(key, {
+                            "Article": item.article || '',
+                            "Quantité": qty,
+                            "Mag.": item.magasin || '',
+                            "Lot": item.lot || '',
+                            "Désignation": item.designation_article || ''
+                        });
+                    }
+                });
+
+                const excelData = Array.from(aggregatedMap.values());
+
+                const worksheet = XLSX.utils.json_to_sheet(excelData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "AB10_Export");
+                XLSX.writeFile(workbook, `AB10_Transfer_${new Date().toISOString().slice(0,10)}.xlsx`);
+
+                alert(`Traitement réussi ! ${targetRows.length} ligne(s) sélectionnées ont été basculées à TERMINE / TRANSFEREE_AB10.`);
+                await loadData();
+
+            } catch (err) {
+                console.error("Erreur lors du traitement de la sélection:", err);
+                alert("Une erreur est survenue lors de l'exécution.");
+            }
         }
 
         window.exportToExcel = function() {
@@ -394,7 +506,8 @@
                 "Lot": item.lot,
                 "Magasin": item.magasin,
                 "Quantité Réservée": item.quantite_reservee,
-                "Statut Réservation": item.statut
+                "Statut Réservation": item.statut,
+                "Statut Picking": item.picking ? item.picking.statut : 'NON_ASSOCIE'
             }));
             const worksheet = XLSX.utils.json_to_sheet(dataToExport);
             const workbook = XLSX.utils.book_new();
@@ -415,14 +528,15 @@
             doc.setFontSize(10);
             doc.text(`Date d'export : ${new Date().toLocaleDateString('fr-FR')}`, 14, 22);
 
-            const columns = ["Document Vente", "Article", "Lot", "Magasin", "Quantité", "Statut"];
+            const columns = ["Document Vente", "Article", "Lot", "Magasin", "Quantité", "Statut Rés.", "Statut Pick."];
             const rows = allExportData.map(item => [
                 item.document_vente || '',
                 item.article || '',
                 item.lot || '',
                 item.magasin || '',
                 Number(item.quantite_reservee || 0).toFixed(3),
-                item.statut || ''
+                item.statut || '',
+                item.picking ? item.picking.statut : ''
             ]);
 
             doc.autoTable({

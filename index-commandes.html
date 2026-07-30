@@ -29,10 +29,9 @@
         }
     </script>
 
+    <!-- BLOCKAGE TOTAL MN L-ASL BACH MATBANCH LA PAGE BIDA -->
     <style>
-        /* Block l-page mn l-asl bach matwli tban walou ila kan mamdouwzch */
-        html { display: none; }
-        
+        html { background-color: #010309; display: none; }
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: #010309; }
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
@@ -80,7 +79,7 @@
         }
     </style>
 
-    <!-- Script de vérification ultra-rapide avant même rendering -->
+    <!-- VERIFICATION SYNCHRONISÉE ULTRA-RAPIDE -->
     <script type="module">
         import SecurityManager from '../assets/js/core/security.js';
         
@@ -91,7 +90,6 @@
             if (!authorized) {
                 window.location.replace('dashboard.html');
             } else {
-                // Ila kan mzyan, bayen html dyal la page
                 document.documentElement.style.display = 'block';
             }
         } catch (e) {

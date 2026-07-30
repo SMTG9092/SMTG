@@ -36,7 +36,6 @@
         ::-webkit-scrollbar-thumb:hover { background: #334155; }
         body { background-color: #010309; color: #f8fafc; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
         
-        /* Cyberpunk Grid & Glows */
         .bg-cyber-grid {
             background-image: linear-gradient(to right, rgba(30, 41, 59, 0.15) 1px, transparent 1px),
                               linear-gradient(to bottom, rgba(30, 41, 59, 0.15) 1px, transparent 1px);
@@ -144,12 +143,10 @@
 
         <!-- PAGE BODY -->
         <main class="flex-1 p-8 overflow-y-auto pt-6 relative z-10">
-            <!-- Dynamic Ambient Glows -->
             <div class="glow-effect top-10 left-1/4"></div>
             <div class="glow-effect bottom-1/4 right-1/4" style="background: radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, transparent 70%);"></div>
 
             <div class="max-w-7xl w-full mx-auto">
-                
                 <div class="text-center mb-8">
                     <div class="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-4.5 py-2 rounded-full mb-3 shadow-sm">
                         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -161,32 +158,46 @@
                     </p>
                 </div>
 
-                <!-- GRID DES CARTES -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    
-                    <!-- CARTE SYNTHÈSE DES COMMANDES -->
                     <a href="commandes.html" class="pro-card rounded-2xl p-6 transition-all duration-300 group flex flex-col items-center text-center cursor-pointer">
                         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        
                         <div class="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-xl mb-4 group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-darker transition-all duration-300 shadow-xl shadow-emerald-500/5">
                             <i class="fas fa-layer-group"></i>
                         </div>
-                        
                         <h3 class="text-sm font-black text-white group-hover:text-emerald-400 transition-colors">Synthèse des Commandes</h3>
                         <p class="text-[10px] text-slate-400 mt-1.5 leading-relaxed">
                             Suivi global par document de vente, réceptionnaires, itinéraires, articles, quantités globales et pièces.
                         </p>
-                        
                         <div class="mt-5 inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3.5 py-1.5 rounded-xl group-hover:bg-emerald-500 group-hover:text-darker transition-all duration-300 shadow-md">
                             <span>Lancer</span>
                             <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                         </div>
                     </a>
-
                 </div>
-
             </div>
         </main>
+    </div>
+
+    <!-- MODAL CUSTOM SECURITE (WAST CHACHA B SHKL MZYAN) -->
+    <div id="securityModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md hidden">
+        <div class="bg-dark border border-red-500/30 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 text-center relative animate-in fade-in zoom-in-95 duration-200">
+            <div class="absolute -top-12 -right-12 w-32 h-32 bg-red-500/10 rounded-full blur-2xl"></div>
+            
+            <div class="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 text-2xl mx-auto mb-4 shadow-lg shadow-red-500/10">
+                <i class="fas fa-shield-cat"></i>
+            </div>
+            
+            <h3 class="text-base font-black text-white tracking-wider uppercase">Alerte Sécurité Système</h3>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                Accès non autorisé détecté par le firewall WMS Core. Vous n'avez pas les permissions requises pour accéder à cette console.
+            </p>
+
+            <div class="mt-6 flex justify-center">
+                <button id="securityOkBtn" class="bg-red-500 hover:bg-red-600 text-slate-950 font-black px-6 py-2.5 rounded-xl text-xs transition shadow-lg shadow-red-500/20 cursor-pointer uppercase tracking-wider">
+                    Compris / Retour
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- SCRIPTS -->
@@ -196,8 +207,23 @@
         import SessionManager from '../assets/js/core/session.js';
 
         document.addEventListener("DOMContentLoaded", async () => {
+            // Override global alert to catch SecurityManager alerts and show gorgeous modal instead
+            const originalAlert = window.alert;
+            window.alert = function(msg) {
+                if (msg && msg.includes('Sécurité')) {
+                    const modal = document.getElementById('securityModal');
+                    if (modal) modal.classList.remove('hidden');
+                } else {
+                    originalAlert(msg);
+                }
+            };
+
             const authorized = await SecurityManager.protectPage('index_commandes');
-            if (!authorized) return;
+            if (!authorized) {
+                const modal = document.getElementById('securityModal');
+                if (modal) modal.classList.remove('hidden');
+                return;
+            }
 
             await Navigation.init();
 
@@ -213,6 +239,13 @@
             if (logoutBtn) {
                 logoutBtn.addEventListener("click", async () => {
                     await SessionManager.logout();
+                });
+            }
+
+            const securityOkBtn = document.getElementById("securityOkBtn");
+            if (securityOkBtn) {
+                securityOkBtn.addEventListener("click", () => {
+                    window.location.href = '../index-stock.html'; // Or wherever safe page is
                 });
             }
         });

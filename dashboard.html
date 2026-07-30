@@ -264,7 +264,6 @@
             color: #fff;
         }
 
-        /* --- Custom Select Filter Style --- */
         .week-filter-select {
             background: rgba(15, 23, 42, 0.9);
             color: var(--primary-glow);
@@ -332,9 +331,41 @@
             color: #000;
             border-color: var(--primary-glow);
         }
+
+        /* --- Toast Notification Style --- */
+        #toastContainer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .custom-toast {
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid var(--danger-glow);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            backdrop-filter: blur(10px);
+            animation: slideIn 0.3s ease forwards;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
     </style>
 </head>
 <body>
+
+<!-- Toast Notification Container -->
+<div id="toastContainer"></div>
 
 <div class="app">
 
@@ -442,7 +473,6 @@
         </div>
 
         <div class="dashboard-grid-pro">
-            <!-- ENTRÉES VS SORTIES B L-FILTER DYL S-SIMANAT -->
             <div class="pro-card">
                 <div class="pro-card-header">
                     <h3>Entrées vs Sorties</h3>
@@ -527,16 +557,33 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- Logique Dashboard & Real-Time Clock & Week Filter -->
+<!-- Logique Dashboard & Real-Time Clock & Week Filter & Auth Check -->
 <script type="module">
-    import Navigation from "/assets/js/core/navigation.js";
-    import SessionManager from "/assets/js/core/session.js";
-    import APP_CONFIG from "/assets/js/core/config.js";
-    import supabase from "/assets/js/core/supabase.js";
-    import { initPermissions } from "/assets/js/core/permissions.js";
+    import Navigation from "./assets/js/core/navigation.js";
+    import SessionManager from "./assets/js/core/session.js";
+    import APP_CONFIG from "./assets/js/core/config.js";
+    import supabase from "./assets/js/core/supabase.js";
+    import { initPermissions } from "./assets/js/core/permissions.js";
 
     let entriesExitsChartInstance = null;
     let globalMouvementsData = [];
+
+    // Fonction bach t-afficha Toast message (ex: ila daz mn s-slhya)
+    function showToast(message, type = 'error') {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = 'custom-toast';
+        toast.innerHTML = `<i class="fas fa-exclamation-circle" style="color: #ef4444; font-size: 16px;"></i> <span>${message}</span>`;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.5s ease';
+            setTimeout(() => toast.remove(), 500);
+        }, 4000);
+    }
 
     function startRealTimeClock() {
         const updateClock = () => {
@@ -561,8 +608,16 @@
     document.addEventListener("DOMContentLoaded", async () => {
         startRealTimeClock();
 
+        // Check ila kan msajel dkhul, wla ydir redirection l login
         const isAuth = await SessionManager.requireAuth();
         if (!isAuth) return;
+
+        // T2akked wach kayn message d accès refusé jaya men chi page khra
+        const deniedMsg = sessionStorage.getItem('access_denied_msg');
+        if (deniedMsg) {
+            showToast(deniedMsg, 'error');
+            sessionStorage.removeItem('access_denied_msg');
+        }
 
         await initPermissions();
         Navigation.init();
@@ -638,7 +693,6 @@
                 document.getElementById('statReservations').textContent = stockReserve.toLocaleString('fr-FR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
             }
 
-            // Commandes l-jadida mn v_commandes_kg
             const { count: countCommandes, error: errCmd } = await supabase
                 .from('v_commandes_kg')
                 .select('*', { count: 'exact', head: true });
@@ -670,7 +724,6 @@
         }
     }
 
-    // --- System Filter Semaines b Dates (ex: 1 = 15-06-2026 / 21-06-2026) ---
     async function initEntriesExitsWithWeekFilter() {
         try {
             const { data, error } = await supabase
@@ -679,13 +732,11 @@
                 .order('date_mouvement', { ascending: true });
 
             if (error || !data) {
-                console.error("Erreur fetch mouvements pour graph:", error);
                 renderEmptyChart();
                 return;
             }
 
             globalMouvementsData = data;
-
             const weeksMap = generateWeeksMap(data);
             const selectEl = document.getElementById('weekFilterSelect');
             if (!selectEl) return;

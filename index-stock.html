@@ -29,7 +29,9 @@
         }
     </script>
 
+    <!-- BLOCKAGE TOTAL MN L-ASL BACH MATBANCH LA PAGE BIDA -->
     <style>
+        html { background-color: #010309; display: none; }
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: #010309; }
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
@@ -77,6 +79,24 @@
             filter: blur(60px);
         }
     </style>
+
+    <!-- VERIFICATION SYNCHRONISÉE ULTRA-RAPIDE -->
+    <script type="module">
+        import SecurityManager from '../assets/js/core/security.js';
+        
+        window.alert = function(msg) {};
+
+        try {
+            const authorized = await SecurityManager.protectPage('index_stock');
+            if (!authorized) {
+                window.location.replace('index-stock.html');
+            } else {
+                document.documentElement.style.display = 'block';
+            }
+        } catch (e) {
+            window.location.replace('index-stock.html');
+        }
+    </script>
 </head>
 <body class="bg-darker text-slate-100 font-sans antialiased min-h-screen flex overflow-hidden selection:bg-emerald-500 selection:text-slate-950">
 
@@ -267,14 +287,10 @@
 
     <!-- SCRIPTS -->
     <script type="module">
-        import SecurityManager from '../assets/js/core/security.js';
         import Navigation from '../assets/js/core/navigation.js';
         import SessionManager from '../assets/js/core/session.js';
 
         document.addEventListener("DOMContentLoaded", async () => {
-            const authorized = await SecurityManager.protectPage('index_stock');
-            if (!authorized) return;
-
             await Navigation.init();
 
             const profile = await SessionManager.getProfile();

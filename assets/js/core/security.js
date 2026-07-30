@@ -35,7 +35,7 @@ const SecurityManager = {
 
             const { data: userRecord, error: userError } = await supabase
                 .from('user_profiles')
-                .select('actif')
+                .select('actif, role_id')
                 .eq('id', profile.id)
                 .maybeSingle();
 
@@ -43,6 +43,11 @@ const SecurityManager = {
                 alert("Accès refusé : Votre compte est inactif ou introuvable.");
                 await SessionManager.logout();
                 return false;
+            }
+
+            // Ila kan l-user ando role_id = 1 (Admin), 3tih l-accès direct bla ma t-vérifi rpc
+            if (Number(userRecord.role_id) === 1) {
+                return true;
             }
 
             if (!pageCode || pageCode === 'index_stock') {

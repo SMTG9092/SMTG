@@ -90,12 +90,12 @@
                                 <i class="fas fa-layer-group text-emerald-400"></i> Suivi Global par Document de Vente
                             </h2>
                             <p class="text-xs text-slate-400 mt-1">
-                                Synthèse consolidée des réceptionnaires, itinéraires, articles, quantités globales et pièces.
+                                Synthèse consolidée des réceptionnaires, itinéraires, articles, quantités globales et pièces. (Sélection multiple de dates activée)
                             </p>
                         </div>
                     </div>
 
-                    <!-- HORIZONTAL DATES BAR (أزرار التواريخ السريعة) -->
+                    <!-- HORIZONTAL DATES BAR (أزرار التواريخ المتعددة) -->
                     <div class="flex items-center gap-2 overflow-x-auto pb-2 pt-1 scrollbar-thin" id="datesQuickBar">
                         <!-- Kay-tgenerer dynamiquement b Javascript -->
                     </div>
@@ -177,7 +177,7 @@
 
         let currentPage = 1;
         const pageSize = 50;
-        let selectedFilterDate = ""; // Variable lli kat-stocker la date selectionnée
+        let selectedFilterDates = []; // Tableau lli kay-stocker tawarikh lli m-sélectionniyin
 
         document.addEventListener("DOMContentLoaded", async () => {
             initQuickDatesBar();
@@ -195,7 +195,7 @@
                 resetBtn.addEventListener("click", () => {
                     searchInput.value = "";
                     statusFilter.value = "";
-                    selectedFilterDate = "";
+                    selectedFilterDates = [];
                     
                     document.querySelectorAll('.date-quick-btn').forEach((b, idx) => {
                         if (idx === 0) {
@@ -231,7 +231,7 @@
             const bar = document.getElementById("datesQuickBar");
             if (!bar) return;
 
-            // "Tous les jours" active par defaut
+            // "Tous les jours" bouton
             let html = `
                 <button type="button" data-date="" class="date-quick-btn shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500 text-slate-950 border border-emerald-400 transition shadow-sm cursor-pointer">
                     <i class="fas fa-globe mr-1"></i> Tous les jours
@@ -262,15 +262,42 @@
 
             document.querySelectorAll('.date-quick-btn').forEach(btn => {
                 btn.addEventListener("click", (e) => {
-                    document.querySelectorAll('.date-quick-btn').forEach(b => {
-                        b.classList.remove('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
-                        b.classList.add('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
-                    });
-                    
-                    btn.classList.remove('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
-                    btn.classList.add('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
+                    const dVal = btn.getAttribute('data-date');
+                    const allBtn = document.querySelector('.date-quick-btn[data-date=""]');
 
-                    selectedFilterDate = btn.getAttribute('data-date');
+                    if (dVal === "") {
+                        // Ila tpressa "Tous les jours"
+                        selectedFilterDates = [];
+                        document.querySelectorAll('.date-quick-btn').forEach(b => {
+                            b.classList.remove('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
+                            b.classList.add('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
+                        });
+                        allBtn.classList.remove('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
+                        allBtn.classList.add('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
+                    } else {
+                        // Ila tpressa chi tarikh 3adi (Multi-select toggle)
+                        allBtn.classList.remove('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
+                        allBtn.classList.add('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
+
+                        if (selectedFilterDates.includes(dVal)) {
+                            // Ila kan déjà f tableau, 7ydu (Deselect)
+                            selectedFilterDates = selectedFilterDates.filter(item => item !== dVal);
+                            btn.classList.remove('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
+                            btn.classList.add('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
+
+                            // Ila t7ydou kamlin, rj3 "Tous les jours" active
+                            if (selectedFilterDates.length === 0) {
+                                allBtn.classList.remove('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
+                                allBtn.classList.add('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
+                            }
+                        } else {
+                            // Ila makanch, zidu (Select)
+                            selectedFilterDates.push(dVal);
+                            btn.classList.remove('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
+                            btn.classList.add('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
+                        }
+                    }
+
                     currentPage = 1;
                     loadOrders();
                 });
@@ -293,15 +320,15 @@
                 if (statusVal) {
                     query = query.eq('statut', statusVal);
                 }
-                if (selectedFilterDate) {
-                    query = query.eq('date_livraison', selectedFilterDate);
+                if (selectedFilterDates.length > 0) {
+                    query = query.in('date_livraison', selectedFilterDates);
                 }
 
                 const { data: excelData, error: excelError } = await query;
                 if (excelError) throw excelError;
 
                 if (!excelData || excelData.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400 text-xs">Aucune commande trouvée pour cette date.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400 text-xs">Aucune commande trouvée pour ces dates.</td></tr>`;
                     document.getElementById("rowCount").textContent = "Affichage de 0 éléments";
                     document.getElementById("pageIndicator").textContent = "Page 1 / 1";
                     return;

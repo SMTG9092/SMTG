@@ -54,9 +54,9 @@
 
     <!-- VERIFICATION SECURITY MANAGER -->
     <script type="module">
-         import SecurityManager from '../assets/js/core/security.js';
+        import SecurityManager from '../assets/js/core/security.js';
         
-        window.alert = function(msg) {};
+        window.alert = function(msg) { console.log(msg); };
 
         try {
             const authorized = await SecurityManager.protectPage('permissions');
@@ -181,7 +181,7 @@
     <script type="module">
         import Navigation from '../assets/js/core/navigation.js';
         import SessionManager from '../assets/js/core/session.js';
-        import { supabase } from '../assets/js/core/supabase.js';
+        import supabase from '../assets/js/core/supabase.js';
 
         let currentUserId = null;
         let permissionsData = {}; 
@@ -285,7 +285,6 @@
                     if (!paMap[pa.page_id]) paMap[pa.page_id] = {};
                     const act = actions.find(a => a.id === pa.action_id);
                     if (act) {
-                        // Ila makantch enregistrée f database g3, n-consideriwaha TRUE (Kolchi m-cté by default)
                         const isAuth = permissionsData[pa.id] !== undefined ? permissionsData[pa.id] : true;
                         paMap[pa.page_id][act.code] = {
                             page_action_id: pa.id,

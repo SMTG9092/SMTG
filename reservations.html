@@ -95,14 +95,14 @@
                             <i class="fas fa-list-check text-emerald-400"></i> Suivi des Réservations & Lots
                         </h2>
                         <p class="text-xs text-slate-400 mt-1">
-                            Visualisez les documents de vente, articles, lots, magasins, quantités et statuts associés.
+                            Sélectionnez manuellement les lignes avec un statut Picking 'VALIDE' pour les traiter et transférer vers AB10.
                         </p>
                     </div>
                     
                     <div class="flex items-center gap-3 flex-wrap">
-                        <!-- SMART AUTOMATIC PROCESSING BUTTON -->
+                        <!-- PROCESS SELECTED BUTTON -->
                         <button onclick="processSelectedReservations()" class="bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500/30 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg cursor-pointer">
-                            <i class="fas fa-check-double"></i> <span>Traiter & Transférer AB10 (Auto)</span>
+                            <i class="fas fa-check-double"></i> <span>Traiter la Sélection (AB10)</span>
                         </button>
 
                         <!-- EXPORT BUTTONS -->
@@ -162,6 +162,9 @@
                         <table class="w-full text-left border-collapse text-sm">
                             <thead>
                                 <tr class="bg-slate-950/60 text-slate-400 uppercase text-[11px] tracking-wider border-b border-slate-800 font-semibold">
+                                    <th class="p-4 w-12 text-center">
+                                        <input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)" class="rounded bg-slate-950 border-slate-700 text-emerald-500 focus:ring-emerald-500 cursor-pointer w-4 h-4">
+                                    </th>
                                     <th class="p-4">Document Vente</th>
                                     <th class="p-4">Article / Désignation</th>
                                     <th class="p-4">Lot</th>
@@ -173,7 +176,7 @@
                             </thead>
                             <tbody id="reservationsTableBody" class="divide-y divide-slate-800/50">
                                 <tr>
-                                    <td colspan="7" class="p-10 text-center text-slate-400 text-xs">
+                                    <td colspan="8" class="p-10 text-center text-slate-400 text-xs">
                                         <i class="fas fa-spinner fa-spin mr-2 text-emerald-500 text-base"></i> Chargement des données...
                                     </td>
                                 </tr>
@@ -209,6 +212,7 @@
         let totalRecords = 0;
         let currentSearch = "";
         let allExportData = [];
+        let currentTableData = [];
 
         window.changePage = async function(direction) {
             currentPage += direction;
@@ -286,18 +290,19 @@
 
                 if (error) {
                     console.error("Erreur:", error);
-                    tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-400 text-xs"><i class="fas fa-exclamation-triangle mr-2"></i> Erreur lors du chargement des données.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-red-400 text-xs"><i class="fas fa-exclamation-triangle mr-2"></i> Erreur lors du chargement des données.</td></tr>`;
                     return;
                 }
 
                 totalRecords = count || 0;
-                renderTable(data || []);
+                currentTableData = data || [];
+                renderTable(currentTableData);
                 updatePagination();
                 await fetchGlobalStats();
 
             } catch (err) {
                 console.error("Erreur technique:", err);
-                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-400 text-xs">Erreur de connexion.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-red-400 text-xs">Erreur de connexion.</td></tr>`;
             }
         }
 
@@ -329,7 +334,7 @@
         function renderTable(data) {
             const tbody = document.getElementById("reservationsTableBody");
             if (!data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 text-xs"><i class="fas fa-folder-open mr-2"></i> Aucune réservation de stock trouvée.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400 text-xs"><i class="fas fa-folder-open mr-2"></i> Aucune réservation de stock trouvée.</td></tr>`;
                 return;
             }
 
@@ -344,8 +349,17 @@
                 if (pickingStatut === 'TERMINE' || pickingStatut === 'VALIDE') badgePickColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
                 if (pickingStatut === 'EN_COURS' || pickingStatut === 'PICKING') badgePickColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
 
+                // Condition stricte : on n'autorise de cocher que si le picking est VALIDE
+                let isValidPicking = (pickingStatut === 'VALIDE');
+                let checkboxDisabled = !isValidPicking ? 'disabled' : '';
+                let checkboxClass = !isValidPicking ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer';
+
                 html += `
                     <tr class="hover:bg-slate-800/35 transition">
+                        <td class="p-4 text-center">
+                            <input type="checkbox" class="row-checkbox rounded bg-slate-950 border-slate-700 text-emerald-500 focus:ring-emerald-500 w-4 h-4 ${checkboxClass}" 
+                                data-id="${item.id}" ${checkboxDisabled} ${!isValidPicking ? 'title="Le Picking doit être VALIDE pour pouvoir être sélectionné"' : ''}>
+                        </td>
                         <td class="p-4 font-mono font-semibold text-emerald-400 text-xs">${item.document_vente || '-'}</td>
                         <td class="p-4 text-slate-100 text-xs">
                             <span class="font-mono font-bold text-slate-200">${item.article || ''}</span>
@@ -372,6 +386,11 @@
             tbody.innerHTML = html;
         }
 
+        window.toggleSelectAll = function(master) {
+            const checkboxes = document.querySelectorAll('.row-checkbox:not(:disabled)');
+            checkboxes.forEach(cb => cb.checked = master.checked);
+        }
+
         function updatePagination() {
             const totalPages = Math.ceil(totalRecords / pageSize) || 1;
             if (currentPage > totalPages) currentPage = totalPages;
@@ -384,24 +403,29 @@
             document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
         }
 
-        // SMART AUTOMATIC PROCESSING FUNCTION: TRAITE UNIQUEMENT LES LIGNES AVEC PICKING 'VALIDE'
+        // SMART SELECTION PROCESSING FUNCTION: TRAITE UNIQUEMENT CE QUE L'UTILISATEUR A SÉLECTIONNÉ AVEC PICKING VALIDE
         window.processSelectedReservations = async function() {
             try {
-                // 1. Filtrer uniquement les lignes dont le picking associé est 'VALIDE' et pas encore transférées
-                const targetRows = allExportData.filter(item => {
-                    const isPickingValid = item.picking && item.picking.statut === 'VALIDE';
-                    const isAlreadyDone = (item.statut === 'TRANSFEREE_AB10' || item.statut === 'VALIDEE');
-                    return isPickingValid && !isAlreadyDone;
-                });
+                // 1. Récupérer les IDs des checkboxes cochées
+                const selectedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
+                if (selectedCheckboxes.length === 0) {
+                    alert("Veuillez sélectionner au moins une ligne valide à traiter.");
+                    return;
+                }
+
+                const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.getAttribute('data-id'));
+
+                // 2. Filtrer les lignes correspondantes dans les données actuelles
+                const targetRows = currentTableData.filter(item => selectedIds.includes(item.id));
 
                 if (targetRows.length === 0) {
-                    alert("Aucune ligne avec un statut Picking 'VALIDE' à traiter.");
+                    alert("Aucune ligne valide sélectionnée.");
                     return;
                 }
 
                 const validIds = targetRows.map(i => i.id);
 
-                // 2. Mettre à jour la réservation à 'TRANSFEREE_AB10'
+                // 3. Mettre à jour la réservation à 'TRANSFEREE_AB10'
                 const { error: errRes } = await supabase
                     .from('reservations_stock')
                     .update({ statut: 'TRANSFEREE_AB10' })
@@ -409,7 +433,7 @@
 
                 if (errRes) throw errRes;
 
-                // 3. Mettre à jour le Picking associé à 'TERMINE' dans la table picking
+                // 4. Mettre à jour le Picking associé à 'TERMINE' dans la table picking
                 const pickingIds = [...new Set(targetRows.map(i => i.picking_id).filter(Boolean))];
                 if (pickingIds.length > 0) {
                     const { error: errPick } = await supabase
@@ -419,7 +443,7 @@
                     if (errPick) throw errPick;
                 }
 
-                // 4. Insérer les lignes dans ab10_stock
+                // 5. Insérer les lignes dans ab10_stock
                 const ab10Payloads = targetRows.map(item => ({
                     reservation_id: item.id,
                     picking_id: item.picking_id,
@@ -442,7 +466,7 @@
                     console.error("Erreur insertion AB10:", errAb10);
                 }
 
-                // 5. AGRÉGATION POUR L'EXCEL: Même Article + même Lot + même Magasin -> Somme des Quantités
+                // 6. AGRÉGATION POUR L'EXCEL: Même Article + même Lot + même Magasin -> Somme des Quantités
                 const aggregatedMap = new Map();
 
                 targetRows.forEach(item => {
@@ -464,17 +488,17 @@
 
                 const excelData = Array.from(aggregatedMap.values());
 
-                // 6. Générer et télécharger l'Excel
+                // 7. Générer et télécharger l'Excel
                 const worksheet = XLSX.utils.json_to_sheet(excelData);
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, "AB10_Export");
                 XLSX.writeFile(workbook, `AB10_Transfer_${new Date().toISOString().slice(0,10)}.xlsx`);
 
-                alert(`Traitement réussi ! ${targetRows.length} ligne(s) avec Picking 'VALIDE' basculées à TERMINE / TRANSFEREE_AB10.`);
+                alert(`Traitement réussi ! ${targetRows.length} ligne(s) sélectionnées ont été basculées à TERMINE / TRANSFEREE_AB10.`);
                 await loadData();
 
             } catch (err) {
-                console.error("Erreur lors du traitement automatique:", err);
+                console.error("Erreur lors du traitement de la sélection:", err);
                 alert("Une erreur est survenue lors de l'exécution.");
             }
         }

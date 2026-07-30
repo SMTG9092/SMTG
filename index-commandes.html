@@ -30,11 +30,14 @@
     </script>
 
     <style>
+        /* Block l-page mn l-asl bach matwli tban walou ila kan mamdouwzch */
+        html { display: none; }
+        
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: #010309; }
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
         ::-webkit-scrollbar-thumb:hover { background: #334155; }
-        body { background-color: #010309; color: #f8fafc; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; display: none; }
+        body { background-color: #010309; color: #f8fafc; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
         
         .bg-cyber-grid {
             background-image: linear-gradient(to right, rgba(30, 41, 59, 0.15) 1px, transparent 1px),
@@ -77,20 +80,23 @@
         }
     </style>
 
-    <!-- Verification w Redirection omatiki l dashboard.html f nafs l-lahda -->
+    <!-- Script de vérification ultra-rapide avant même rendering -->
     <script type="module">
         import SecurityManager from '../assets/js/core/security.js';
         
         window.alert = function(msg) {};
 
-        (async () => {
+        try {
             const authorized = await SecurityManager.protectPage('index_commandes');
             if (!authorized) {
-                window.location.replace('dashboard.html'); // Omatiki l dashboard.html bla mayt3ettal
+                window.location.replace('dashboard.html');
             } else {
+                // Ila kan mzyan, bayen html dyal la page
                 document.documentElement.style.display = 'block';
             }
-        })();
+        } catch (e) {
+            window.location.replace('dashboard.html');
+        }
     </script>
 </head>
 <body class="bg-darker text-slate-100 font-sans antialiased min-h-screen flex overflow-hidden selection:bg-emerald-500 selection:text-slate-950">

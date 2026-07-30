@@ -141,7 +141,7 @@
                     <div class="p-5 border-b border-bordercolor flex items-center justify-between bg-dark/50">
                         <div>
                             <h3 class="text-sm font-black text-white uppercase tracking-wider">Droits d'accès par Page et Action</h3>
-                            <p class="text-[11px] text-slate-400 mt-0.5">Cochez ou décochez les cases pour modifier instantanément les accès de l'utilisateur sélectionné.</p>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Tout est coché par défaut. Décochez les cases des actions que vous souhaitez interdire à cet utilisateur.</p>
                         </div>
                         <button id="saveBtn" class="bg-emerald-500 hover:bg-emerald-600 text-darker font-black text-xs px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 cursor-pointer">
                             <i class="fas fa-save"></i> Enregistrer les Modifications
@@ -184,7 +184,7 @@
         import { supabase } from '../assets/js/core/supabaseClient.js';
 
         let currentUserId = null;
-        let permissionsData = {}; // key: page_action_id, value: autorise (boolean)
+        let permissionsData = {}; 
 
         document.addEventListener("DOMContentLoaded", async () => {
             await Navigation.init();
@@ -252,49 +252,44 @@
                 document.getElementById("permissionsTableBody").innerHTML = `
                     <tr><td colspan="8" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Chargement des permissions...</td></tr>`;
 
-                // 1. Récupérer toutes les pages
                 const { data: pages, error: errPages } = await supabase
                     .from('pages')
                     .select('*')
                     .order('ordre_affichage', { ascending: true });
                 if (errPages) throw errPages;
 
-                // 2. Récupérer toutes les actions
                 const { data: actions, error: errActions } = await supabase
                     .from('actions')
                     .select('*')
                     .order('id', { ascending: true });
                 if (errActions) throw errActions;
 
-                // 3. Récupérer les liaisons page_actions
                 const { data: pageActions, error: errPA } = await supabase
                     .from('page_actions')
                     .select('*');
                 if (errPA) throw errPA;
 
-                // 4. Récupérer les permissions de l'utilisateur
                 const { data: userActions, error: errUA } = await supabase
                     .from('user_page_actions')
                     .select('*')
                     .eq('user_id', userId);
                 if (errUA) throw errUA;
 
-                // Mapper les autorisations actuelles
                 permissionsData = {};
                 userActions.forEach(ua => {
                     permissionsData[ua.page_action_id] = ua.autorise;
                 });
 
-                // Construire la map rapide: page_id -> { action_code: page_action_id }
                 const paMap = {};
                 pageActions.forEach(pa => {
                     if (!paMap[pa.page_id]) paMap[pa.page_id] = {};
-                    // Trouver le code de l'action
                     const act = actions.find(a => a.id === pa.action_id);
                     if (act) {
+                        // Ila makantch enregistrée f database g3, n-consideriwaha TRUE (Kolchi m-cté by default)
+                        const isAuth = permissionsData[pa.id] !== undefined ? permissionsData[pa.id] : true;
                         paMap[pa.page_id][act.code] = {
                             page_action_id: pa.id,
-                            autorise: permissionsData[pa.id] === true
+                            autorise: isAuth
                         };
                     }
                 });
@@ -355,7 +350,6 @@
                     });
                 });
 
-                // Upsert dans user_page_actions grâce à la contrainte unique (user_id, page_action_id)
                 const { error } = await supabase
                     .from('user_page_actions')
                     .upsert(updates, { onConflict: 'user_id, page_action_id' });

@@ -54,7 +54,6 @@
         <!-- HEADER -->
         <header class="h-20 bg-slate-900/40 border-b border-slate-800/80 px-8 flex items-center justify-between shrink-0">
             <div class="flex items-center gap-4">
-                <!-- زر الرجوع السريع إلى index-stock.html -->
                 <a href="../index-stock.html" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow-sm group">
                     <i class="fas fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
                     <span>Retour au Hub</span>
@@ -96,9 +95,7 @@
                     </div>
 
                     <!-- HORIZONTAL DATES BAR -->
-                    <div class="flex items-center gap-2 overflow-x-auto pb-2 pt-1 scrollbar-thin" id="datesQuickBar">
-                        <!-- Kay-tgenerer dynamiquement b Javascript -->
-                    </div>
+                    <div class="flex items-center gap-2 overflow-x-auto pb-2 pt-1 scrollbar-thin" id="datesQuickBar"></div>
                     
                     <!-- Search & Filter Controls Grid -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-2 border-t border-slate-800/80">
@@ -120,7 +117,6 @@
                             <option value="ANNULEE">ANNULEE</option>
                         </select>
 
-                        <!-- Filtre Itinéraire -->
                         <select id="itineraireFilter" class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500 transition shadow-inner cursor-pointer font-mono">
                             <option value="">Tous les itinéraires</option>
                         </select>
@@ -150,11 +146,12 @@
                                     <th class="p-4 text-center">Total Pièces</th>
                                     <th class="p-4 text-center">Date Livraison</th>
                                     <th class="p-4 text-center">Statut</th>
+                                    <th class="p-4 text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="ordersTableBody" class="divide-y divide-slate-800/50">
                                 <tr>
-                                    <td colspan="8" class="p-12 text-center text-slate-400 text-xs">
+                                    <td colspan="9" class="p-12 text-center text-slate-400 text-xs">
                                         <i class="fas fa-spinner fa-spin mr-2 text-emerald-500 text-base"></i> Chargement des données...
                                     </td>
                                 </tr>
@@ -176,6 +173,81 @@
         </main>
     </div>
 
+    <!-- MODAL DETAILS COMMANDE -->
+    <div id="orderDetailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] mx-4 animate-in fade-in zoom-in-95 duration-200">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 bg-slate-950/60 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                        <i class="fas fa-file-invoice text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-100" id="modalDocTitle">Détails du Document</h3>
+                        <p class="text-xs text-slate-400" id="modalDocSubtitle">Chargement des informations...</p>
+                    </div>
+                </div>
+                <button type="button" id="closeModalBtn" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 flex items-center justify-center transition cursor-pointer">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 overflow-y-auto flex-1 flex flex-col gap-6">
+                <!-- Info Cards Summary -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-3.5">
+                        <span class="text-[10px] font-medium text-slate-400 block">Réceptionnaire</span>
+                        <strong class="text-xs text-slate-200 mt-1 block truncate" id="modalRecip">-</strong>
+                    </div>
+                    <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-3.5">
+                        <span class="text-[10px] font-medium text-slate-400 block">Itinéraire</span>
+                        <strong class="text-xs text-slate-200 font-mono mt-1 block truncate" id="modalItin">-</strong>
+                    </div>
+                    <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-3.5">
+                        <span class="text-[10px] font-medium text-slate-400 block">Date de Livraison</span>
+                        <strong class="text-xs text-emerald-400 font-mono mt-1 block" id="modalDate">-</strong>
+                    </div>
+                    <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-3.5">
+                        <span class="text-[10px] font-medium text-slate-400 block">Statut Actuel</span>
+                        <div class="mt-1" id="modalStatutBadge">-</div>
+                    </div>
+                </div>
+
+                <!-- Articles Table Inside Modal -->
+                <div class="flex flex-col gap-2">
+                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fas fa-boxes text-emerald-400"></i> Articles Commandés & Pièces
+                    </h4>
+                    <div class="border border-slate-800 rounded-xl overflow-hidden bg-slate-950/40">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-950/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800 font-semibold">
+                                    <th class="p-3">Code Article</th>
+                                    <th class="p-3">Désignation</th>
+                                    <th class="p-3 text-center">Qté Commandée</th>
+                                    <th class="p-3 text-center">Nombre de Pièces</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalArticlesTableBody" class="divide-y divide-slate-800/50">
+                                <tr>
+                                    <td colspan="4" class="p-8 text-center text-slate-400">Chargement...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 bg-slate-950/60 border-t border-slate-800 flex items-center justify-end">
+                <button type="button" id="closeModalFooterBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer">
+                    Fermer
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- SCRIPTS -->
     <script type="module">
         import supabase from '../assets/js/core/supabase.js';
@@ -193,11 +265,22 @@
             const searchInput = document.getElementById("searchInput");
             const statusFilter = document.getElementById("statusFilter");
             const itineraireFilter = document.getElementById("itineraireFilter");
+            const closeModalBtn = document.getElementById("closeModalBtn");
+            const closeModalFooterBtn = document.getElementById("closeModalFooterBtn");
+            const orderDetailModal = document.getElementById("orderDetailModal");
 
             if (searchBtn) searchBtn.addEventListener("click", () => { currentPage = 1; loadOrders(); });
             if (searchInput) searchInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { currentPage = 1; loadOrders(); } });
             if (statusFilter) statusFilter.addEventListener("change", () => { currentPage = 1; loadOrders(); });
             if (itineraireFilter) itineraireFilter.addEventListener("change", () => { currentPage = 1; loadOrders(); });
+
+            if (closeModalBtn) closeModalBtn.addEventListener("click", () => orderDetailModal.classList.add('hidden'));
+            if (closeModalFooterBtn) closeModalFooterBtn.addEventListener("click", () => orderDetailModal.classList.add('hidden'));
+            if (orderDetailModal) {
+                orderDetailModal.addEventListener("click", (e) => {
+                    if (e.target === orderDetailModal) orderDetailModal.classList.add('hidden');
+                });
+            }
 
             if (resetBtn) {
                 resetBtn.addEventListener("click", () => {
@@ -333,7 +416,7 @@
             const statusVal = document.getElementById("statusFilter").value;
             const itineraireVal = document.getElementById("itineraireFilter").value;
 
-            tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400 text-xs"><i class="fas fa-spinner fa-spin mr-2 text-emerald-500"></i> Synthèse en cours...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" class="p-12 text-center text-slate-400 text-xs"><i class="fas fa-spinner fa-spin mr-2 text-emerald-500"></i> Synthèse en cours...</td></tr>`;
 
             try {
                 let query = supabase.from('commandes_excel').select('*');
@@ -355,7 +438,7 @@
                 if (excelError) throw excelError;
 
                 if (!excelData || excelData.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400 text-xs">Aucune commande trouvée avec ces critères.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="9" class="p-12 text-center text-slate-400 text-xs">Aucune commande trouvée avec ces critères.</td></tr>`;
                     document.getElementById("rowCount").textContent = "Affichage de 0 éléments";
                     document.getElementById("pageIndicator").textContent = "Page 1 / 1";
                     return;
@@ -426,6 +509,11 @@
                             <td class="p-4 text-center">
                                 <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold border ${badgeColor}">${group.statut}</span>
                             </td>
+                            <td class="p-4 text-center">
+                                <button type="button" onclick="openOrderDetails('${group.document_vente}')" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-emerald-500/20 text-slate-300 hover:text-emerald-400 border border-slate-700 hover:border-emerald-500/40 transition flex items-center justify-center mx-auto shadow-sm cursor-pointer" title="Afficher les détails">
+                                    <i class="fas fa-eye text-xs"></i>
+                                </button>
+                            </td>
                         </tr>
                     `;
                 });
@@ -440,9 +528,98 @@
 
             } catch (err) {
                 console.error("Erreur synthèse commandes:", err);
-                tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-red-400 text-xs">Erreur lors de la génération de la synthèse.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="p-12 text-center text-red-400 text-xs">Erreur lors de la génération de la synthèse.</td></tr>`;
             }
         }
+
+        // Global function to open Modal and fetch specific document details
+        window.openOrderDetails = async function(docVente) {
+            const modal = document.getElementById("orderDetailModal");
+            const modalDocTitle = document.getElementById("modalDocTitle");
+            const modalDocSubtitle = document.getElementById("modalDocSubtitle");
+            const modalRecip = document.getElementById("modalRecip");
+            const modalItin = document.getElementById("modalItin");
+            const modalDate = document.getElementById("modalDate");
+            const modalStatutBadge = document.getElementById("modalStatutBadge");
+            const modalArticlesBody = document.getElementById("modalArticlesTableBody");
+
+            modalDocTitle.textContent = `Document : ${docVente}`;
+            modalDocSubtitle.textContent = "Chargement des lignes articles...";
+            modalRecip.textContent = "-";
+            modalItin.textContent = "-";
+            modalDate.textContent = "-";
+            modalStatutBadge.innerHTML = "-";
+            modalArticlesBody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2 text-emerald-500"></i> Chargement...</td></tr>`;
+
+            modal.classList.remove('hidden');
+
+            try {
+                // Fetch articles for this document from commandes_excel
+                const { data: articlesData, error: artError } = await supabase
+                    .from('commandes_excel')
+                    .select('*')
+                    .eq('document_vente', docVente);
+
+                if (artError) throw artError;
+
+                // Fetch pieces info for this document from commandes_clients_pieces
+                const { data: piecesData, error: pieceError } = await supabase
+                    .from('commandes_clients_pieces')
+                    .select('*')
+                    .eq('document_vente', docVente);
+
+                if (pieceError) throw pieceError;
+
+                if (articlesData && articlesData.length > 0) {
+                    const first = articlesData[0];
+                    modalRecip.textContent = first.nom_receptionnaire || '-';
+                    modalItin.textContent = first.itineraire || '-';
+                    modalDate.textContent = first.date_livraison || '-';
+
+                    let st = (first.statut || 'IMPORTEE').toUpperCase();
+                    let badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/20";
+                    if (st === 'LANCEE' || st === 'EN_PICKING') badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+                    else if (st === 'PREPAREE' || st === 'CONTROLEE') badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+                    else if (st === 'EXPEDIEE') badgeColor = "bg-sky-500/10 text-sky-400 border-sky-500/20";
+                    else if (st === 'ANNULEE') badgeColor = "bg-red-500/10 text-red-400 border-red-500/20";
+
+                    modalStatutBadge.innerHTML = `<span class="px-2.5 py-1 rounded-full text-[10px] font-semibold border ${badgeColor}">${first.statut}</span>`;
+                    modalDocSubtitle.textContent = `${articlesData.length} article(s) trouvé(s) pour ce document`;
+
+                    // Create a map for pieces by code_article if available
+                    let piecesMap = new Map();
+                    if (piecesData) {
+                        piecesData.forEach(p => {
+                            piecesMap.set(p.code_article, Number(p.nombre_pieces || 0));
+                        });
+                    }
+
+                    let rowsHtml = "";
+                    articlesData.forEach(art => {
+                        const codeArt = art.code_article || '-';
+                        const designation = art.designation_article || art.libelle_article || 'Article sans désignation';
+                        const qteCmd = Number(art.quantite_commandee || 0);
+                        const nbrPcs = piecesMap.get(codeArt) ?? '-';
+
+                        rowsHtml += `
+                            <tr class="hover:bg-slate-800/30 transition">
+                                <td class="p-3 font-mono font-bold text-emerald-400">${codeArt}</td>
+                                <td class="p-3 text-slate-200">${designation}</td>
+                                <td class="p-3 text-center font-mono font-semibold text-slate-100">${qteCmd.toLocaleString()}</td>
+                                <td class="p-3 text-center font-mono font-bold text-sky-400">${nbrPcs !== '-' ? nbrPcs.toLocaleString() + ' pcs' : '-'}</td>
+                            </tr>
+                        `;
+                    });
+                    modalArticlesBody.innerHTML = rowsHtml;
+                } else {
+                    modalArticlesBody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400">Aucun détail trouvé.</td></tr>`;
+                }
+
+            } catch (err) {
+                console.error("Erreur chargement détails document:", err);
+                modalArticlesBody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-400">Erreur lors de la récupération des détails.</td></tr>`;
+            }
+        };
     </script>
 </body>
 </html>

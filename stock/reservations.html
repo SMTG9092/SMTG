@@ -100,6 +100,13 @@
                     </div>
                     
                     <div class="flex items-center gap-3 flex-wrap">
+                        <!-- DATE FILTER INPUT -->
+                        <div class="relative flex items-center">
+                            <span class="text-xs text-slate-400 mr-2 font-medium"><i class="fas fa-calendar-alt text-emerald-400 mr-1"></i> Date :</span>
+                            <input type="date" id="filterDateInput" 
+                                class="bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition shadow-inner cursor-pointer">
+                        </div>
+
                         <!-- PROCESS SELECTED BUTTON -->
                         <button onclick="processSelectedReservations()" class="bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500/30 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg cursor-pointer">
                             <i class="fas fa-check-double"></i> <span>Traiter la Sélection (AB10)</span>
@@ -211,6 +218,7 @@
         const pageSize = 50;
         let totalRecords = 0;
         let currentSearch = "";
+        let currentDateFilter = "";
         let allExportData = [];
         let currentTableData = [];
 
@@ -221,6 +229,22 @@
 
         document.addEventListener("DOMContentLoaded", async () => {
             initLiveClock();
+
+            // Initialiser le champ date avec la date d'aujourd'hui (format YYYY-MM-DD)
+            const todayStr = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById("filterDateInput");
+            if (dateInput) {
+                dateInput.value = todayStr;
+                currentDateFilter = todayStr;
+
+                // Écouter les changements de date
+                dateInput.addEventListener("change", async (e) => {
+                    currentDateFilter = e.target.value;
+                    currentPage = 1;
+                    await loadData();
+                });
+            }
+
             await loadData();
 
             const searchInput = document.getElementById("searchInput");
@@ -251,6 +275,14 @@
         }
 
         function applyFilters(query) {
+            // Filtrage par date de création (basé sur le champ created_at de Supabase)
+            if (currentDateFilter) {
+                const startOfDay = `${currentDateFilter}T00:00:00`;
+                const endOfDay = `${currentDateFilter}T23:59:59`;
+                query = query.gte('created_at', startOfDay).lte('created_at', endOfDay);
+            }
+
+            // Filtrage par recherche textuelle
             if (currentSearch !== "") {
                 query = query.or(`document_vente.ilike.%${currentSearch}%,article.ilike.%${currentSearch}%,lot.ilike.%${currentSearch}%`);
             }
@@ -277,6 +309,7 @@
                         quantite_reservee,
                         unite,
                         statut,
+                        created_at,
                         picking:picking_id ( id, statut )
                     `, { count: 'exact' });
 
@@ -308,7 +341,7 @@
 
         async function fetchGlobalStats() {
             try {
-                let q = supabase.from('reservations_stock').select('id, stock_id, picking_id, picking_detail_id, suivi_id, quantite_reservee, statut, document_vente, article, designation_article, lot, magasin, picking:picking_id(id, statut)');
+                let q = supabase.from('reservations_stock').select('id, stock_id, picking_id, picking_detail_id, suivi_id, quantite_reservee, statut, document_vente, article, designation_article, lot, magasin, created_at, picking:picking_id(id, statut)');
                 q = applyFilters(q);
                 const { data, error } = await q.limit(10000);
                 if (error || !data) return;
@@ -334,7 +367,7 @@
         function renderTable(data) {
             const tbody = document.getElementById("reservationsTableBody");
             if (!data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400 text-xs"><i class="fas fa-folder-open mr-2"></i> Aucune réservation de stock trouvée.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400 text-xs"><i class="fas fa-folder-open mr-2"></i> Aucune réservation trouvée pour cette date.</td></tr>`;
                 return;
             }
 
@@ -512,7 +545,7 @@
             const worksheet = XLSX.utils.json_to_sheet(dataToExport);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "ReservationsStock");
-            XLSX.writeFile(workbook, `Reservations_Stock_${new Date().toISOString().slice(0,10)}.xlsx`);
+            XLSX.writeFile(workbook, `Reservations_Stock_${currentDateFilter || new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
         window.exportToPDF = function() {
@@ -524,7 +557,7 @@
             const doc = new jsPDF('l', 'mm', 'a4');
 
             doc.setFontSize(16);
-            doc.text("SoufStock Enterprise - Suivi des Réservations Stock", 14, 15);
+            doc.text(`SoufStock Enterprise - Suivi des Réservations (${currentDateFilter})`, 14, 15);
             doc.setFontSize(10);
             doc.text(`Date d'export : ${new Date().toLocaleDateString('fr-FR')}`, 14, 22);
 
@@ -548,7 +581,7 @@
                 headStyles: { fillColor: [15, 23, 42] }
             });
 
-            doc.save(`Reservations_Stock_${new Date().toISOString().slice(0,10)}.pdf`);
+            doc.save(`Reservations_Stock_${currentDateFilter || new Date().toISOString().slice(0,10)}.pdf`);
         }
     </script>
 </body>

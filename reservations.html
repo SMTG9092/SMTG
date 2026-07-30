@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des Réservations de Stock - SoufStock Enterprise ERP/WMS</title>
+    <title>Gestion des Réservations - SoufStock Enterprise ERP/WMS</title>
     
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -53,47 +53,26 @@
         body { background-color: #020617; color: #f1f5f9; font-family: ui-sans-serif, system-ui, sans-serif; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex overflow-hidden">
-
-    <!-- SIDEBAR -->
-    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-screen p-4 select-none shrink-0">
-        <div class="flex items-center gap-3 px-2 mb-6">
-            <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
-                <i class="fas fa-snowflake text-lg"></i>
-            </div>
-            <div>
-                <span class="font-bold text-base tracking-wide block text-slate-100">SoufStock</span>
-                <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Enterprise ERP</span>
-            </div>
-        </div>
-        
-        <nav id="sidebarNav" class="flex-1 overflow-y-auto pr-1">
-            <!-- Dynamic Sidebar -->
-        </nav>
-
-        <div class="pt-4 mt-auto border-t border-slate-800/80">
-            <div class="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3 mb-2">
-                <span id="sidebarUserName" class="block text-xs font-bold text-slate-200 truncate uppercase">...</span>
-                <span id="sidebarUserRole" class="block text-[10px] text-emerald-400 font-medium mt-0.5">Chargement...</span>
-            </div>
-            <button id="logoutBtn" class="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl py-2 px-3 text-xs font-semibold transition flex items-center justify-center gap-2 cursor-pointer">
-                <i class="fas fa-sign-out-alt"></i> Déconnexion
-            </button>
-        </div>
-    </aside>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col overflow-x-hidden">
 
     <!-- MAIN CONTAINER -->
-    <div class="flex-1 flex flex-col h-screen min-w-0 overflow-hidden relative">
+    <div class="flex-1 flex flex-col min-w-0">
         
         <!-- HEADER -->
         <header class="h-20 bg-slate-900/40 border-b border-slate-800/80 px-8 flex items-center justify-between shrink-0">
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-6">
+                <!-- زر الرجوع السريع إلى index-stock.html -->
+                <a href="../index-stock.html" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow-sm group">
+                    <i class="fas fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
+                    <span>Retour au Hub</span>
+                </a>
+
                 <div>
-                    <h1 class="text-xl font-bold tracking-tight text-slate-100">Gestion des Réservations de Stock</h1>
-                    <div class="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
+                    <h1 id="pageTitle" class="text-xl font-bold tracking-tight text-slate-100">Gestion des Réservations</h1>
+                    <div id="breadcrumb" class="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
                         <span>Accueil</span>
                         <span>/</span>
-                        <strong class="text-slate-300">Réservations Stock</strong>
+                        <strong class="text-slate-300">Réservations</strong>
                     </div>
                 </div>
             </div>
@@ -108,20 +87,25 @@
 
         <!-- PAGE BODY -->
         <main class="flex-1 p-8 overflow-y-auto">
-            <div class="w-full flex flex-col gap-6">
+            <div class="w-full px-4 flex flex-col gap-6 max-w-[1600px] mx-auto">
                 
                 <!-- CONTROLS & FILTERS BAR -->
                 <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                     <div>
                         <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
-                            <i class="fas fa-bookmark text-emerald-400"></i> Suivi des Stocks Réservés
+                            <i class="fas fa-list-check text-emerald-400"></i> Suivi Global des Réservations
                         </h2>
                         <p class="text-xs text-slate-400 mt-1">
-                            Contrôle des quantités réservées, statuts et affectations par document de vente.
+                            Visualisez, filtrez et gérez l'ensemble des réservations enregistrées dans le système.
                         </p>
                     </div>
                     
                     <div class="flex items-center gap-3 flex-wrap">
+                        <!-- ADD BUTTON -->
+                        <button onclick="openAddModal()" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs transition flex items-center gap-2 shadow-lg cursor-pointer">
+                            <i class="fas fa-plus"></i> <span>Nouvelle Réservation</span>
+                        </button>
+
                         <!-- EXPORT BUTTONS -->
                         <button onclick="exportToExcel()" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow-sm cursor-pointer">
                             <i class="fas fa-file-excel"></i> <span>Excel</span>
@@ -131,32 +115,11 @@
                             <i class="fas fa-file-pdf"></i> <span>PDF</span>
                         </button>
 
-                        <!-- STATUT FILTER -->
-                        <div class="relative">
-                            <i class="fas fa-filter absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
-                            <select id="statutFilter" class="bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-8 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition shadow-inner appearance-none cursor-pointer">
-                                <option value="">Tous les statuts</option>
-                                <option value="RESERVEE">RESERVEE</option>
-                                <option value="VALIDEE">VALIDEE</option>
-                                <option value="LIBEREE">LIBEREE</option>
-                                <option value="TRANSFEREE_AB10">TRANSFEREE_AB10</option>
-                                <option value="ANNULEE">ANNULEE</option>
-                            </select>
-                            <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-[10px] pointer-events-none"></i>
-                        </div>
-
-                        <!-- SEARCH: DOCUMENT DE VENTE -->
+                        <!-- SEARCH INPUT -->
                         <div class="relative">
                             <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-400 text-sm"></i>
-                            <input type="text" id="searchDocInput" placeholder="Doc Vente..." 
-                                class="bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-44 transition shadow-inner">
-                        </div>
-
-                        <!-- SEARCH: ARTICLE / MAGASIN -->
-                        <div class="relative">
-                            <i class="fas fa-barcode absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-400 text-sm"></i>
-                            <input type="text" id="searchArticleInput" placeholder="Article / Magasin..." 
-                                class="bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-44 transition shadow-inner">
+                            <input type="text" id="searchInput" placeholder="Rechercher..." 
+                                class="bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-56 transition shadow-inner">
                         </div>
                     </div>
                 </div>
@@ -165,31 +128,31 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex items-center justify-between">
                         <div>
-                            <span class="text-[11px] text-slate-400 uppercase font-semibold tracking-wider block">Quantité Totale Réservée</span>
-                            <span id="totalQtyBadge" class="text-xl font-bold text-emerald-400 font-mono mt-1 block">0.000</span>
+                            <span class="text-[11px] text-slate-400 uppercase font-semibold tracking-wider block">Total Réservations</span>
+                            <span id="totalLinesBadge" class="text-xl font-bold text-emerald-400 font-mono mt-1 block">0</span>
                         </div>
                         <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-lg">
-                            <i class="fas fa-scale-balanced"></i>
+                            <i class="fas fa-calendar-alt"></i>
                         </div>
                     </div>
 
                     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex items-center justify-between">
                         <div>
-                            <span class="text-[11px] text-slate-400 uppercase font-semibold tracking-wider block">Total Lignes Réservations</span>
-                            <span id="totalLinesBadge" class="text-xl font-bold text-sky-400 font-mono mt-1 block">0</span>
+                            <span class="text-[11px] text-slate-400 uppercase font-semibold tracking-wider block">Actives / Validées</span>
+                            <span id="totalActiveBadge" class="text-xl font-bold text-sky-400 font-mono mt-1 block">0</span>
                         </div>
                         <div class="w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 text-lg">
-                            <i class="fas fa-list-check"></i>
+                            <i class="fas fa-circle-check"></i>
                         </div>
                     </div>
 
                     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex items-center justify-between">
                         <div>
-                            <span class="text-[11px] text-slate-400 uppercase font-semibold tracking-wider block">Réservations Actives</span>
-                            <span id="totalActiveBadge" class="text-xl font-bold text-amber-400 font-mono mt-1 block">0</span>
+                            <span class="text-[11px] text-slate-400 uppercase font-semibold tracking-wider block">En Attente</span>
+                            <span id="totalPendingBadge" class="text-xl font-bold text-amber-400 font-mono mt-1 block">0</span>
                         </div>
                         <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-lg">
-                            <i class="fas fa-circle-check"></i>
+                            <i class="fas fa-clock"></i>
                         </div>
                     </div>
                 </div>
@@ -200,19 +163,17 @@
                         <table class="w-full text-left border-collapse text-sm">
                             <thead>
                                 <tr class="bg-slate-950/60 text-slate-400 uppercase text-[11px] tracking-wider border-b border-slate-800 font-semibold">
-                                    <th class="p-4">Doc Vente</th>
-                                    <th class="p-4">Article & Désignation</th>
-                                    <th class="p-4">Lot</th>
-                                    <th class="p-4">Magasin / Emplacement</th>
-                                    <th class="p-4">Palette / Chariot</th>
-                                    <th class="p-4 text-right">Quantité Réservée</th>
+                                    <th class="p-4">ID</th>
+                                    <th class="p-4">Référence / Code</th>
+                                    <th class="p-4">Client / Détails</th>
+                                    <th class="p-4">Date Réservation</th>
                                     <th class="p-4 text-center">Statut</th>
                                     <th class="p-4 text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="reservationsTableBody" class="divide-y divide-slate-800/50">
                                 <tr>
-                                    <td colspan="8" class="p-10 text-center text-slate-400 text-xs">
+                                    <td colspan="6" class="p-10 text-center text-slate-400 text-xs">
                                         <i class="fas fa-spinner fa-spin mr-2 text-emerald-500 text-base"></i> Chargement des réservations...
                                     </td>
                                 </tr>
@@ -239,69 +200,90 @@
         </main>
     </div>
 
+    <!-- MODAL AJOUT / EDITION -->
+    <div id="reservationModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
+            <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                <h3 id="modalTitle" class="text-base font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fas fa-circle-plus text-emerald-400"></i> Ajouter une Réservation
+                </h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-200 transition cursor-pointer">
+                    <i class="fas fa-times text-base"></i>
+                </button>
+            </div>
+            <form id="reservationForm" onsubmit="saveReservation(event)" class="p-6 flex flex-col gap-4">
+                <input type="hidden" id="reservationId">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Référence *</label>
+                        <input type="text" id="resReference" required placeholder="ex: RES-2026-001" 
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Client *</label>
+                        <input type="text" id="resClient" required placeholder="Nom du client" 
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Date Réservation *</label>
+                        <input type="date" id="resDate" required 
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Statut</label>
+                        <select id="resStatus" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+                            <option value="En attente">En attente</option>
+                            <option value="Validée">Validée</option>
+                            <option value="Annulée">Annulée</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition cursor-pointer">
+                        Annuler
+                    </button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-bold transition cursor-pointer">
+                        Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- SCRIPTS -->
     <script type="module">
-        import Navigation from '../assets/js/core/navigation.js';
-        import supabase from '../assets/js/core/supabase.js';
+        import supabase from './assets/js/core/supabase.js';
 
         let currentPage = 1;
         const pageSize = 50;
         let totalRecords = 0;
-        let currentSearchDoc = "";
-        let currentSearchArticle = "";
-        let currentStatut = "";
+        let currentSearch = "";
         let allExportData = [];
 
         window.changePage = async function(direction) {
             currentPage += direction;
-            await loadReservationsData();
+            await loadData();
         }
 
         document.addEventListener("DOMContentLoaded", async () => {
-            await Navigation.init();
             initLiveClock();
-            await loadReservationsData();
+            await loadData();
 
-            const searchDocInput = document.getElementById("searchDocInput");
-            const searchArticleInput = document.getElementById("searchArticleInput");
-            const statutFilter = document.getElementById("statutFilter");
-
+            const searchInput = document.getElementById("searchInput");
             let timeout;
-            if (searchDocInput) {
-                searchDocInput.addEventListener("input", (e) => {
+            if (searchInput) {
+                searchInput.addEventListener("input", (e) => {
                     clearTimeout(timeout);
                     timeout = setTimeout(async () => {
-                        currentSearchDoc = e.target.value.trim();
+                        currentSearch = e.target.value.trim();
                         currentPage = 1;
-                        await loadReservationsData();
+                        await loadData();
                     }, 300);
-                });
-            }
-
-            if (searchArticleInput) {
-                searchArticleInput.addEventListener("input", (e) => {
-                    clearTimeout(timeout);
-                    timeout = setTimeout(async () => {
-                        currentSearchArticle = e.target.value.trim();
-                        currentPage = 1;
-                        await loadReservationsData();
-                    }, 300);
-                });
-            }
-
-            if (statutFilter) {
-                statutFilter.addEventListener("change", async (e) => {
-                    currentStatut = e.target.value;
-                    currentPage = 1;
-                    await loadReservationsData();
-                });
-            }
-
-            const logoutBtn = document.getElementById("logoutBtn");
-            if (logoutBtn) {
-                logoutBtn.addEventListener("click", async () => {
-                    await supabase.auth.signOut();
-                    window.location.href = "login.html";
                 });
             }
         });
@@ -320,34 +302,28 @@
         }
 
         function applyFilters(query) {
-            if (currentSearchDoc !== "") {
-                query = query.ilike('document_vente', `%${currentSearchDoc}%`);
-            }
-            if (currentSearchArticle !== "") {
-                query = query.or(`article.ilike.%${currentSearchArticle}%,magasin.ilike.%${currentSearchArticle}%`);
-            }
-            if (currentStatut !== "") {
-                query = query.eq('statut', currentStatut);
+            if (currentSearch !== "") {
+                query = query.or(`reference.ilike.%${currentSearch}%,client.ilike.%${currentSearch}%`);
             }
             return query;
         }
 
-        async function loadReservationsData() {
+        async function loadData() {
             const tbody = document.getElementById("reservationsTableBody");
 
             try {
-                let query = supabase.from('reservations_stock').select('*', { count: 'exact' });
+                let query = supabase.from('reservations').select('*', { count: 'exact' });
                 query = applyFilters(query);
 
                 const start = (currentPage - 1) * pageSize;
                 const end = start + pageSize - 1;
-                query = query.range(start, end).order('date_reservation', { ascending: false });
+                query = query.range(start, end).order('id', { ascending: false });
 
                 const { data, count, error } = await query;
 
                 if (error) {
-                    console.error("Erreur reservations:", error);
-                    tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-red-400 text-xs"><i class="fas fa-exclamation-triangle mr-2"></i> Erreur chargement des réservations.</td></tr>`;
+                    console.error("Erreur:", error);
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-red-400 text-xs"><i class="fas fa-exclamation-triangle mr-2"></i> Erreur lors du chargement (Vérifiez que la table 'reservations' existe).</td></tr>`;
                     return;
                 }
 
@@ -358,29 +334,29 @@
 
             } catch (err) {
                 console.error("Erreur technique:", err);
-                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-red-400 text-xs">Erreur de connexion.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-red-400 text-xs">Erreur de connexion.</td></tr>`;
             }
         }
 
         async function fetchGlobalStats() {
             try {
-                let q = supabase.from('reservations_stock').select('*');
+                let q = supabase.from('reservations').select('*');
                 q = applyFilters(q);
                 const { data, error } = await q.limit(10000);
                 if (error || !data) return;
 
                 allExportData = data;
-                let totalQty = 0;
                 let activeCount = 0;
+                let pendingCount = 0;
 
                 data.forEach(item => {
-                    totalQty += Number(item.quantite_reservee || 0);
-                    if (item.est_active === true) activeCount++;
+                    if (item.statut === 'Validée') activeCount++;
+                    if (item.statut === 'En attente') pendingCount++;
                 });
 
-                document.getElementById("totalQtyBadge").textContent = totalQty.toLocaleString('fr-FR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
                 document.getElementById("totalLinesBadge").textContent = data.length.toLocaleString();
                 document.getElementById("totalActiveBadge").textContent = activeCount.toLocaleString();
+                document.getElementById("totalPendingBadge").textContent = pendingCount.toLocaleString();
 
             } catch (err) {
                 console.error("Erreur stats:", err);
@@ -390,46 +366,34 @@
         function renderTable(data) {
             const tbody = document.getElementById("reservationsTableBody");
             if (!data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400 text-xs"><i class="fas fa-folder-open mr-2"></i> Aucune réservation trouvée.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400 text-xs"><i class="fas fa-folder-open mr-2"></i> Aucune réservation trouvée.</td></tr>`;
                 return;
             }
 
             let html = "";
             data.forEach(item => {
-                const badgeColor = 
-                    item.statut === 'VALIDEE' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                    item.statut === 'TRANSFEREE_AB10' ? 'bg-sky-500/10 text-sky-400 border-sky-500/20' :
-                    item.statut === 'LIBEREE' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
-                    item.statut === 'ANNULEE' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                    'bg-amber-500/10 text-amber-400 border-amber-500/20';
+                let badgeColor = 'bg-slate-500/10 text-slate-400 border-slate-500/20';
+                if (item.statut === 'Validée') badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                if (item.statut === 'En attente') badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+                if (item.statut === 'Annulée') badgeColor = 'bg-red-500/10 text-red-400 border-red-500/20';
 
                 html += `
                     <tr class="hover:bg-slate-800/35 transition">
-                        <td class="p-4 font-mono font-semibold text-emerald-400 text-xs">${item.document_vente || '-'}</td>
-                        <td class="p-4">
-                            <span class="font-mono text-xs text-sky-300 font-semibold block">${item.article || ''}</span>
-                            <span class="text-[11px] text-slate-400 block">${item.designation_article || ''}</span>
-                        </td>
-                        <td class="p-4 font-mono text-slate-300 text-xs">${item.lot || '-'}</td>
-                        <td class="p-4 text-xs">
-                            <span class="text-slate-200 font-semibold block">${item.magasin || '-'}</span>
-                            <span class="text-slate-400 text-[10px] block">Emp: ${item.emplacement || '-'}</span>
-                        </td>
-                        <td class="p-4 text-xs">
-                            <span class="text-amber-300 font-mono block"><i class="fas fa-pallet mr-1"></i> ${item.numero_palette || '-'}</span>
-                            <span class="text-slate-400 text-[10px] font-mono block">Chariot: ${item.numero_chariot || '-'}</span>
-                        </td>
-                        <td class="p-4 text-right font-bold text-emerald-300 font-mono text-xs">
-                            ${Number(item.quantite_reservee || 0).toLocaleString()} <span class="text-[10px] text-slate-400">${item.unite || 'KG'}</span>
-                        </td>
+                        <td class="p-4 font-mono text-slate-400 text-xs">#${item.id}</td>
+                        <td class="p-4 font-mono font-semibold text-emerald-400 text-xs">${item.reference || '-'}</td>
+                        <td class="p-4 text-slate-100 font-semibold text-xs">${item.client || '-'}</td>
+                        <td class="p-4 text-slate-300 text-xs">${item.date_reservation || '-'}</td>
                         <td class="p-4 text-center">
                             <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold border ${badgeColor}">
-                                ${item.statut || 'RESERVEE'}
+                                ${item.statut || 'En attente'}
                             </span>
                         </td>
-                        <td class="p-4 text-center">
-                            <button onclick="updateStatut('${item.id}', '${item.statut}')" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-3 py-1.5 rounded-lg text-xs transition cursor-pointer" title="Changer Statut">
+                        <td class="p-4 text-center flex items-center justify-center gap-2">
+                            <button onclick='openEditModal(${JSON.stringify(item)})' class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-3 py-1.5 rounded-lg text-xs transition cursor-pointer" title="Modifier">
                                 <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteReservation(${item.id})" class="bg-slate-800 hover:bg-slate-700 text-red-400 border border-slate-700 px-3 py-1.5 rounded-lg text-xs transition cursor-pointer" title="Supprimer">
+                                <i class="fas fa-trash"></i>
                             </button>
                         </td>
                     </tr>
@@ -450,32 +414,61 @@
             document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
         }
 
-        window.updateStatut = async function(id, currentStatut) {
-            const newStatut = prompt("Entrez le nouveau statut (RESERVEE, VALIDEE, LIBEREE, TRANSFEREE_AB10, ANNULEE) :", currentStatut);
-            if (!newStatut) return;
-            const upperStatut = newStatut.trim().toUpperCase();
+        window.openAddModal = function() {
+            document.getElementById("modalTitle").innerHTML = `<i class="fas fa-circle-plus text-emerald-400"></i> Ajouter une Réservation`;
+            document.getElementById("reservationForm").reset();
+            document.getElementById("reservationId").value = "";
+            document.getElementById("reservationModal").classList.remove("hidden");
+        }
 
-            const validStatuses = ['RESERVEE', 'VALIDEE', 'LIBEREE', 'TRANSFEREE_AB10', 'ANNULEE'];
-            if (!validStatuses.includes(upperStatut)) {
-                alert("Statut invalide !");
-                return;
-            }
+        window.openEditModal = function(item) {
+            document.getElementById("modalTitle").innerHTML = `<i class="fas fa-file-pen text-emerald-400"></i> Modifier la Réservation`;
+            document.getElementById("reservationId").value = item.id;
+            document.getElementById("resReference").value = item.reference || '';
+            document.getElementById("resClient").value = item.client || '';
+            document.getElementById("resDate").value = item.date_reservation || '';
+            document.getElementById("resStatus").value = item.statut || 'En attente';
+            document.getElementById("reservationModal").classList.remove("hidden");
+        }
 
-            const updatePayload = { 
-                statut: upperStatut, 
-                updated_at: new Date().toISOString() 
+        window.closeModal = function() {
+            document.getElementById("reservationModal").classList.add("hidden");
+        }
+
+        window.saveReservation = async function(event) {
+            event.preventDefault();
+            const id = document.getElementById("reservationId").value;
+            const payload = {
+                reference: document.getElementById("resReference").value.trim(),
+                client: document.getElementById("resClient").value.trim(),
+                date_reservation: document.getElementById("resDate").value,
+                statut: document.getElementById("resStatus").value
             };
 
-            if (upperStatut === 'LIBEREE' || upperStatut === 'ANNULEE') {
-                updatePayload.est_active = false;
-                updatePayload.date_liberation = new Date().toISOString();
+            let error;
+            if (id) {
+                const res = await supabase.from('reservations').update(payload).eq('id', id);
+                error = res.error;
+            } else {
+                const res = await supabase.from('reservations').insert([payload]);
+                error = res.error;
             }
 
-            const { error } = await supabase.from('reservations_stock').update(updatePayload).eq('id', id);
             if (error) {
-                alert("Erreur lors de la mise à jour: " + error.message);
+                alert("Erreur lors de l'enregistrement: " + error.message);
             } else {
-                await loadReservationsData();
+                closeModal();
+                await loadData();
+            }
+        }
+
+        window.deleteReservation = async function(id) {
+            if (!confirm("Voulez-vous vraiment supprimer cette réservation ?")) return;
+            const { error } = await supabase.from('reservations').delete().eq('id', id);
+            if (error) {
+                alert("Erreur lors de la suppression: " + error.message);
+            } else {
+                await loadData();
             }
         }
 
@@ -485,23 +478,16 @@
                 return;
             }
             const dataToExport = allExportData.map(item => ({
-                "Doc Vente": item.document_vente,
-                "Article": item.article,
-                "Désignation": item.designation_article,
-                "Lot": item.lot,
-                "Magasin": item.magasin,
-                "Emplacement": item.emplacement,
-                "Palette": item.numero_palette,
-                "Chariot": item.numero_chariot,
-                "Quantité Réservée": Number(item.quantite_reservee),
-                "Unité": item.unite,
-                "Statut": item.statut,
-                "Active": item.est_active ? "Oui" : "Non"
+                "ID": item.id,
+                "Référence": item.reference,
+                "Client": item.client,
+                "Date Réservation": item.date_reservation,
+                "Statut": item.statut
             }));
             const worksheet = XLSX.utils.json_to_sheet(dataToExport);
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Réservations Stock");
-            XLSX.writeFile(workbook, `Reservations_Stock_${new Date().toISOString().slice(0,10)}.xlsx`);
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Réservations");
+            XLSX.writeFile(workbook, `Reservations_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
         window.exportToPDF = function() {
@@ -513,20 +499,17 @@
             const doc = new jsPDF('l', 'mm', 'a4');
 
             doc.setFontSize(16);
-            doc.text("SoufStock Enterprise - Suivi Réservations de Stock", 14, 15);
+            doc.text("SoufStock Enterprise - Suivi des Réservations", 14, 15);
             doc.setFontSize(10);
             doc.text(`Date d'export : ${new Date().toLocaleDateString('fr-FR')}`, 14, 22);
 
-            const columns = ["Doc Vente", "Article", "Lot", "Magasin", "Palette", "Quantité", "Statut", "Active"];
+            const columns = ["ID", "Référence", "Client", "Date Réservation", "Statut"];
             const rows = allExportData.map(item => [
-                item.document_vente || '',
-                item.article || '',
-                item.lot || '',
-                item.magasin || '',
-                item.numero_palette || '',
-                Number(item.quantite_reservee || 0).toLocaleString(),
-                item.statut || '',
-                item.est_active ? 'Oui' : 'Non'
+                item.id,
+                item.reference || '',
+                item.client || '',
+                item.date_reservation || '',
+                item.statut || ''
             ]);
 
             doc.autoTable({
@@ -534,11 +517,11 @@
                 body: rows,
                 startY: 28,
                 theme: 'grid',
-                styles: { fontSize: 8, cellPadding: 3 },
+                styles: { fontSize: 9, cellPadding: 3 },
                 headStyles: { fillColor: [15, 23, 42] }
             });
 
-            doc.save(`Reservations_Stock_${new Date().toISOString().slice(0,10)}.pdf`);
+            doc.save(`Reservations_${new Date().toISOString().slice(0,10)}.pdf`);
         }
     </script>
 </body>

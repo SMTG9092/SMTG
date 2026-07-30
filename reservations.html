@@ -100,9 +100,9 @@
                     </div>
                     
                     <div class="flex items-center gap-3 flex-wrap">
-                        <!-- ACTION BUTTON TO OPEN MODAL -->
-                        <button onclick="openActionModal()" class="bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow-sm cursor-pointer">
-                            <i class="fas fa-tasks"></i> <span>Traitement AB10 & Statuts</span>
+                        <!-- SMART SINGLE ACTION BUTTON -->
+                        <button onclick="processSelectedReservations()" class="bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500/30 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg cursor-pointer">
+                            <i class="fas fa-check-double"></i> <span>Traiter & Transférer AB10</span>
                         </button>
 
                         <!-- EXPORT BUTTONS -->
@@ -199,49 +199,6 @@
 
             </div>
         </main>
-    </div>
-
-    <!-- MODAL FOR STATUTS & AB10 PROCESSING -->
-    <div id="actionModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl flex flex-col gap-5">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-                <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
-                    <i class="fas fa-cog text-purple-400"></i> Changer les Statuts & Transférer AB10
-                </h3>
-                <button onclick="closeActionModal()" class="text-slate-400 hover:text-slate-200 cursor-pointer">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-
-            <div class="flex flex-col gap-3">
-                <label class="text-xs text-slate-400 font-medium">Sélectionnez le nouveau statut désiré :</label>
-                
-                <label class="flex items-center gap-3 bg-slate-950/60 border border-slate-800 p-3 rounded-xl cursor-pointer hover:border-purple-500/50 transition">
-                    <input type="radio" name="statusOption" value="VALIDEE_VALIDEE" checked class="text-purple-500 focus:ring-0">
-                    <div class="text-xs">
-                        <span class="font-bold text-slate-200 block">VALIDEE - VALIDEE</span>
-                        <span class="text-slate-400 text-[11px]">Met la réservation & picking à validé + Crée AB10 & Télécharge Excel</span>
-                    </div>
-                </label>
-
-                <label class="flex items-center gap-3 bg-slate-950/60 border border-slate-800 p-3 rounded-xl cursor-pointer hover:border-purple-500/50 transition">
-                    <input type="radio" name="statusOption" value="RESERVEE_EN_COURS" class="text-purple-500 focus:ring-0">
-                    <div class="text-xs">
-                        <span class="font-bold text-slate-200 block">RESERVEE - EN_COURS</span>
-                        <span class="text-slate-400 text-[11px]">Rétablit ou définit l'état initial des lignes sélectionnées</span>
-                    </div>
-                </label>
-            </div>
-
-            <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
-                <button onclick="closeActionModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition cursor-pointer">
-                    Annuler
-                </button>
-                <button onclick="confirmActionModal()" class="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold transition shadow-lg cursor-pointer">
-                    Valider & Traiter
-                </button>
-            </div>
-        </div>
     </div>
 
     <!-- SCRIPTS -->
@@ -348,7 +305,7 @@
 
         async function fetchGlobalStats() {
             try {
-                let q = supabase.from('reservations_stock').select('id, stock_id, picking_id, picking_detail_id, suivi_id, quantite_reservee, statut, document_vente, article, designation_article, lot, magasin, picking:picking_id(id)');
+                let q = supabase.from('reservations_stock').select('id, stock_id, picking_id, picking_detail_id, suivi_id, quantite_reservee, statut, document_vente, article, designation_article, lot, magasin, picking:picking_id(id, statut)');
                 q = applyFilters(q);
                 const { data, error } = await q.limit(10000);
                 if (error || !data) return;
@@ -359,7 +316,7 @@
 
                 data.forEach(item => {
                     totalQty += Number(item.quantite_reservee || 0);
-                    if (item.statut === 'RESERVEE' || item.statut === 'VALIDEE') activeCount++;
+                    if (item.statut === 'RESERVEE') activeCount++;
                 });
 
                 document.getElementById("totalLinesBadge").textContent = data.length.toLocaleString();
@@ -405,16 +362,13 @@
                 let isChecked = selectedRowIds.has(item.id) ? 'checked' : '';
 
                 let badgeResColor = 'bg-slate-500/10 text-slate-400 border-slate-500/20';
-                if (item.statut === 'VALIDEE') badgeResColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                if (item.statut === 'VALIDEE' || item.statut === 'TERMINE') badgeResColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
                 if (item.statut === 'RESERVEE') badgeResColor = 'bg-sky-500/10 text-sky-400 border-sky-500/20';
-                if (item.statut === 'TRANSFEREE_AB10') badgeResColor = 'bg-purple-500/10 text-purple-400 border-purple-500/20';
-                if (item.statut === 'ANNULEE' || item.statut === 'LIBEREE') badgeResColor = 'bg-red-500/10 text-red-400 border-red-500/20';
 
                 let pickingStatut = item.picking ? item.picking.statut : 'NON_ASSOCIE';
                 let badgePickColor = 'bg-slate-500/10 text-slate-400 border-slate-500/20';
                 if (pickingStatut === 'VALIDE' || pickingStatut === 'TERMINE') badgePickColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
                 if (pickingStatut === 'EN_COURS' || pickingStatut === 'PICKING') badgePickColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-                if (pickingStatut === 'ANNULE') badgePickColor = 'bg-red-500/10 text-red-400 border-red-500/20';
 
                 html += `
                     <tr class="hover:bg-slate-800/35 transition">
@@ -457,95 +411,87 @@
             document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
         }
 
-        window.openActionModal = function() {
+        // SMART PROCESSING FUNCTION: Filters out already terminated rows and processes valid ones automatically
+        window.processSelectedReservations = async function() {
             if (selectedRowIds.size === 0) {
                 alert("Veuillez sélectionner au moins une ligne dans le tableau.");
                 return;
             }
-            document.getElementById("actionModal").classList.remove("hidden");
-        }
-
-        window.closeActionModal = function() {
-            document.getElementById("actionModal").classList.add("hidden");
-        }
-
-        window.confirmActionModal = async function() {
-            const selectedOption = document.querySelector('input[name="statusOption"]:checked').value;
-            closeActionModal();
-
-            let resStatut = 'RESERVEE';
-            let pickStatut = 'EN_COURS';
-
-            if (selectedOption === 'VALIDEE_VALIDEE') {
-                resStatut = 'VALIDEE';
-                pickStatut = 'VALIDE';
-            } else if (selectedOption === 'RESERVEE_EN_COURS') {
-                resStatut = 'RESERVEE';
-                pickStatut = 'EN_COURS';
-            }
 
             const idsArray = Array.from(selectedRowIds);
-            const targetRows = allExportData.filter(item => idsArray.includes(item.id));
+            const allSelectedRows = allExportData.filter(item => idsArray.includes(item.id));
+
+            // Filtrer uniquement les lignes qui ne sont PAS déjà validées / terminées
+            const targetRows = allSelectedRows.filter(item => {
+                const isResAlreadyDone = (item.statut === 'VALIDEE' || item.statut === 'TERMINE');
+                const isPickAlreadyDone = item.picking && (item.picking.statut === 'VALIDE' || item.picking.statut === 'TERMINE');
+                return !(isResAlreadyDone && isPickAlreadyDone);
+            });
+
+            if (targetRows.length === 0) {
+                alert("Les lignes sélectionnées ont déjà été traitées (Statut déjà terminé/validé).");
+                return;
+            }
+
+            const validIds = targetRows.map(i => i.id);
 
             try {
-                // 1. Update reservations_stock statuts
+                // 1. Mettre à jour la réservation à VALIDEE / TERMINE
                 const { error: errRes } = await supabase
                     .from('reservations_stock')
-                    .update({ statut: resStatut })
-                    .in('id', idsArray);
+                    .update({ statut: 'VALIDEE' })
+                    .in('id', validIds);
 
                 if (errRes) throw errRes;
 
-                // 2. Update picking statuts unique list
+                // 2. Mettre à jour le picking associé à VALIDE / TERMINE
                 const pickingIds = [...new Set(targetRows.map(i => i.picking_id).filter(Boolean))];
                 if (pickingIds.length > 0) {
                     const { error: errPick } = await supabase
                         .from('picking')
-                        .update({ statut: pickStatut })
+                        .update({ statut: 'VALIDE' })
                         .in('id', pickingIds);
                     if (errPick) throw errPick;
                 }
 
-                // 3. If VALIDEE_VALIDEE, insert into ab10_stock and generate specific excel file
-                if (selectedOption === 'VALIDEE_VALIDEE') {
-                    const ab10Payloads = targetRows.map(item => ({
-                        reservation_id: item.id,
-                        picking_id: item.picking_id,
-                        picking_detail_id: item.picking_detail_id,
-                        suivi_id: item.suivi_id,
-                        stock_id: item.stock_id,
-                        document_vente: item.document_vente,
-                        article: item.article,
-                        designation_article: item.designation_article,
-                        lot: item.lot,
-                        magasin_origine: item.magasin,
-                        magasin_destination: 'AB10',
-                        quantite: item.quantite_reservee,
-                        unite: item.unite || 'KG',
-                        statut: 'EN_AB10'
-                    }));
+                // 3. Insérer les lignes dans ab10_stock
+                const ab10Payloads = targetRows.map(item => ({
+                    reservation_id: item.id,
+                    picking_id: item.picking_id,
+                    picking_detail_id: item.picking_detail_id,
+                    suivi_id: item.suivi_id,
+                    stock_id: item.stock_id,
+                    document_vente: item.document_vente,
+                    article: item.article,
+                    designation_article: item.designation_article,
+                    lot: item.lot,
+                    magasin_origine: item.magasin,
+                    magasin_destination: 'AB10',
+                    quantite: item.quantite_reservee,
+                    unite: item.unite || 'KG',
+                    statut: 'EN_AB10'
+                }));
 
-                    const { error: errAb10 } = await supabase.from('ab10_stock').insert(ab10Payloads);
-                    if (errAb10) {
-                        console.error("Erreur insertion AB10:", errAb10);
-                        alert("Attention: Mise à jour réussie, mais erreur lors de l'enregistrement dans ab10_stock.");
-                    }
-
-                    // Generate required Excel format: Article (code safi), Quantité, Mag., Lot
-                    const excelData = targetRows.map(item => ({
-                        "Article": item.article,
-                        "Quantité": item.quantite_reservee,
-                        "Mag.": item.magasin,
-                        "Lot": item.lot
-                    }));
-
-                    const worksheet = XLSX.utils.json_to_sheet(excelData);
-                    const workbook = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(workbook, worksheet, "AB10_Export");
-                    XLSX.writeFile(workbook, `AB10_Transfer_${new Date().toISOString().slice(0,10)}.xlsx`);
+                const { error: errAb10 } = await supabase.from('ab10_stock').insert(ab10Payloads);
+                if (errAb10) {
+                    console.error("Erreur insertion AB10:", errAb10);
+                    alert("Attention: Mise à jour réussie, mais erreur lors de l'enregistrement dans ab10_stock.");
                 }
 
-                alert("Traitement effectué avec succès !");
+                // 4. Générer le fichier Excel avec les colonnes exactes demandées pour les éléments nouvellement traités
+                const excelData = targetRows.map(item => ({
+                    "Article": item.article,
+                    "Quantité": item.quantite_reservee,
+                    "Mag.": item.magasin,
+                    "Lot": item.lot
+                }));
+
+                const worksheet = XLSX.utils.json_to_sheet(excelData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "AB10_Export");
+                XLSX.writeFile(workbook, `AB10_Transfer_${new Date().toISOString().slice(0,10)}.xlsx`);
+
+                alert(`Traitement réussi ! ${targetRows.length} ligne(s) traitée(s) et exportée(s).`);
                 selectedRowIds.clear();
                 document.getElementById("selectAllCheckbox").checked = false;
                 await loadData();

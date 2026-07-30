@@ -90,18 +90,18 @@
                                 <i class="fas fa-layer-group text-emerald-400"></i> Suivi Global par Document de Vente
                             </h2>
                             <p class="text-xs text-slate-400 mt-1">
-                                Synthèse consolidée des réceptionnaires, itinéraires, articles, quantités globales et pièces. (Sélection multiple de dates activée)
+                                Synthèse consolidée des réceptionnaires, itinéraires, articles, quantités globales et pièces.
                             </p>
                         </div>
                     </div>
 
-                    <!-- HORIZONTAL DATES BAR (أزرار التواريخ المتعددة) -->
+                    <!-- HORIZONTAL DATES BAR -->
                     <div class="flex items-center gap-2 overflow-x-auto pb-2 pt-1 scrollbar-thin" id="datesQuickBar">
                         <!-- Kay-tgenerer dynamiquement b Javascript -->
                     </div>
                     
                     <!-- Search & Filter Controls Grid -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-slate-800/80">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-2 border-t border-slate-800/80">
                         <div class="relative flex items-center">
                             <i class="fas fa-search absolute left-3.5 text-slate-500 text-sm"></i>
                             <input type="text" id="searchInput" placeholder="N° Document / Réceptionnaire..." 
@@ -118,6 +118,11 @@
                             <option value="EN_AB10">EN_AB10</option>
                             <option value="EXPEDIEE">EXPEDIEE</option>
                             <option value="ANNULEE">ANNULEE</option>
+                        </select>
+
+                        <!-- Filtre Itinéraire -->
+                        <select id="itineraireFilter" class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500 transition shadow-inner cursor-pointer font-mono">
+                            <option value="">Tous les itinéraires</option>
                         </select>
 
                         <div class="flex items-center gap-2 col-span-1 sm:col-span-2 lg:col-span-2">
@@ -177,24 +182,28 @@
 
         let currentPage = 1;
         const pageSize = 50;
-        let selectedFilterDates = []; // Tableau lli kay-stocker tawarikh lli m-sélectionniyin
+        let selectedFilterDates = [];
 
         document.addEventListener("DOMContentLoaded", async () => {
             initQuickDatesBar();
+            await loadItinerairesDropdown();
 
             const searchBtn = document.getElementById("searchBtn");
             const resetBtn = document.getElementById("resetBtn");
             const searchInput = document.getElementById("searchInput");
             const statusFilter = document.getElementById("statusFilter");
+            const itineraireFilter = document.getElementById("itineraireFilter");
 
             if (searchBtn) searchBtn.addEventListener("click", () => { currentPage = 1; loadOrders(); });
             if (searchInput) searchInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { currentPage = 1; loadOrders(); } });
             if (statusFilter) statusFilter.addEventListener("change", () => { currentPage = 1; loadOrders(); });
+            if (itineraireFilter) itineraireFilter.addEventListener("change", () => { currentPage = 1; loadOrders(); });
 
             if (resetBtn) {
                 resetBtn.addEventListener("click", () => {
                     searchInput.value = "";
                     statusFilter.value = "";
+                    itineraireFilter.value = "";
                     selectedFilterDates = [];
                     
                     document.querySelectorAll('.date-quick-btn').forEach((b, idx) => {
@@ -227,11 +236,30 @@
             loadOrders();
         });
 
+        async function loadItinerairesDropdown() {
+            try {
+                const { data, error } = await supabase.from('commandes_excel').select('itineraire');
+                if (error) throw error;
+
+                if (data) {
+                    const uniqueItineraires = [...new Set(data.map(item => item.itineraire).filter(Boolean))].sort();
+                    const select = document.getElementById("itineraireFilter");
+                    
+                    let html = '<option value="">Tous les itinéraires</option>';
+                    uniqueItineraires.forEach(it => {
+                        html += `<option value="${it}">${it}</option>`;
+                    });
+                    select.innerHTML = html;
+                }
+            } catch (err) {
+                console.error("Erreur chargement itinéraires:", err);
+            }
+        }
+
         function initQuickDatesBar() {
             const bar = document.getElementById("datesQuickBar");
             if (!bar) return;
 
-            // "Tous les jours" bouton
             let html = `
                 <button type="button" data-date="" class="date-quick-btn shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500 text-slate-950 border border-emerald-400 transition shadow-sm cursor-pointer">
                     <i class="fas fa-globe mr-1"></i> Tous les jours
@@ -266,7 +294,6 @@
                     const allBtn = document.querySelector('.date-quick-btn[data-date=""]');
 
                     if (dVal === "") {
-                        // Ila tpressa "Tous les jours"
                         selectedFilterDates = [];
                         document.querySelectorAll('.date-quick-btn').forEach(b => {
                             b.classList.remove('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
@@ -275,23 +302,19 @@
                         allBtn.classList.remove('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
                         allBtn.classList.add('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
                     } else {
-                        // Ila tpressa chi tarikh 3adi (Multi-select toggle)
                         allBtn.classList.remove('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
                         allBtn.classList.add('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
 
                         if (selectedFilterDates.includes(dVal)) {
-                            // Ila kan déjà f tableau, 7ydu (Deselect)
                             selectedFilterDates = selectedFilterDates.filter(item => item !== dVal);
                             btn.classList.remove('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
                             btn.classList.add('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
 
-                            // Ila t7ydou kamlin, rj3 "Tous les jours" active
                             if (selectedFilterDates.length === 0) {
                                 allBtn.classList.remove('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
                                 allBtn.classList.add('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
                             }
                         } else {
-                            // Ila makanch, zidu (Select)
                             selectedFilterDates.push(dVal);
                             btn.classList.remove('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
                             btn.classList.add('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
@@ -308,6 +331,7 @@
             const tbody = document.getElementById("ordersTableBody");
             const searchVal = document.getElementById("searchInput").value.trim();
             const statusVal = document.getElementById("statusFilter").value;
+            const itineraireVal = document.getElementById("itineraireFilter").value;
 
             tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400 text-xs"><i class="fas fa-spinner fa-spin mr-2 text-emerald-500"></i> Synthèse en cours...</td></tr>`;
 
@@ -320,6 +344,9 @@
                 if (statusVal) {
                     query = query.eq('statut', statusVal);
                 }
+                if (itineraireVal) {
+                    query = query.eq('itineraire', itineraireVal);
+                }
                 if (selectedFilterDates.length > 0) {
                     query = query.in('date_livraison', selectedFilterDates);
                 }
@@ -328,7 +355,7 @@
                 if (excelError) throw excelError;
 
                 if (!excelData || excelData.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400 text-xs">Aucune commande trouvée pour ces dates.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400 text-xs">Aucune commande trouvée avec ces critères.</td></tr>`;
                     document.getElementById("rowCount").textContent = "Affichage de 0 éléments";
                     document.getElementById("pageIndicator").textContent = "Page 1 / 1";
                     return;

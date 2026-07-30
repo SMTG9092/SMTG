@@ -344,6 +344,9 @@
                 if (pickingStatut === 'VALIDE' || pickingStatut === 'TERMINE') badgePickColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
                 if (pickingStatut === 'EN_COURS' || pickingStatut === 'PICKING') badgePickColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
 
+                let displayResStatut = (item.statut === 'VALIDEE' || item.statut === 'TERMINE') ? 'TERMINE' : (item.statut || 'RESERVEE');
+                let displayPickStatut = (pickingStatut === 'VALIDE' || pickingStatut === 'TERMINE') ? 'TERMINE' : pickingStatut;
+
                 html += `
                     <tr class="hover:bg-slate-800/35 transition">
                         <td class="p-4 font-mono font-semibold text-emerald-400 text-xs">${item.document_vente || '-'}</td>
@@ -358,12 +361,12 @@
                         </td>
                         <td class="p-4 text-center">
                             <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold border ${badgeResColor}">
-                                ${item.statut || 'RESERVEE'}
+                                ${displayResStatut}
                             </span>
                         </td>
                         <td class="p-4 text-center">
                             <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold border ${badgePickColor}">
-                                ${pickingStatut}
+                                ${displayPickStatut}
                             </span>
                         </td>
                     </tr>
@@ -384,10 +387,10 @@
             document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
         }
 
-        // SMART AUTOMATIC PROCESSING FUNCTION WITH QUANTITY AGGREGATION
+        // SMART AUTOMATIC PROCESSING FUNCTION WITH DUAL 'TERMINE' STATUS & QUANTITY AGGREGATION
         window.processSelectedReservations = async function() {
             try {
-                // 1. Récupérer automatiquement toutes les lignes non encore terminées/validées
+                // 1. Filtrer automatiquement les lignes non encore terminées
                 const targetRows = allExportData.filter(item => {
                     const isResDone = (item.statut === 'VALIDEE' || item.statut === 'TERMINE');
                     const isPickDone = item.picking && (item.picking.statut === 'VALIDE' || item.picking.statut === 'TERMINE');
@@ -401,20 +404,20 @@
 
                 const validIds = targetRows.map(i => i.id);
 
-                // 2. Mettre à jour la réservation à VALIDEE
+                // 2. Mettre à jour le Statut Réservation à 'TERMINE'
                 const { error: errRes } = await supabase
                     .from('reservations_stock')
-                    .update({ statut: 'VALIDEE' })
+                    .update({ statut: 'TERMINE' })
                     .in('id', validIds);
 
                 if (errRes) throw errRes;
 
-                // 3. Mettre à jour le picking associé si existant
+                // 3. Mettre à jour le Statut Picking associé à 'TERMINE' si existant
                 const pickingIds = [...new Set(targetRows.map(i => i.picking_id).filter(Boolean))];
                 if (pickingIds.length > 0) {
                     const { error: errPick } = await supabase
                         .from('picking')
-                        .update({ statut: 'VALIDE' })
+                        .update({ statut: 'TERMINE' })
                         .in('id', pickingIds);
                     if (errPick) throw errPick;
                 }
@@ -470,7 +473,7 @@
                 XLSX.utils.book_append_sheet(workbook, worksheet, "AB10_Export");
                 XLSX.writeFile(workbook, `AB10_Transfer_${new Date().toISOString().slice(0,10)}.xlsx`);
 
-                alert(`Traitement automatique réussi ! ${targetRows.length} ligne(s) traitée(s) et regroupées dans l'Excel.`);
+                alert(`Traitement automatique réussi ! ${targetRows.length} ligne(s) mise(s) à jour au statut TERMINE.`);
                 await loadData();
 
             } catch (err) {

@@ -25,7 +25,7 @@ class NavigationManager {
             'stock': { name: 'Gestion Stock', icon: 'fas fa-warehouse' },
             'commandes': { name: 'Commandes', icon: 'fas fa-shopping-cart' },
             'picking': { name: 'Préparation Picking', icon: 'fas fa-dolly' },
-            'ab10': { name: 'Magasin AB10', icon: 'fas fa-box-open' },
+            'ab10': { name: 'Magasin ', icon: 'fas fa-box-open' },
             'expeditions': { name: 'Expéditions', icon: 'fas fa-truck-fast' },
             'utilisateurs': { name: 'Utilisateurs', icon: 'fas fa-users-cog' },
             'parametres': { name: 'Paramètres', icon: 'fas fa-sliders' },

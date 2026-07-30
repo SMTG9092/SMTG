@@ -402,7 +402,6 @@
             document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
         }
 
-        // SMART SELECTION PROCESSING FUNCTION: TRAITE LA SÉLECTION AVec Ism l-Mntaj (Désignation) mn mọr Lot f Excel
         window.processSelectedReservations = async function() {
             try {
                 const selectedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
@@ -421,7 +420,6 @@
 
                 const validIds = targetRows.map(i => i.id);
 
-                // Mettre à jour la réservation à 'TRANSFEREE_AB10'
                 const { error: errRes } = await supabase
                     .from('reservations_stock')
                     .update({ statut: 'TRANSFEREE_AB10' })
@@ -429,7 +427,6 @@
 
                 if (errRes) throw errRes;
 
-                // Mettre à jour le Picking associé à 'TERMINE'
                 const pickingIds = [...new Set(targetRows.map(i => i.picking_id).filter(Boolean))];
                 if (pickingIds.length > 0) {
                     const { error: errPick } = await supabase
@@ -439,7 +436,6 @@
                     if (errPick) throw errPick;
                 }
 
-                // Insérer dans ab10_stock
                 const ab10Payloads = targetRows.map(item => ({
                     reservation_id: item.id,
                     picking_id: item.picking_id,
@@ -462,7 +458,6 @@
                     console.error("Erreur insertion AB10:", errAb10);
                 }
 
-                // AGRÉGATION POUR L'EXCEL: Article, Magasin, Lot, Désignation (Ism l-Mntaj mn mọr Lot) -> Somme des Quantités
                 const aggregatedMap = new Map();
 
                 targetRows.forEach(item => {
@@ -471,21 +466,20 @@
 
                     if (aggregatedMap.has(key)) {
                         let existing = aggregatedMap.get(key);
-                        existing["Quantité"] += qty;
+                        existing.Quantité += qty;
                     } else {
                         aggregatedMap.set(key, {
-                            "Article": item.article,
-                            "Mag.": item.magasin,
-                            "Lot": item.lot,
-                            "Désignation Produit": item.designation_article || '',
-                            "Quantité": qty
+                            "Article": item.article || '',
+                            "Quantité": qty,
+                            "Mag.": item.magasin || '',
+                            "Lot": item.lot || '',
+                            "Désignation": item.designation_article || ''
                         });
                     }
                 });
 
                 const excelData = Array.from(aggregatedMap.values());
 
-                // Générer et télécharger l'Excel
                 const worksheet = XLSX.utils.json_to_sheet(excelData);
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, "AB10_Export");

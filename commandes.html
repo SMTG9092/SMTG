@@ -82,7 +82,7 @@
         <header class="h-20 bg-slate-900/40 border-b border-slate-800/80 px-8 flex items-center justify-between shrink-0">
             <div class="flex items-center gap-4">
                 <div>
-                    <h1 id="pageTitle" class="text-xl font-bold tracking-tight text-slate-100">Consultation des Commandes</h1>
+                    <h1 id="pageTitle" class="text-xl font-bold tracking-tight text-slate-100">Synthèse des Commandes</h1>
                     <div id="breadcrumb" class="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
                         <span>Accueil</span>
                         <span>/</span>
@@ -94,7 +94,7 @@
             <div class="flex items-center gap-4 bg-slate-900/80 border border-slate-800 px-4 py-2 rounded-xl">
                 <div class="text-right">
                     <span id="currentDate" class="text-xs font-medium text-slate-300 block">Jeudi 30 juillet 2026</span>
-                    <span id="currentTime" class="text-[10px] text-emerald-400 font-mono block">15:44:13</span>
+                    <span id="currentTime" class="text-[10px] text-emerald-400 font-mono block">15:47:04</span>
                 </div>
             </div>
         </header>
@@ -107,26 +107,17 @@
                 <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                     <div>
                         <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
-                            <i class="fas fa-shipping-fast text-emerald-400"></i> Suivi des Commandes Clients & Pièces
+                            <i class="fas fa-layer-group text-emerald-400"></i> Suivi Global par Document de Vente
                         </h2>
                         <p class="text-xs text-slate-400 mt-1">
-                            Analyse croisée entre commandes Excel et les pièces associées par document de vente.
+                            Synthèse consolidée des articles, quantités globales et pièces par commande.
                         </p>
                     </div>
                     
                     <div class="flex items-center gap-3 flex-wrap">
-                        <div class="flex bg-slate-950 border border-slate-800 rounded-xl p-1 text-xs">
-                            <button id="tabExcel" onclick="switchTable('excel')" class="px-3 py-1.5 rounded-lg font-semibold bg-emerald-500 text-slate-950 transition shadow-sm">
-                                Commandes Excel & Pièces
-                            </button>
-                            <button id="tabPieces" onclick="switchTable('pieces')" class="px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-slate-200 transition">
-                                Commandes Pièces Seules
-                            </button>
-                        </div>
-
                         <div class="relative flex items-center">
                             <i class="fas fa-search absolute left-3.5 text-slate-500 text-sm"></i>
-                            <input type="text" id="searchInput" placeholder="N° Document / Client / Article..." 
+                            <input type="text" id="searchInput" placeholder="N° Document / Client..." 
                                 class="bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-64 transition shadow-inner">
                         </div>
 
@@ -153,13 +144,19 @@
                     <div class="overflow-x-auto flex-1">
                         <table class="w-full text-left border-collapse text-sm">
                             <thead>
-                                <tr id="tableHeader" class="bg-slate-950/60 text-slate-400 uppercase text-[11px] tracking-wider border-b border-slate-800 font-semibold">
-                                    <!-- Dynamic Headers -->
+                                <tr class="bg-slate-950/60 text-slate-400 uppercase text-[11px] tracking-wider border-b border-slate-800 font-semibold">
+                                    <th class="p-4">N° Document</th>
+                                    <th class="p-4">Client</th>
+                                    <th class="p-4 text-center">Nbr Articles</th>
+                                    <th class="p-4 text-center">Qté Globale (Cmd)</th>
+                                    <th class="p-4 text-center">Total Pièces</th>
+                                    <th class="p-4 text-center">Date Livraison</th>
+                                    <th class="p-4 text-center">Statut</th>
                                 </tr>
                             </thead>
                             <tbody id="ordersTableBody" class="divide-y divide-slate-800/50">
                                 <tr>
-                                    <td colspan="8" class="p-12 text-center text-slate-400 text-xs">
+                                    <td colspan="7" class="p-12 text-center text-slate-400 text-xs">
                                         <i class="fas fa-spinner fa-spin mr-2 text-emerald-500 text-base"></i> Chargement des données...
                                     </td>
                                 </tr>
@@ -186,7 +183,6 @@
         import Navigation from '../assets/js/core/navigation.js';
         import supabase from '../assets/js/core/supabase.js';
 
-        let currentMode = 'excel'; // 'excel' or 'pieces'
         let currentPage = 1;
         const pageSize = 50;
 
@@ -224,120 +220,84 @@
             loadOrders();
         });
 
-        window.switchTable = function(mode) {
-            currentMode = mode;
-            currentPage = 1;
-            
-            const btnExcel = document.getElementById("tabExcel");
-            const btnPieces = document.getElementById("tabPieces");
-
-            if (mode === 'excel') {
-                btnExcel.className = "px-3 py-1.5 rounded-lg font-semibold bg-emerald-500 text-slate-950 transition shadow-sm";
-                btnPieces.className = "px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-slate-200 transition";
-            } else {
-                btnPieces.className = "px-3 py-1.5 rounded-lg font-semibold bg-emerald-500 text-slate-950 transition shadow-sm";
-                btnExcel.className = "px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-slate-200 transition";
-            }
-
-            loadOrders();
-        }
-
         async function loadOrders() {
             const tbody = document.getElementById("ordersTableBody");
-            const thead = document.getElementById("tableHeader");
             const searchVal = document.getElementById("searchInput").value.trim();
             const statusVal = document.getElementById("statusFilter").value;
 
-            tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400 text-xs"><i class="fas fa-spinner fa-spin mr-2 text-emerald-500"></i> Chargement des données...</td></tr>`;
-
-            const tableName = currentMode === 'excel' ? 'commandes_excel' : 'commandes_clients_pieces';
-
-            if (currentMode === 'excel') {
-                thead.innerHTML = `
-                    <th class="p-4">N° Document</th>
-                    <th class="p-4">Client</th>
-                    <th class="p-4">Article / Désignation</th>
-                    <th class="p-4 text-center">Qté Cmd</th>
-                    <th class="p-4 text-center">Qté Prép</th>
-                    <th class="p-4 text-center">Nbr Pièces (Matching)</th>
-                    <th class="p-4 text-center">Date Livraison</th>
-                    <th class="p-4 text-center">Statut</th>
-                `;
-            } else {
-                thead.innerHTML = `
-                    <th class="p-4">N° Document</th>
-                    <th class="p-4">Client (Réceptionnaire)</th>
-                    <th class="p-4">Article / Désignation</th>
-                    <th class="p-4 text-center">Qté Cmd</th>
-                    <th class="p-4 text-center">Qté Prép</th>
-                    <th class="p-4 text-center">Nbr Pièces</th>
-                    <th class="p-4 text-center">Date Livraison</th>
-                    <th class="p-4 text-center">Statut</th>
-                `;
-            }
+            tbody.innerHTML = `<tr><td colspan="7" class="p-12 text-center text-slate-400 text-xs"><i class="fas fa-spinner fa-spin mr-2 text-emerald-500"></i> Synthèse en cours...</td></tr>`;
 
             try {
-                let query = supabase
-                    .from(tableName)
-                    .select('*', { count: 'exact' });
+                // 1. Fetch from commandes_excel
+                let query = supabase.from('commandes_excel').select('*');
 
                 if (searchVal) {
-                    query = query.or(`document_vente.ilike.%${searchVal}%,client.ilike.%${searchVal}%,article.ilike.%${searchVal}%`);
+                    query = query.or(`document_vente.ilike.%${searchVal}%,client.ilike.%${searchVal}%`);
                 }
-
                 if (statusVal) {
                     query = query.eq('statut', statusVal);
                 }
 
-                const fromRange = (currentPage - 1) * pageSize;
-                const toRange = fromRange + pageSize - 1;
+                const { data: excelData, error: excelError } = await query;
+                if (excelError) throw excelError;
 
-                const { data, error, count } = await query
-                    .order('date_livraison', { ascending: false, nullsFirst: false })
-                    .range(fromRange, toRange);
-
-                if (error) throw error;
-
-                if (!data || data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400 text-xs">Aucune commande trouvée.</td></tr>`;
+                if (!excelData || excelData.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-12 text-center text-slate-400 text-xs">Aucune commande trouvée.</td></tr>`;
                     document.getElementById("rowCount").textContent = "Affichage de 0 éléments";
                     document.getElementById("pageIndicator").textContent = "Page 1 / 1";
                     return;
                 }
 
-                // Ila kunna f mode excel، njibo matching dyal nombre_pieces mn commandes_clients_pieces b nafs document_vente o article
-                let piecesMap = new Map();
-                if (currentMode === 'excel') {
-                    const docNumbers = [...new Set(data.map(item => item.document_vente))];
-                    const { data: piecesData } = await supabase
-                        .from('commandes_clients_pieces')
-                        .select('document_vente, article, nombre_pieces')
-                        .in('document_vente', docNumbers);
+                // 2. Fetch matching pieces from commandes_clients_pieces
+                const docNumbers = [...new Set(excelData.map(item => item.document_vente))];
+                const { data: piecesData } = await supabase
+                    .from('commandes_clients_pieces')
+                    .select('document_vente, nombre_pieces')
+                    .in('document_vente', docNumbers);
 
-                    if (piecesData) {
-                        piecesData.forEach(p => {
-                            const key = `${p.document_vente}_${p.article}`;
-                            piecesMap.set(key, Number(p.nombre_pieces || 0));
-                        });
-                    }
+                // Map pieces per document
+                let piecesMap = new Map();
+                if (piecesData) {
+                    piecesData.forEach(p => {
+                        const doc = p.document_vente;
+                        const currentSum = piecesMap.get(doc) || 0;
+                        piecesMap.set(doc, currentSum + Number(p.nombre_pieces || 0));
+                    });
                 }
 
-                let html = "";
-                data.forEach(item => {
-                    const qteCmd = Number(item.quantite_commandee || 0);
-                    const qtePrep = Number(item.quantite_preparee || 0);
-                    
-                    let secondaryMetric = "";
-                    if (currentMode === 'excel') {
-                        const matchKey = `${item.document_vente}_${item.article}`;
-                        const matchedPieces = piecesMap.get(matchKey) || 0;
-                        secondaryMetric = `<span class="text-emerald-400 font-bold">${matchedPieces} pcs</span>`;
-                    } else {
-                        secondaryMetric = `<span class="text-slate-300 font-semibold">${item.nombre_pieces || 0} pcs</span>`;
+                // 3. Group by document_vente (Aggregating articles, quantities)
+                let groupedMap = new Map();
+                excelData.forEach(item => {
+                    const doc = item.document_vente;
+                    if (!groupedMap.has(doc)) {
+                        groupedMap.set(doc, {
+                            document_vente: doc,
+                            client: item.client || '-',
+                            date_livraison: item.date_livraison || '-',
+                            statut: item.statut || 'IMPORTEE',
+                            articlesCount: 0,
+                            totalQty: 0
+                        });
                     }
-                    
+                    let group = groupedMap.get(doc);
+                    group.articlesCount += 1;
+                    group.totalQty += Number(item.quantite_commandee || 0);
+                });
+
+                let groupedArray = Array.from(groupedMap.values());
+
+                // Pagination logic
+                const totalCount = groupedArray.length;
+                const totalPages = Math.ceil(totalCount / pageSize) || 1;
+                const fromRange = (currentPage - 1) * pageSize;
+                const paginatedData = groupedArray.slice(fromRange, fromRange + pageSize);
+
+                let html = "";
+                paginatedData.forEach(group => {
+                    const totalPieces = piecesMap.get(group.document_vente) || 0;
+
                     let badgeColor = "bg-slate-500/10 text-slate-400 border-slate-500/20";
-                    const st = (item.statut || "").toUpperCase();
+                    const st = (group.statut || "").toUpperCase();
                     if (st === 'IMPORTEE') badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/20";
                     else if (st === 'LANCEE' || st === 'EN_PICKING') badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
                     else if (st === 'PREPAREE' || st === 'CONTROLEE') badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
@@ -346,18 +306,14 @@
 
                     html += `
                         <tr class="hover:bg-slate-800/35 transition">
-                            <td class="p-4 font-mono font-semibold text-emerald-400 text-xs">${item.document_vente || '-'}</td>
-                            <td class="p-4 font-semibold text-slate-200 text-xs">${item.client || item.nom_receptionnaire || '-'}</td>
-                            <td class="p-4">
-                                <span class="font-semibold text-slate-200 text-xs block">${item.article || '-'}</span>
-                                <span class="text-slate-400 text-[11px] block mt-0.5 truncate max-w-xs">${item.designation_article || '-'}</span>
-                            </td>
-                            <td class="p-4 text-center font-bold text-slate-200 text-xs">${qteCmd.toLocaleString()} ${item.unite || ''}</td>
-                            <td class="p-4 text-center font-mono text-sky-400 text-xs">${qtePrep.toLocaleString()}</td>
-                            <td class="p-4 text-center font-mono text-xs">${secondaryMetric}</td>
-                            <td class="p-4 text-center font-mono text-slate-300 text-xs">${item.date_livraison || '-'}</td>
+                            <td class="p-4 font-mono font-bold text-emerald-400 text-xs">${group.document_vente}</td>
+                            <td class="p-4 font-semibold text-slate-200 text-xs">${group.client}</td>
+                            <td class="p-4 text-center font-mono font-semibold text-sky-400 text-xs">${group.articlesCount} article(s)</td>
+                            <td class="p-4 text-center font-mono font-bold text-slate-200 text-xs">${group.totalQty.toLocaleString()}</td>
+                            <td class="p-4 text-center font-mono font-bold text-emerald-400 text-xs">${totalPieces.toLocaleString()} pcs</td>
+                            <td class="p-4 text-center font-mono text-slate-300 text-xs">${group.date_livraison}</td>
                             <td class="p-4 text-center">
-                                <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold border ${badgeColor}">${item.statut || 'IMPORTEE'}</span>
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold border ${badgeColor}">${group.statut}</span>
                             </td>
                         </tr>
                     `;
@@ -365,16 +321,15 @@
 
                 tbody.innerHTML = html;
 
-                const totalPages = Math.ceil((count || 0) / pageSize) || 1;
-                document.getElementById("rowCount").textContent = `Affichage de ${data.length} sur ${count || 0} éléments`;
+                document.getElementById("rowCount").textContent = `Affichage de ${paginatedData.length} sur ${totalCount} documents`;
                 document.getElementById("pageIndicator").textContent = `Page ${currentPage} / ${totalPages}`;
                 
                 document.getElementById("prevPageBtn").disabled = currentPage <= 1;
                 document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
 
             } catch (err) {
-                console.error("Erreur chargement commandes:", err);
-                tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-red-400 text-xs">Erreur lors du chargement des commandes.</td></tr>`;
+                console.error("Erreur synthèse commandes:", err);
+                tbody.innerHTML = `<tr><td colspan="7" class="p-12 text-center text-red-400 text-xs">Erreur lors de la génération de la synthèse.</td></tr>`;
             }
         }
     </script>

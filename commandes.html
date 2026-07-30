@@ -44,19 +44,22 @@
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #334155; }
         body { background-color: #020617; color: #f1f5f9; font-family: ui-sans-serif, system-ui, sans-serif; }
+        .sidebar-transition { transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex overflow-hidden">
 
     <!-- SIDEBAR -->
-    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-screen p-4 select-none shrink-0">
-        <div class="flex items-center gap-3 px-2 mb-6">
-            <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
-                <i class="fas fa-snowflake text-lg"></i>
-            </div>
-            <div>
-                <span class="font-bold text-base tracking-wide block text-slate-100">SoufStock</span>
-                <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Gestion</span>
+    <aside id="appSidebar" class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-screen p-4 select-none shrink-0 sidebar-transition relative z-20">
+        <div class="flex items-center justify-between px-2 mb-6">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 shrink-0">
+                    <i class="fas fa-snowflake text-lg"></i>
+                </div>
+                <div class="sidebar-text">
+                    <span class="font-bold text-base tracking-wide block text-slate-100">SoufStock</span>
+                    <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Gestion</span>
+                </div>
             </div>
         </div>
         
@@ -81,6 +84,17 @@
         <!-- HEADER -->
         <header class="h-20 bg-slate-900/40 border-b border-slate-800/80 px-8 flex items-center justify-between shrink-0">
             <div class="flex items-center gap-4">
+                <!-- TOGGLE SIDEBAR BUTTON -->
+                <button id="toggleSidebarBtn" class="w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-emerald-400 flex items-center justify-center transition shadow-sm" title="Afficher/Masquer le menu">
+                    <i class="fas fa-bars text-base"></i>
+                </button>
+
+                <!-- زر الرجوع السريع إلى index-stock.html -->
+                <a href="../index-stock.html" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow-sm group">
+                    <i class="fas fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
+                    <span>Retour au Hub</span>
+                </a>
+
                 <div>
                     <h1 id="pageTitle" class="text-xl font-bold tracking-tight text-slate-100">Synthèse des Commandes</h1>
                     <div id="breadcrumb" class="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
@@ -101,7 +115,7 @@
 
         <!-- PAGE BODY -->
         <main class="flex-1 p-8 overflow-y-auto">
-            <div class="max-w-7xl mx-auto flex flex-col gap-6">
+            <div class="w-full mx-auto flex flex-col gap-6">
                 
                 <!-- FILTER & CONTROLS BAR -->
                 <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
@@ -188,7 +202,23 @@
         const pageSize = 50;
 
         document.addEventListener("DOMContentLoaded", async () => {
-            await Navigation.init();
+            if (typeof Navigation !== 'undefined' && Navigation.init) {
+                await Navigation.init();
+            }
+
+            // Toggle Sidebar Event
+            const toggleBtn = document.getElementById("toggleSidebarBtn");
+            const sidebar = document.getElementById("appSidebar");
+            if (toggleBtn && sidebar) {
+                toggleBtn.addEventListener("click", () => {
+                    sidebar.classList.toggle("-translate-x-full");
+                    sidebar.classList.toggle("w-64");
+                    sidebar.classList.toggle("w-0");
+                    sidebar.classList.toggle("p-4");
+                    sidebar.classList.toggle("p-0");
+                    sidebar.classList.toggle("overflow-hidden");
+                });
+            }
 
             const logoutBtn = document.getElementById("logoutBtn");
             if (logoutBtn) {

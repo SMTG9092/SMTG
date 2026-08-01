@@ -66,8 +66,8 @@
     <!-- MAIN CONTAINER -->
     <div class="flex-1 flex flex-col overflow-hidden p-6 gap-6 bg-slate-950">
         
-        <!-- KPI METRICS -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 shrink-0">
+        <!-- KPI METRICS (3 Cartes - Sans Delta/Modification) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0">
             <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between shadow-lg">
                 <div>
                     <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Total Commandes Filtrées</span>
@@ -95,15 +95,6 @@
                     <i class="fas fa-cubes text-base"></i>
                 </div>
             </div>
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between shadow-lg">
-                <div>
-                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Modifications / Delta</span>
-                    <span id="kpiModified" class="text-xl font-bold font-mono text-amber-400 mt-0.5 block">0</span>
-                </div>
-                <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                    <i class="fas fa-triangle-exclamation text-base"></i>
-                </div>
-            </div>
         </div>
 
         <!-- FILTERS BAR -->
@@ -118,12 +109,12 @@
             </div>
             
             <div class="flex flex-wrap items-center gap-3">
-                <!-- Date Début -->
+                <!-- Date Début (Aujourd'hui par défaut) -->
                 <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5">
                     <span class="text-[10px] text-slate-400 font-bold uppercase">Du:</span>
                     <input type="date" id="filterDateDebut" class="bg-transparent text-xs text-emerald-400 font-mono focus:outline-none cursor-pointer">
                 </div>
-                <!-- Date Fin -->
+                <!-- Date Fin (Aujourd'hui par défaut) -->
                 <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5">
                     <span class="text-[10px] text-slate-400 font-bold uppercase">Au:</span>
                     <input type="date" id="filterDateFin" class="bg-transparent text-xs text-emerald-400 font-mono focus:outline-none cursor-pointer">
@@ -173,55 +164,6 @@
 
     </div>
 
-    <!-- MODAL EDIT / DETAIL -->
-    <div id="editModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-slate-900 border border-slate-800 w-[500px] rounded-2xl p-6 shadow-2xl flex flex-col gap-4 transform scale-95 transition-transform duration-300" id="editModalBox">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
-                    <i class="fas fa-pen-to-square text-emerald-400"></i> Modifier Commande & Statut
-                </h3>
-                <button id="closeModalBtn" class="text-slate-400 hover:text-slate-100 cursor-pointer"><i class="fas fa-xmark text-sm"></i></button>
-            </div>
-            <form id="editForm" class="flex flex-col gap-3 text-xs">
-                <input type="hidden" id="editId">
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Document de Vente</label>
-                        <input type="text" id="editDocVente" readonly class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-400 font-mono">
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Poste</label>
-                        <input type="text" id="editPoste" readonly class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-400 font-mono">
-                    </div>
-                </div>
-                <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Statut</label>
-                    <select id="editStatut" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-100 font-mono focus:outline-none focus:border-emerald-500/50">
-                        <option value="IMPORTEE">IMPORTEE</option>
-                        <option value="CONTROLEE">CONTROLEE</option>
-                        <option value="LANCEE">LANCEE</option>
-                        <option value="EN_PICKING">EN_PICKING</option>
-                        <option value="PREPAREE">PREPAREE</option>
-                        <option value="EXPEDIEE">EXPEDIEE</option>
-                        <option value="ANNULEE">ANNULEE</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Quantité Préparée (KG)</label>
-                    <input type="number" step="0.001" id="editQtePrep" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-100 font-mono focus:outline-none focus:border-emerald-500/50">
-                </div>
-                <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Commentaire</label>
-                    <textarea id="editCommentaire" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-100 font-mono focus:outline-none focus:border-emerald-500/50"></textarea>
-                </div>
-                <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
-                    <button type="button" id="cancelModalBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl font-semibold transition cursor-pointer">Annuler</button>
-                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-semibold transition cursor-pointer shadow-lg">Enregistrer</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- SCRIPT MODULE -->
     <script type="module">
         import supabase from '../assets/js/core/supabase.js';
@@ -235,7 +177,7 @@
             document.getElementById("currentTime").innerText = now.toTimeString().split(' ')[0];
         }, 1000);
 
-        // Initialisation des dates par défaut : Uniquement "Aujourd'hui" (Lyom bohedo)
+        // Initialisation des dates par défaut : Uniquement "Aujourd'hui"
         function initDefaultDates() {
             const today = new Date();
             const formatDate = (d) => d.toISOString().split('T')[0];
@@ -266,12 +208,10 @@
             const totalCmd = data.length;
             const totalKg = data.reduce((acc, curr) => acc + (Number(curr.quantite_commandee) || 0), 0);
             const totalPieces = data.reduce((acc, curr) => acc + (Number(curr.nombre_pieces) || 0), 0);
-            const modifiedCount = data.filter(curr => curr.est_modifie).length;
 
             document.getElementById("kpiTotalCmd").textContent = totalCmd.toLocaleString();
             document.getElementById("kpiTotalKg").textContent = totalKg.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             document.getElementById("kpiTotalPieces").textContent = totalPieces.toLocaleString();
-            document.getElementById("kpiModified").textContent = modifiedCount.toLocaleString();
         }
 
         function renderTable(data) {
@@ -310,9 +250,6 @@
                                 <button onclick="window.filterBySameDate('${item.date_livraison}')" title="Filtrer les commandes de cette même date" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-sky-600 text-sky-400 hover:text-white transition inline-flex items-center justify-center cursor-pointer shadow-sm">
                                     <i class="fas fa-calendar-day text-[10px]"></i>
                                 </button>
-                                <button onclick="window.openEditModal('${item.id}')" title="Modifier" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white transition inline-flex items-center justify-center cursor-pointer shadow-sm">
-                                    <i class="fas fa-pen text-[10px]"></i>
-                                </button>
                             </div>
                         </td>
                     </tr>
@@ -332,63 +269,6 @@
             document.getElementById("filterDateFin").value = dateStr;
             applyFilters();
         };
-
-        window.openEditModal = function(id) {
-            const item = allCommandes.find(c => c.id === id);
-            if (!item) return;
-
-            document.getElementById("editId").value = item.id;
-            document.getElementById("editDocVente").value = item.document_vente;
-            document.getElementById("editPoste").value = item.Poste;
-            document.getElementById("editStatut").value = item.statut || 'IMPORTEE';
-            document.getElementById("editQtePrep").value = item.quantite_preparee || 0;
-            document.getElementById("editCommentaire").value = item.commentaire || '';
-
-            const modal = document.getElementById("editModal");
-            const box = document.getElementById("editModalBox");
-            modal.classList.remove("hidden");
-            setTimeout(() => {
-                modal.classList.remove("opacity-0");
-                box.classList.remove("scale-95");
-                box.classList.add("scale-100");
-            }, 10);
-        };
-
-        function closeEditModal() {
-            const modal = document.getElementById("editModal");
-            const box = document.getElementById("editModalBox");
-            modal.classList.add("opacity-0");
-            box.classList.remove("scale-100");
-            box.classList.add("scale-95");
-            setTimeout(() => {
-                modal.classList.add("hidden");
-            }, 300);
-        }
-
-        document.getElementById("closeModalBtn").addEventListener("click", closeEditModal);
-        document.getElementById("cancelModalBtn").addEventListener("click", closeEditModal);
-
-        document.getElementById("editForm").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const id = document.getElementById("editId").value;
-            const statut = document.getElementById("editStatut").value;
-            const quantite_preparee = parseFloat(document.getElementById("editQtePrep").value) || 0;
-            const commentaire = document.getElementById("editCommentaire").value;
-
-            try {
-                const { error } = await supabase
-                    .from('commandes_excel')
-                    .update({ statut, quantite_preparee, commentaire, updated_at: new Date().toISOString() })
-                    .eq('id', id);
-
-                if (error) throw error;
-                closeEditModal();
-                fetchCommandes();
-            } catch (err) {
-                console.error("Erreur de mise à jour :", err);
-                alert("Erreur lors de la mise à jour : " + err.message);
-            }
-        });
 
         function applyFilters() {
             const query = document.getElementById("searchInput").value.toLowerCase();

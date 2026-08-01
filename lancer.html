@@ -162,7 +162,6 @@
     <script type="module">
         import supabase from '../assets/js/core/supabase.js';
 
-        // 1. Fonction correcte de formatage Local YYYY-MM-DD (Evite les problèmes de décalage UTC)
         function getLocalDateString(dateObj) {
             const year = dateObj.getFullYear();
             const month = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -170,7 +169,7 @@
             return `${year}-${month}-${day}`;
         }
 
-        // 2. Set Default Dates: Du = Aujourd'hui, Au = Demain (Rada)
+        // Set Default Dates: Du = Aujourd'hui, Au = Demain
         const today = new Date();
         const todayStr = getLocalDateString(today);
         
@@ -188,17 +187,30 @@
             
             tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Chargement...</td></tr>`;
 
-            // 3. Jib l-hisaiyat kamlin (Statistiques dyal la période)
-            let queryStats = supabase.from('suivi_commandes_lancer').select('statut');
+            // 1. Jib l-hisaiyat mn table 'commandes_excel' b DISTINCT document_vente bach n-calculw les totaux dyal les commandes mashi l-postes
+            let queryStats = supabase
+                .from('commandes_excel')
+                .select('document_vente, statut, date_livraison');
+
             if (dateDebut) queryStats = queryStats.gte('date_livraison', dateDebut);
             if (dateFin) queryStats = queryStats.lte('date_livraison', dateFin);
-            
-            const { data: allStats } = await queryStats;
-            if (allStats) {
-                const total = allStats.length;
-                const importee = allStats.filter(item => item.statut === 'IMPORTEE').length;
-                const lancee = allStats.filter(item => item.statut === 'LANCEE').length;
-                const picking = allStats.filter(item => item.statut === 'EN_PICKING').length;
+
+            const { data: rawStats, error: errStats } = await queryStats;
+
+            if (!errStats && rawStats) {
+                // Grouper b document_vente bach n-jibou statut dyal kol commande unique
+                const commandesMap = {};
+                rawStats.forEach(row => {
+                    if (!commandesMap[row.document_vente]) {
+                        commandesMap[row.document_vente] = row.statut;
+                    }
+                });
+
+                const allStatuts = Object.values(commandesMap);
+                const total = allStatuts.length;
+                const importee = allStatuts.filter(s => s === 'IMPORTEE').length;
+                const lancee = allStatuts.filter(s => s === 'LANCEE').length;
+                const picking = allStatuts.filter(s => s === 'EN_PICKING').length;
 
                 document.getElementById('statTotal').textContent = total;
                 document.getElementById('statImportee').textContent = importee;
@@ -211,32 +223,44 @@
                 document.getElementById('statPicking').textContent = 0;
             }
 
-            // 4. Jib gha les commandes li fiha statut IMPORTEE bach ytzhro f la table l-taadil
-            let query = supabase
-                .from('suivi_commandes_lancer')
-                .select('*')
+            // 2. Jib les commandes li 3ndhom statut 'IMPORTEE' bach ttzhro f la table l-taadil
+            let queryTable = supabase
+                .from('commandes_excel')
+                .select('document_vente, nom_receptionnaire, date_livraison, itineraire, statut')
                 .eq('statut', 'IMPORTEE');
 
-            if (dateDebut) query = query.gte('date_livraison', dateDebut);
-            if (dateFin) query = query.lte('date_livraison', dateFin);
+            if (dateDebut) queryTable = queryTable.gte('date_livraison', dateDebut);
+            if (dateFin) queryTable = queryTable.lte('date_livraison', dateFin);
 
-            const { data: suiviList, error } = await query.order('date_livraison', { ascending: true });
+            const { data: tableRows, error: errTable } = await queryTable;
 
-            if (error) {
-                console.error(error);
-                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-rose-400">Erreur: ${error.message}</td></tr>`;
+            if (errTable) {
+                console.error(errTable);
+                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-rose-400">Erreur: ${errTable.message}</td></tr>`;
                 return;
             }
 
-            document.getElementById('tableCountBadge').textContent = `${suiviList ? suiviList.length : 0} commandes`;
+            // Grouper b document_vente bach n-affichiw kol commande f ligne wahda f la table
+            const uniqueCmdsMap = {};
+            if (tableRows) {
+                tableRows.forEach(row => {
+                    if (!uniqueCmdsMap[row.document_vente]) {
+                        uniqueCmdsMap[row.document_vente] = row;
+                    }
+                });
+            }
 
-            if (!suiviList || suiviList.length === 0) {
+            const suiviList = Object.values(uniqueCmdsMap);
+            document.getElementById('tableCountBadge').textContent = `${suiviList.length} commandes`;
+
+            if (suiviList.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-500">Aucune commande IMPORTEE trouvée pour cette période.</td></tr>`;
                 return;
             }
 
             let html = "";
             for (let item of suiviList) {
+                // Jib les détails dyal kol commande (postes, poids, pieces) mn 'commandes_excel'
                 const { data: details } = await supabase
                     .from('commandes_excel')
                     .select('quantite_commandee, nombre_pieces, "Poste"')
@@ -249,18 +273,18 @@
                 html += `
                     <tr class="hover:bg-slate-800/30 transition">
                         <td class="p-3.5 font-bold text-emerald-400">${item.document_vente}</td>
-                        <td class="p-3.5 text-slate-200">${item.client || 'Client Divers'}</td>
+                        <td class="p-3.5 text-slate-200">${item.nom_receptionnaire || 'Client Divers'}</td>
                         <td class="p-3.5 text-sky-300 font-mono">${item.date_livraison || '-'}</td>
                         <td class="p-3.5 text-center font-bold text-sky-400">${nbPostes} Postes</td>
                         <td class="p-3.5 text-right font-bold text-slate-100">${totalKg.toFixed(2)} KG</td>
                         <td class="p-3.5 text-right font-bold text-emerald-400">${totalPieces} Pcs</td>
                         <td class="p-3.5 text-slate-300"><span class="bg-slate-950 px-2 py-1 rounded border border-slate-800 text-[11px]">${item.itineraire || 'Non assigné'}</span></td>
-                        <td class="p-3.5"><span class="border px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border-emerald-500/20">${item.statut}</span></td>
+                        <td class="p-3.5"><span class="border px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border-amber-500/20">${item.statut}</span></td>
                         <td class="p-3.5 text-center flex items-center justify-center gap-2">
                             <button onclick="openDetails('${item.document_vente}')" class="bg-slate-800 hover:bg-slate-700 text-sky-400 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow">
                                 <i class="fas fa-eye"></i> Articles
                             </button>
-                            <button onclick="lancerCommande('${item.id}', '${item.document_vente}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow">
+                            <button onclick="lancerCommande('${item.document_vente}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow">
                                 <i class="fas fa-play"></i> Lancer
                             </button>
                         </td>
@@ -310,30 +334,22 @@
             setTimeout(() => modal.classList.add("hidden"), 300);
         };
 
-        window.lancerCommande = async function(suiviId, docVente) {
+        window.lancerCommande = async function(docVente) {
             if (!confirm(`Voulez-vous vraiment lancer la commande ${docVente} ?`)) return;
 
-            const { data: { user } } = await supabase.auth.getUser();
-            const userId = user ? user.id : null;
-
-            const { error: errSuivi } = await supabase
-                .from('suivi_commandes_lancer')
-                .update({
+            // Bdel statut b kolla les lignes (postes) dyal had document_vente f commandes_excel l 'LANCEE'
+            const { error: err } = await supabase
+                .from('commandes_excel')
+                .update({ 
                     statut: 'LANCEE',
-                    lance_par: userId,
-                    date_lancement: new Date().toISOString()
+                    updated_at: new Date().toISOString()
                 })
-                .eq('id', suiviId);
+                .eq('document_vente', docVente);
 
-            if (errSuivi) {
-                alert("Erreur: " + errSuivi.message);
+            if (err) {
+                alert("Erreur: " + err.message);
                 return;
             }
-
-            await supabase
-                .from('commandes_excel')
-                .update({ statut: 'LANCEE' })
-                .eq('document_vente', docVente);
 
             alert(`La commande ${docVente} a été lancée avec succès !`);
             loadSuiviCommandes();

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Importation Combinée & Analyse - SoufStock ERP/WMS</title>
+    <title>Smart Import Engine - Double Fichier & Analyse - SoufStock ERP/WMS</title>
     
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -23,7 +23,8 @@
                         slate: { 950: '#020617', 900: '#0f172a', 800: '#1e293b', 700: '#334155', 400: '#94a3b8', 300: '#cbd5e1', 100: '#f1f5f9' },
                         emerald: { 600: '#059669', 500: '#10b981', 400: '#34d399', 300: '#6ee7b7' },
                         amber: { 500: '#f59e0b', 400: '#fbbf24' },
-                        rose: { 500: '#f43f5e', 400: '#fb7185' }
+                        rose: { 500: '#f43f5e', 400: '#fb7185' },
+                        sky: { 500: '#0ea5e9', 400: '#38bdf8' }
                     }
                 }
             }
@@ -33,167 +34,186 @@
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #090d16; }
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
         body { background-color: #020617; color: #f1f5f9; font-family: ui-sans-serif, system-ui, sans-serif; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased">
+<body class="bg-slate-950 text-slate-100 font-sans antialiased h-screen flex flex-col overflow-hidden">
 
-    <!-- HEADER -->
-    <header class="h-20 bg-slate-900/40 border-b border-slate-800/80 px-8 flex items-center justify-between shrink-0">
-        <div class="flex items-center gap-6">
-            <a href="index-stock.html" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow-sm">
-                <i class="fas fa-arrow-left"></i>
-                <span>Retour au Hub</span>
-            </a>
+    <!-- HEADER PRINCIPAL -->
+    <header class="h-16 bg-slate-900/60 border-b border-slate-800/80 px-6 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                <i class="fas fa-snowflake text-base"></i>
+            </div>
             <div>
-                <h1 class="text-xl font-bold tracking-tight text-slate-100">Smart Import Engine - Double Fichier & Analyse</h1>
-                <p class="text-xs text-slate-400">Importez les deux fichiers (KG & Pièces) pour débloquer l'analyse et l'enregistrement.</p>
+                <span class="font-bold text-sm tracking-wide block text-slate-100">SoufStock <span class="text-emerald-400 font-normal">WMS</span></span>
+                <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Smart Import Engine</span>
             </div>
         </div>
-        <div class="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl text-right">
-            <span id="currentDate" class="text-xs font-medium text-slate-300 block">Chargement...</span>
-            <span id="currentTime" class="text-[10px] text-emerald-400 font-mono block">00:00:00</span>
+        
+        <div class="flex items-center gap-4 bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl">
+            <div class="text-right">
+                <span id="currentDate" class="text-[11px] font-medium text-slate-300 block">Chargement...</span>
+                <span id="currentTime" class="text-[10px] text-emerald-400 font-mono block">00:00:00</span>
+            </div>
         </div>
     </header>
 
-    <!-- MAIN CONTAINER -->
-    <main class="flex-1 p-8 overflow-y-auto max-w-[1600px] w-full mx-auto flex flex-col gap-8">
+    <!-- CONTAINER GLOBAL AVEC SIDEBAR LATÉRALE -->
+    <div class="flex-1 flex overflow-hidden">
         
-        <!-- DEUX CARTES D'IMPORTATION -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            
+        <!-- SIDEBAR LATÉRALE GAUCHE (CONTIENT LES CARTES D'IMPORTATION & ÉTATS KG/PIÈCES) -->
+        <aside class="w-[420px] bg-slate-900/50 border-r border-slate-800/80 flex flex-col p-5 gap-5 overflow-y-auto shrink-0">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                    <i class="fas fa-file-arrow-up text-emerald-400"></i> Panneau d'Importation
+                </h2>
+                <button onclick="cancelPreview()" class="text-[10px] text-slate-400 hover:text-slate-200 underline cursor-pointer">Tout réinitialiser</button>
+            </div>
+
             <!-- CARTE 1: COMMANDES KG -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between relative group hover:border-emerald-500/50 transition">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-lg flex flex-col justify-between relative group hover:border-emerald-500/50 transition">
                 <input type="file" id="fileKgInput" accept=".xlsx, .xls, .csv" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="handleFileSelect(event, 'KG')">
                 <div>
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-lg">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-sm">
                                 <i class="fas fa-weight-scale"></i>
                             </div>
                             <div>
-                                <h2 class="text-base font-bold text-slate-100">Commandes Excel (KG)</h2>
-                                <p class="text-xs text-slate-400">Importation des commandes SAP en kilogrammes.</p>
+                                <h3 class="text-xs font-bold text-slate-100">Fichier Excel (KG)</h3>
+                                <p class="text-[10px] text-slate-400">Commandes SAP en KG</p>
                             </div>
                         </div>
-                        <span id="badgeKg" class="text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2.5 py-1 rounded-full font-mono">En attente</span>
+                        <span id="badgeKg" class="text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full font-mono">En attente</span>
                     </div>
 
-                    <div class="border-2 border-dashed border-slate-800 rounded-xl p-8 text-center bg-slate-950/50 my-4 group-hover:border-emerald-500/30 transition">
-                        <div class="w-10 h-10 mx-auto rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-2">
-                            <i class="fas fa-file-excel"></i>
-                        </div>
-                        <p class="text-xs font-medium text-slate-300">Cliquez pour sélectionner ou glissez votre fichier KG ici</p>
-                        <p id="fileKgName" class="text-[11px] text-emerald-400 font-mono mt-2 hidden">Aucun fichier sélectionné</p>
+                    <div class="border border-dashed border-slate-800 rounded-lg p-3 text-center bg-slate-950/40 my-2 group-hover:border-emerald-500/30 transition">
+                        <p class="text-[11px] text-slate-300">Glissez ou cliquez pour fichier KG</p>
+                        <p id="fileKgName" class="text-[10px] text-emerald-400 font-mono mt-1 hidden">Aucun fichier</p>
                     </div>
                 </div>
 
-                <button onclick="document.getElementById('fileKgInput').click()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-md z-20 relative cursor-pointer">
-                    <i class="fas fa-folder-open"></i> Sélectionner le Fichier KG
+                <button onclick="document.getElementById('fileKgInput').click()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2 z-20 relative cursor-pointer mt-2">
+                    <i class="fas fa-folder-open"></i> Sélectionner KG
                 </button>
             </div>
 
             <!-- CARTE 2: COMMANDES PIÈCES -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between relative group hover:border-emerald-500/50 transition">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-lg flex flex-col justify-between relative group hover:border-emerald-500/50 transition">
                 <input type="file" id="filePiecesInput" accept=".xlsx, .xls, .csv" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="handleFileSelect(event, 'PIECES')">
                 <div>
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-lg">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-sm">
                                 <i class="fas fa-boxes-stacked"></i>
                             </div>
                             <div>
-                                <h2 class="text-base font-bold text-slate-100">Commandes Pièces</h2>
-                                <p class="text-xs text-slate-400">Importation des commandes SAP par nombre de pièces.</p>
+                                <h3 class="text-xs font-bold text-slate-100">Fichier Pièces</h3>
+                                <p class="text-[10px] text-slate-400">Commandes par pièces</p>
                             </div>
                         </div>
-                        <span id="badgePieces" class="text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2.5 py-1 rounded-full font-mono">En attente</span>
+                        <span id="badgePieces" class="text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full font-mono">En attente</span>
                     </div>
 
-                    <div class="border-2 border-dashed border-slate-800 rounded-xl p-8 text-center bg-slate-950/50 my-4 group-hover:border-emerald-500/30 transition">
-                        <div class="w-10 h-10 mx-auto rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-2">
-                            <i class="fas fa-file-lines"></i>
-                        </div>
-                        <p class="text-xs font-medium text-slate-300">Cliquez pour sélectionner ou glissez votre fichier Pièces ici</p>
-                        <p id="filePiecesName" class="text-[11px] text-emerald-400 font-mono mt-2 hidden">Aucun fichier sélectionné</p>
+                    <div class="border border-dashed border-slate-800 rounded-lg p-3 text-center bg-slate-950/40 my-2 group-hover:border-emerald-500/30 transition">
+                        <p class="text-[11px] text-slate-300">Glissez ou cliquez pour fichier Pièces</p>
+                        <p id="filePiecesName" class="text-[10px] text-emerald-400 font-mono mt-1 hidden">Aucun fichier</p>
                     </div>
                 </div>
 
-                <button onclick="document.getElementById('filePiecesInput').click()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-md z-20 relative cursor-pointer">
-                    <i class="fas fa-folder-open"></i> Sélectionner le Fichier Pièces
+                <button onclick="document.getElementById('filePiecesInput').click()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2 z-20 relative cursor-pointer mt-2">
+                    <i class="fas fa-folder-open"></i> Sélectionner Pièces
                 </button>
             </div>
 
-        </div>
+            <!-- BOUTON ANALYSER (VISIBLE SEULEMENT QUAND LES 2 FICHIERS SONT CHARGÉS) -->
+            <div id="actionContainer" class="hidden flex flex-col gap-2 mt-auto pt-4 border-t border-slate-800">
+                <button onclick="analyzeData()" class="w-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-md">
+                    <i class="fas fa-chart-pie"></i> Analyser les Données
+                </button>
+                <button onclick="saveToSupabase()" id="btnSave" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg cursor-pointer">
+                    <i class="fas fa-save"></i> Enregistrer dans Supabase
+                </button>
+            </div>
+        </aside>
 
-        <!-- SECTION APERÇU ET ANALYSE (APPARAÎT SEULEMENT QUAND LES 2 FICHIERS SONT LÀ) -->
-        <div id="previewSection" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col gap-6">
-            <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
-                <div>
-                    <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
-                        <i class="fas fa-table text-emerald-400"></i> Aperçu combiné : <span class="text-emerald-400">Fichier KG & Fichier Pièces</span> (<span id="rowCount">0</span> lignes totales)
-                    </h3>
-                    <p class="text-xs text-slate-400">Les deux fichiers sont prêts. Cliquez sur "Analyser les Données" pour inspecter la cohérence.</p>
+        <!-- CONTENU PRINCIPAL (ESPACE TABLEAU & RAPPORT) -->
+        <main class="flex-1 p-6 overflow-y-auto flex flex-col gap-6 bg-slate-950">
+            
+            <!-- ETAT INITIAL (AVANT CHARGEMENT) -->
+            <div id="welcomeState" class="flex-1 flex flex-col items-center justify-center text-center p-12 border-2 border-dashed border-slate-800/80 rounded-2xl bg-slate-900/20">
+                <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-2xl mb-4">
+                    <i class="fas fa-file-excel animate-pulse"></i>
                 </div>
-                <div class="flex items-center gap-3">
-                    <button onclick="analyzeData()" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-md">
-                        <i class="fas fa-chart-pie"></i> Analyser les Données
-                    </button>
-                    <button onclick="cancelPreview()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer">Réinitialiser</button>
-                    <button onclick="saveToSupabase()" id="btnSave" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg cursor-pointer">
-                        <i class="fas fa-save"></i> Enregistrer dans Supabase
-                    </button>
-                </div>
+                <h3 class="text-base font-bold text-slate-200">En attente des fichiers combinés</h3>
+                <p class="text-xs text-slate-400 max-w-md mt-1">Veuillez sélectionner le fichier <strong>KG</strong> et le fichier <strong>Pièces</strong> depuis le panneau latéral de gauche pour afficher l'aperçu et lancer l'analyse.</p>
             </div>
 
-            <!-- RAPPORT D'ANALYSE (CACHÉ JUSQU'À CLIC SUR LE BOUTON D'ANALYSE) -->
-            <div id="analysisReportBox" class="hidden bg-slate-950 border border-slate-800 rounded-xl p-5 flex flex-col gap-4">
-                <h4 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
-                    <i class="fas fa-shield-halved"></i> Rapport d'analyse combinée (KG + Pièces)
-                </h4>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono">
-                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-800">
-                        <span class="text-slate-400 block text-[10px]">Total Lignes</span>
-                        <span id="anaTotal" class="text-slate-100 font-bold text-sm">0</span>
-                    </div>
-                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-800">
-                        <span class="text-slate-400 block text-[10px]">Commandes Uniques</span>
-                        <span id="anaDocs" class="text-emerald-400 font-bold text-sm">0</span>
-                    </div>
-                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-800">
-                        <span class="text-slate-400 block text-[10px]">Lignes Anormales</span>
-                        <span id="anaErrors" class="text-rose-400 font-bold text-sm">0</span>
-                    </div>
-                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-800">
-                        <span class="text-slate-400 block text-[10px]">Total Pièces Cumulées</span>
-                        <span id="anaSumPieces" class="text-sky-400 font-bold text-sm">0</span>
+            <!-- SECTION APERÇU ET ANALYSE (CACHÉE PAR DÉFAUT) -->
+            <div id="previewSection" class="hidden flex flex-col gap-6">
+                
+                <div class="flex items-center justify-between bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-md">
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-100 flex items-center gap-2">
+                            <i class="fas fa-table text-emerald-400"></i> Aperçu combiné : <span class="text-emerald-400">Fichier KG & Fichier Pièces</span>
+                        </h3>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Total lignes fusionnées : <span id="rowCount" class="font-bold text-slate-200">0</span></p>
                     </div>
                 </div>
+
+                <!-- RAPPORT D'ANALYSE -->
+                <div id="analysisReportBox" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-3 shadow-lg">
+                    <h4 class="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                        <i class="fas fa-shield-halved"></i> Rapport d'analyse combinée (KG + Pièces)
+                    </h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-mono">
+                        <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                            <span class="text-slate-400 block text-[9px]">Total Lignes</span>
+                            <span id="anaTotal" class="text-slate-100 font-bold text-sm">0</span>
+                        </div>
+                        <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                            <span class="text-slate-400 block text-[9px]">Commandes Uniques</span>
+                            <span id="anaDocs" class="text-emerald-400 font-bold text-sm">0</span>
+                        </div>
+                        <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                            <span class="text-slate-400 block text-[9px]">Lignes Anormales</span>
+                            <span id="anaErrors" class="text-rose-400 font-bold text-sm">0</span>
+                        </div>
+                        <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                            <span class="text-slate-400 block text-[9px]">Total Pièces Cumulées</span>
+                            <span id="anaSumPieces" class="text-sky-400 font-bold text-sm">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TABLEAU DES DONNÉES -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl flex-1 flex flex-col">
+                    <div class="overflow-x-auto max-h-[550px]">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead class="sticky top-0 bg-slate-950 z-10 text-slate-400 uppercase text-[10px]">
+                                <tr class="border-b border-slate-800">
+                                    <th class="p-3">Source</th>
+                                    <th class="p-3">Doc Vente</th>
+                                    <th class="p-3">Poste</th>
+                                    <th class="p-3">Article</th>
+                                    <th class="p-3">Désignation</th>
+                                    <th class="p-3 text-right">Qte (KG)</th>
+                                    <th class="p-3 text-right">Nb Pièces</th>
+                                    <th class="p-3">Réceptionnaire</th>
+                                </tr>
+                            </thead>
+                            <tbody id="previewBody" class="divide-y divide-slate-800/50 font-mono"></tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
+        </main>
+    </div>
 
-            <!-- TABLEAU D'APERÇU -->
-            <div class="overflow-x-auto max-h-[400px]">
-                <table class="w-full text-left text-xs border-collapse">
-                    <thead class="sticky top-0 bg-slate-950 z-10 text-slate-400 uppercase text-[10px]">
-                        <tr class="border-b border-slate-800">
-                            <th class="p-3">Source</th>
-                            <th class="p-3">Doc Vente</th>
-                            <th class="p-3">Poste</th>
-                            <th class="p-3">Article</th>
-                            <th class="p-3">Désignation</th>
-                            <th class="p-3 text-right">Qte (KG)</th>
-                            <th class="p-3 text-right">Nb Pièces</th>
-                            <th class="p-3">Réceptionnaire</th>
-                        </tr>
-                    </thead>
-                    <tbody id="previewBody" class="divide-y divide-slate-800/50 font-mono"></tbody>
-                </table>
-            </div>
-        </div>
-
-    </main>
-
-    <!-- SCRIPTS -->
+    <!-- SCRIPT LOGIQUE -->
     <script type="module">
         import supabase from './assets/js/core/supabase.js';
 
@@ -204,7 +224,7 @@
         document.addEventListener("DOMContentLoaded", () => {
             setInterval(() => {
                 const now = new Date();
-                document.getElementById("currentDate").innerText = now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                document.getElementById("currentDate").innerText = now.toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
                 document.getElementById("currentTime").innerText = now.toTimeString().split(' ')[0];
             }, 1000);
         });
@@ -241,22 +261,19 @@
                         document.getElementById("fileKgName").textContent = `${file.name} (${parsed.length} lignes)`;
                         document.getElementById("fileKgName").classList.remove("hidden");
                         
-                        // Badge KG = OK (Vert)
                         const badge = document.getElementById("badgeKg");
-                        badge.className = "text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full font-mono";
+                        badge.className = "text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono";
                         badge.textContent = "KG = OK";
                     } else {
                         piecesDataParsed = parsed;
                         document.getElementById("filePiecesName").textContent = `${file.name} (${parsed.length} lignes)`;
                         document.getElementById("filePiecesName").classList.remove("hidden");
                         
-                        // Badge Pièces = OK (Vert)
                         const badge = document.getElementById("badgePieces");
-                        badge.className = "text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full font-mono";
+                        badge.className = "text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono";
                         badge.textContent = "Pieces = OK";
                     }
 
-                    // VÉRIFIER SI LES DEUX FICHIERS SONT CHARGÉS
                     checkBothFilesLoaded();
 
                 } catch (err) {
@@ -268,12 +285,14 @@
         }
 
         function checkBothFilesLoaded() {
-            // S'affichent et s'activent uniquement si les deux fichiers sont chargés
             if (kgDataParsed.length > 0 && piecesDataParsed.length > 0) {
                 combinedData = [...kgDataParsed, ...piecesDataParsed];
                 
                 document.getElementById("rowCount").textContent = combinedData.length;
+                document.getElementById("welcomeState").classList.add("hidden");
                 document.getElementById("previewSection").classList.remove("hidden");
+                document.getElementById("actionContainer").classList.remove("hidden");
+                
                 renderPreview(combinedData.slice(0, 50));
             }
         }
@@ -321,19 +340,21 @@
             kgDataParsed = [];
             piecesDataParsed = [];
             combinedData = [];
+            document.getElementById("welcomeState").classList.remove("hidden");
             document.getElementById("previewSection").classList.add("hidden");
             document.getElementById("analysisReportBox").classList.add("hidden");
+            document.getElementById("actionContainer").classList.add("hidden");
             document.getElementById("fileKgInput").value = "";
             document.getElementById("filePiecesInput").value = "";
             document.getElementById("fileKgName").classList.add("hidden");
             document.getElementById("filePiecesName").classList.add("hidden");
             
             const badgeKg = document.getElementById("badgeKg");
-            badgeKg.className = "text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2.5 py-1 rounded-full font-mono";
+            badgeKg.className = "text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full font-mono";
             badgeKg.textContent = "En attente";
 
             const badgePieces = document.getElementById("badgePieces");
-            badgePieces.className = "text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2.5 py-1 rounded-full font-mono";
+            badgePieces.className = "text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full font-mono";
             badgePieces.textContent = "En attente";
         }
 

@@ -1,203 +1,360 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Import Commandes - SoufStock Enterprise ERP</title>
+    <title>Importation Combinée & Analyse - SoufStock ERP/WMS</title>
     
-    <!-- External Stylesheets -->
+    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Application CSS (Nafs CSS System) -->
-    <link rel="stylesheet" href="../assets/css/variables.css">
-    <link rel="stylesheet" href="../assets/css/import_commandes.css">
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS pour Lire les fichiers Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- SheetJS (XLSX) -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-
-    <!-- Application Script -->
-    <script type="module" src="/assets/js/commandes-import.js" defer></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: { 950: '#020617', 900: '#0f172a', 800: '#1e293b', 700: '#334155', 400: '#94a3b8', 300: '#cbd5e1', 100: '#f1f5f9' },
+                        emerald: { 600: '#059669', 500: '#10b981', 400: '#34d399', 300: '#6ee7b7' },
+                        amber: { 500: '#f59e0b', 400: '#fbbf24' },
+                        rose: { 500: '#f43f5e', 400: '#fb7185' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #090d16; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+        body { background-color: #020617; color: #f1f5f9; font-family: ui-sans-serif, system-ui, sans-serif; }
+    </style>
 </head>
-<body>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased">
 
-    <!-- Loader Overlay -->
-    <div id="loaderOverlay" class="loader-overlay hidden">
-        <div class="spinner"></div>
-        <div id="loaderMessage" style="font-weight: 500; margin-bottom: 0.5rem;">Chargement...</div>
-        <div class="progress-container">
-            <div id="loaderBar" class="progress-bar"></div>
-        </div>
-        <div id="loaderPercent" style="font-size: 0.8125rem; color: #94a3b8; margin-top: 0.35rem;">0%</div>
-    </div>
-
-    <!-- Toast Notifications Container -->
-    <div id="toastContainer" class="toast-container"></div>
-
-    <div class="app-container">
-        <!-- Main Content Area -->
-        <main class="main-content">
-            <div class="import-container">
-
-                <!-- Header Section -->
-                <header class="import-header-section">
-                    <div class="import-header-content">
-                        <h1>Import Commandes</h1>
-                        <p>Importation et synchronisation des commandes SAP (KG &amp; Pièces)</p>
-                    </div>
-                    <div>
-                        <a href="../dashboard.html" class="btn btn-outline" style="color: #ffffff; border-color: rgba(255,255,255,0.2);">
-                            <i class="fas fa-arrow-left"></i> Retour au Tableau de Bord
-                        </a>
-                    </div>
-                </header>
-
-                <!-- Import Grids for KG & Pièces -->
-                <div class="import-grid">
-                    
-                    <!-- Commandes Excel (KG) -->
-                    <section class="import-card">
-                        <div>
-                            <div class="import-card-header">
-                                <div class="import-card-icon">
-                                    <i class="fas fa-weight-scale"></i>
-                                </div>
-                                <div class="import-card-titles">
-                                    <h3>Commandes Excel (KG)</h3>
-                                    <span>Importation des commandes SAP en kilogrammes.</span>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <input type="file" id="fileExcel" accept=".xlsx, .xls, .csv" class="hidden">
-                                <div class="file-dropzone-custom" id="btnSelectExcel">
-                                    <i class="fas fa-file-excel"></i>
-                                    <div>
-                                        <strong>Cliquez pour sélectionner</strong> ou glissez votre fichier KG ici
-                                    </div>
-                                </div>
-                                <div class="file-info-row">
-                                    <span class="file-name-display" id="excelFileName">Aucun fichier sélectionné</span>
-                                    <span class="badge badge-success" id="excelFileBadge">Prêt</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <button type="button" id="btnImportExcel" class="btn btn-primary" style="width: 100%;" disabled>
-                                <i class="fas fa-cloud-arrow-up"></i> Importer les Commandes KG
-                            </button>
-                        </div>
-                    </section>
-
-                    <!-- Commandes Pièces -->
-                    <section class="import-card">
-                        <div>
-                            <div class="import-card-header">
-                                <div class="import-card-icon">
-                                    <i class="fas fa-boxes-stacked"></i>
-                                </div>
-                                <div class="import-card-titles">
-                                    <h3>Commandes Pièces</h3>
-                                    <span>Importation des commandes SAP par nombre de pièces.</span>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <input type="file" id="filePieces" accept=".xlsx, .xls, .csv" class="hidden">
-                                <div class="file-dropzone-custom" id="btnSelectPieces">
-                                    <i class="fas fa-file-lines"></i>
-                                    <div>
-                                        <strong>Cliquez pour sélectionner</strong> ou glissez votre fichier Pièces ici
-                                    </div>
-                                </div>
-                                <div class="file-info-row">
-                                    <span class="file-name-display" id="piecesFileName">Aucun fichier sélectionné</span>
-                                    <span class="badge badge-success" id="piecesFileBadge">Prêt</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <button type="button" id="btnImportPieces" class="btn btn-primary" style="width: 100%;" disabled>
-                                <i class="fas fa-cloud-arrow-up"></i> Importer les Pièces
-                            </button>
-                        </div>
-                    </section>
-
-                </div>
-
-                <!-- Analysis & Synchronization Section -->
-                <section class="card">
-                    <div class="card-header">
-                        <div>
-                            <h2 class="card-title">Analyse des Commandes</h2>
-                            <p style="font-size: 0.875rem; color: var(--text-muted);">Comparaison entre les fichiers SAP et la base de données avant l'importation.</p>
-                        </div>
-                        <button type="button" id="btnAnalyse" class="btn btn-outline" disabled>
-                            <span class="spinner-border hidden" role="status"></span>
-                            <i class="fas fa-magnifying-glass-chart"></i> Lancer l'Analyse
-                        </button>
-                    </div>
-
-                    <div class="analyse-stats-grid">
-                        <div class="stat-box new">
-                            <div class="stat-value" id="analyseNew">0</div>
-                            <div class="stat-label">Nouvelles</div>
-                        </div>
-                        <div class="stat-box updated">
-                            <div class="stat-value" id="analyseUpdated">0</div>
-                            <div class="stat-label">Modifiées</div>
-                        </div>
-                        <div class="stat-box deleted">
-                            <div class="stat-value" id="analyseDeleted">0</div>
-                            <div class="stat-label">Supprimées</div>
-                        </div>
-                        <div class="stat-box same">
-                            <div class="stat-value" id="analyseSame">0</div>
-                            <div class="stat-label">Identiques</div>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.875rem; color: var(--text-muted); background-color: #f8fafc; padding: 0.75rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-                        <span id="currentStatus">Prêt pour l'analyse.</span>
-                        <span id="analyseStatus" style="font-weight: 500; color: var(--text-main);">En attente</span>
-                    </div>
-                </section>
-
-                <!-- Actions Toolbar -->
-                <div class="import-actions-toolbar">
-                    <div class="toolbar-group">
-                        <button type="button" id="btnStartImport" class="btn btn-primary" disabled>
-                            <i class="fas fa-database"></i> Démarrer l'Importation &amp; Synchro
-                        </button>
-                        <button type="button" id="btnResetImport" class="btn btn-outline">
-                            <i class="fas fa-rotate-left"></i> Réinitialiser
-                        </button>
-                    </div>
-                    <div class="toolbar-group">
-                        <button type="button" id="btnRestoreDeleted" class="btn btn-outline">
-                            <i class="fas fa-trash-arrow-back"></i> Restaurer Supprimées
-                        </button>
-                        <button type="button" id="btnConfirmDelete" class="btn btn-danger">
-                            <i class="fas fa-triangle-exclamation"></i> Vider Corbeille SAP
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Logs Terminal Box -->
-                <section class="card" style="margin-top: 1.5rem;">
-                    <div class="card-header">
-                        <h3 class="card-title" style="font-size: 1rem;"><i class="fas fa-terminal"></i> Journal des Opérations</h3>
-                        <button type="button" class="btn btn-outline" style="padding: 0.25rem 0.75rem; font-size: 0.75rem;" onclick="ImportCommandes.clearLog()">Effacer</button>
-                    </div>
-                    <div id="importLog" class="import-log">
-                        <div class="log-line info"><strong>Système</strong> - Module d'importation initialisé avec succès.</div>
-                    </div>
-                </section>
-
+    <!-- HEADER -->
+    <header class="h-20 bg-slate-900/40 border-b border-slate-800/80 px-8 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-6">
+            <a href="index-stock.html" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow-sm">
+                <i class="fas fa-arrow-left"></i>
+                <span>Retour au Hub</span>
+            </a>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight text-slate-100">Smart Import Engine - Double Fichier & Analyse</h1>
+                <p class="text-xs text-slate-400">Importez les deux fichiers (KG & Pièces) pour débloquer l'analyse et l'enregistrement.</p>
             </div>
-        </main>
-    </div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl text-right">
+            <span id="currentDate" class="text-xs font-medium text-slate-300 block">Chargement...</span>
+            <span id="currentTime" class="text-[10px] text-emerald-400 font-mono block">00:00:00</span>
+        </div>
+    </header>
 
+    <!-- MAIN CONTAINER -->
+    <main class="flex-1 p-8 overflow-y-auto max-w-[1600px] w-full mx-auto flex flex-col gap-8">
+        
+        <!-- DEUX CARTES D'IMPORTATION -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <!-- CARTE 1: COMMANDES KG -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between relative group hover:border-emerald-500/50 transition">
+                <input type="file" id="fileKgInput" accept=".xlsx, .xls, .csv" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="handleFileSelect(event, 'KG')">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-lg">
+                                <i class="fas fa-weight-scale"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-base font-bold text-slate-100">Commandes Excel (KG)</h2>
+                                <p class="text-xs text-slate-400">Importation des commandes SAP en kilogrammes.</p>
+                            </div>
+                        </div>
+                        <span id="badgeKg" class="text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2.5 py-1 rounded-full font-mono">En attente</span>
+                    </div>
+
+                    <div class="border-2 border-dashed border-slate-800 rounded-xl p-8 text-center bg-slate-950/50 my-4 group-hover:border-emerald-500/30 transition">
+                        <div class="w-10 h-10 mx-auto rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-2">
+                            <i class="fas fa-file-excel"></i>
+                        </div>
+                        <p class="text-xs font-medium text-slate-300">Cliquez pour sélectionner ou glissez votre fichier KG ici</p>
+                        <p id="fileKgName" class="text-[11px] text-emerald-400 font-mono mt-2 hidden">Aucun fichier sélectionné</p>
+                    </div>
+                </div>
+
+                <button onclick="document.getElementById('fileKgInput').click()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-md z-20 relative cursor-pointer">
+                    <i class="fas fa-folder-open"></i> Sélectionner le Fichier KG
+                </button>
+            </div>
+
+            <!-- CARTE 2: COMMANDES PIÈCES -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between relative group hover:border-emerald-500/50 transition">
+                <input type="file" id="filePiecesInput" accept=".xlsx, .xls, .csv" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="handleFileSelect(event, 'PIECES')">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-lg">
+                                <i class="fas fa-boxes-stacked"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-base font-bold text-slate-100">Commandes Pièces</h2>
+                                <p class="text-xs text-slate-400">Importation des commandes SAP par nombre de pièces.</p>
+                            </div>
+                        </div>
+                        <span id="badgePieces" class="text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2.5 py-1 rounded-full font-mono">En attente</span>
+                    </div>
+
+                    <div class="border-2 border-dashed border-slate-800 rounded-xl p-8 text-center bg-slate-950/50 my-4 group-hover:border-emerald-500/30 transition">
+                        <div class="w-10 h-10 mx-auto rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-2">
+                            <i class="fas fa-file-lines"></i>
+                        </div>
+                        <p class="text-xs font-medium text-slate-300">Cliquez pour sélectionner ou glissez votre fichier Pièces ici</p>
+                        <p id="filePiecesName" class="text-[11px] text-emerald-400 font-mono mt-2 hidden">Aucun fichier sélectionné</p>
+                    </div>
+                </div>
+
+                <button onclick="document.getElementById('filePiecesInput').click()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-md z-20 relative cursor-pointer">
+                    <i class="fas fa-folder-open"></i> Sélectionner le Fichier Pièces
+                </button>
+            </div>
+
+        </div>
+
+        <!-- SECTION APERÇU ET ACTIONS (BLOQUÉE TANT QUE LES 2 NE SONT PAS LÀ) -->
+        <div id="previewSection" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col gap-6">
+            <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                        <i class="fas fa-table text-emerald-400"></i> Aperçu combiné : <span class="text-emerald-400">Fichier KG & Fichier Pièces</span> (<span id="rowCount">0</span> lignes totales)
+                    </h3>
+                    <p class="text-xs text-slate-400">Les deux fichiers ont été chargés avec succès. Vous pouvez maintenant analyser ou enregistrer.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="analyzeData()" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer">
+                        <i class="fas fa-chart-pie"></i> Analyser les Données
+                    </button>
+                    <button onclick="cancelPreview()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer">Annuler / Réinitialiser</button>
+                    <button onclick="saveToSupabase()" id="btnSave" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg cursor-pointer">
+                        <i class="fas fa-save"></i> Enregistrer dans Supabase
+                    </button>
+                </div>
+            </div>
+
+            <!-- RAPPORT D'ANALYSE -->
+            <div id="analysisReportBox" class="hidden bg-slate-950 border border-slate-800 rounded-xl p-5 flex flex-col gap-4">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                    <i class="fas fa-shield-halved"></i> Rapport d'analyse combinée (KG + Pièces)
+                </h4>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono">
+                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-800">
+                        <span class="text-slate-400 block text-[10px]">Total Lignes</span>
+                        <span id="anaTotal" class="text-slate-100 font-bold text-sm">0</span>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-800">
+                        <span class="text-slate-400 block text-[10px]">Commandes Uniques</span>
+                        <span id="anaDocs" class="text-emerald-400 font-bold text-sm">0</span>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-800">
+                        <span class="text-slate-400 block text-[10px]">Lignes Anormales</span>
+                        <span id="anaErrors" class="text-rose-400 font-bold text-sm">0</span>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-800">
+                        <span class="text-slate-400 block text-[10px]">Total Pièces Cumulées</span>
+                        <span id="anaSumPieces" class="text-sky-400 font-bold text-sm">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABLEAU D'APERÇU -->
+            <div class="overflow-x-auto max-h-[400px]">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="sticky top-0 bg-slate-950 z-10 text-slate-400 uppercase text-[10px]">
+                        <tr class="border-b border-slate-800">
+                            <th class="p-3">Source</th>
+                            <th class="p-3">Doc Vente</th>
+                            <th class="p-3">Poste</th>
+                            <th class="p-3">Article</th>
+                            <th class="p-3">Désignation</th>
+                            <th class="p-3 text-right">Qte (KG)</th>
+                            <th class="p-3 text-right">Nb Pièces</th>
+                            <th class="p-3">Réceptionnaire</th>
+                        </tr>
+                    </thead>
+                    <tbody id="previewBody" class="divide-y divide-slate-800/50 font-mono"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- SCRIPTS -->
+    <script type="module">
+        import supabase from './assets/js/core/supabase.js';
+
+        let kgDataParsed = [];
+        let piecesDataParsed = [];
+        let combinedData = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            setInterval(() => {
+                const now = new Date();
+                document.getElementById("currentDate").innerText = now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                document.getElementById("currentTime").innerText = now.toTimeString().split(' ')[0];
+            }, 1000);
+        });
+
+        window.handleFileSelect = function(event, type) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rawJson = XLSX.utils.sheet_to_json(worksheet);
+
+                    const parsed = rawJson.map(row => ({
+                        source_type: type,
+                        document_vente: String(row['Document de vente'] || row['NUCOMD'] || '').trim(),
+                        Poste: parseInt(row['Poste'] || 0),
+                        article: String(row['Article'] || '').trim(),
+                        designation_article: String(row["Description d'article"] || row['DESIGNATION'] || '').trim(),
+                        quantite_commandee: parseFloat(row['Quantité commandée (poste)'] || row['QT COMD'] || 0),
+                        nombre_pieces: parseInt(row['Nombre de pièces'] || row['NB PIECES'] || 0),
+                        nom_receptionnaire: String(row['Nom Réceptionnaire'] || row['RECEPTIONNAIRE'] || '').trim(),
+                        itineraire: String(row['Description Itinéraire'] || row['ZONE DISTRIBUTION'] || '').trim(),
+                        date_livraison: row['Date de livraison'] ? String(row['Date de livraison']).split('T')[0] : null,
+                        unite: type === 'KG' ? 'KG' : 'PIECES',
+                        statut: 'IMPORTEE'
+                    })).filter(item => item.document_vente && item.article);
+
+                    if (type === 'KG') {
+                        kgDataParsed = parsed;
+                        document.getElementById("fileKgName").textContent = `${file.name} (${parsed.lignes || parsed.length} lignes)`;
+                        document.getElementById("fileKgName").classList.remove("hidden");
+                        document.getElementById("badgeKg").className = "text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full font-mono";
+                        document.getElementById("badgeKg").textContent = "Chargé";
+                    } else {
+                        piecesDataParsed = parsed;
+                        document.getElementById("filePiecesName").textContent = `${file.name} (${parsed.length} lignes)`;
+                        document.getElementById("filePiecesName").classList.remove("hidden");
+                        document.getElementById("badgePieces").className = "text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full font-mono";
+                        document.getElementById("badgePieces").textContent = "Chargé";
+                    }
+
+                    // VÉRIFIER SI LES DEUX FICHIERS SONT CHARGÉS
+                    checkBothFilesLoaded();
+
+                } catch (err) {
+                    console.error(err);
+                    alert("Erreur lors de la lecture du fichier Excel.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function checkBothFilesLoaded() {
+            if (kgDataParsed.length > 0 && piecesDataParsed.length > 0) {
+                // Combiner les deux tableaux
+                combinedData = [...kgDataParsed, ...piecesDataParsed];
+                
+                document.getElementById("rowCount").textContent = combinedData.length;
+                document.getElementById("previewSection").classList.remove("hidden");
+                renderPreview(combinedData.slice(0, 50));
+            }
+        }
+
+        window.analyzeData = function() {
+            if (combinedData.length === 0) return;
+
+            const totalLignes = combinedData.length;
+            const uniqueDocs = new Set(combinedData.map(d => d.document_vente)).size;
+            const errorRows = combinedData.filter(d => d.quantite_commandee <= 0 && d.nombre_pieces <= 0).length;
+            const sumPieces = combinedData.reduce((acc, curr) => acc + (curr.nombre_pieces || 0), 0);
+
+            document.getElementById("anaTotal").textContent = totalLignes;
+            document.getElementById("anaDocs").textContent = uniqueDocs;
+            document.getElementById("anaErrors").textContent = errorRows;
+            document.getElementById("anaSumPieces").textContent = sumPieces;
+
+            document.getElementById("analysisReportBox").classList.remove("hidden");
+        }
+
+        function renderPreview(data) {
+            let html = "";
+            data.forEach(item => {
+                const badgeSource = item.source_type === 'KG' 
+                    ? `<span class="bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded text-[10px]">KG</span>` 
+                    : `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px]">Pièces</span>`;
+
+                html += `
+                    <tr class="hover:bg-slate-800/40">
+                        <td class="p-3">${badgeSource}</td>
+                        <td class="p-3 text-emerald-400 font-bold">${item.document_vente}</td>
+                        <td class="p-3 text-amber-400">${item.Poste}</td>
+                        <td class="p-3 text-sky-400">${item.article}</td>
+                        <td class="p-3 text-slate-200">${item.designation_article}</td>
+                        <td class="p-3 text-right font-bold text-slate-100">${item.quantite_commandee.toFixed(3)}</td>
+                        <td class="p-3 text-right font-bold text-emerald-300">${item.nombre_pieces}</td>
+                        <td class="p-3 text-slate-300">${item.nom_receptionnaire}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById("previewBody").innerHTML = html;
+        }
+
+        window.cancelPreview = function() {
+            kgDataParsed = [];
+            piecesDataParsed = [];
+            combinedData = [];
+            document.getElementById("previewSection").classList.add("hidden");
+            document.getElementById("analysisReportBox").classList.add("hidden");
+            document.getElementById("fileKgInput").value = "";
+            document.getElementById("filePiecesInput").value = "";
+            document.getElementById("fileKgName").classList.add("hidden");
+            document.getElementById("filePiecesName").classList.add("hidden");
+            document.getElementById("badgeKg").className = "text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2.5 py-1 rounded-full font-mono";
+            document.getElementById("badgeKg").textContent = "En attente";
+            document.getElementById("badgePieces").className = "text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2.5 py-1 rounded-full font-mono";
+            document.getElementById("badgePieces").textContent = "En attente";
+        }
+
+        window.saveToSupabase = async function() {
+            if (combinedData.length === 0) return;
+
+            const btn = document.getElementById("btnSave");
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Enregistrement...`;
+
+            try {
+                const batchSize = 500;
+                for (let i = 0; i < combinedData.length; i += batchSize) {
+                    const chunk = combinedData.slice(i, i + batchSize);
+                    const { error } = await supabase
+                        .from('commandes_excel')
+                        .upsert(chunk, { onConflict: 'document_vente,Poste' });
+
+                    if (error) throw error;
+                }
+
+                alert(`Succès ! ${combinedData.length} lignes enregistrées avec succès dans Supabase.`);
+                cancelPreview();
+            } catch (err) {
+                console.error(err);
+                alert(`Erreur Supabase : ${err.message || JSON.stringify(err)}`);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-save"></i> Enregistrer dans Supabase`;
+            }
+        }
+    </script>
 </body>
 </html>

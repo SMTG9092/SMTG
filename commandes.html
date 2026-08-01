@@ -40,15 +40,17 @@
 
     <!-- HEADER -->
     <header class="h-16 bg-slate-900/60 border-b border-slate-800/80 px-6 flex items-center justify-between shrink-0">
-        <div class="flex items-center gap-4">
-            <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+        <!-- Logo / Brand link to dashboard.html -->
+        <a href="dashboard.html" class="flex items-center gap-4 group cursor-pointer focus:outline-none" title="Aller au Dashboard">
+            <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500/20 transition">
                 <i class="fas fa-boxes-stacked text-base"></i>
             </div>
             <div>
-                <span class="font-bold text-sm tracking-wide block text-slate-100">SoufStock <span class="text-emerald-400 font-normal">WMS</span></span>
+                <span class="font-bold text-sm tracking-wide block text-slate-100 group-hover:text-emerald-400 transition">SoufStock <span class="text-emerald-400 font-normal">WMS</span></span>
                 <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Module de Gestion des Commandes Excel</span>
             </div>
-        </div>
+        </a>
+
         <div class="flex items-center gap-3">
             <button id="btnResetFilters" class="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 cursor-pointer shadow-sm">
                 <i class="fas fa-filter-circle-xmark"></i> Réinitialiser Filtres Date
@@ -114,7 +116,7 @@
                     <span class="text-[10px] text-slate-400 font-bold uppercase">Du:</span>
                     <input type="date" id="filterDateDebut" class="bg-transparent text-xs text-emerald-400 font-mono focus:outline-none cursor-pointer">
                 </div>
-                <!-- Date Fin (Lendemain / Au) -->
+                <!-- Date Fin (Lendemain) -->
                 <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5">
                     <span class="text-[10px] text-slate-400 font-bold uppercase">Au:</span>
                     <input type="date" id="filterDateFin" class="bg-transparent text-xs text-emerald-400 font-mono focus:outline-none cursor-pointer">

@@ -202,7 +202,7 @@
         </main>
     </div>
 
-    <!-- SCRIPT APPLICATION COMPLET 100% -->
+    <!-- SCRIPT APPLICATION MODULE -->
     <script type="module">
         import supabase from '../assets/js/core/supabase.js';
 
@@ -433,7 +433,7 @@
             document.getElementById("previewBody").innerHTML = html;
         }
 
-        window.saveToSupabaseWithDelta = async function() {
+        async function saveToSupabaseWithDelta() {
             if (finalMatchedData.length === 0) return;
 
             const btn = document.getElementById("btnSave");

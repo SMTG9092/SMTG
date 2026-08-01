@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Suivi & Lancement des Commandes - SoufStock WMS</title>
+    <title>Lancement des Commandes par Date - SoufStock WMS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -25,30 +25,46 @@
 
     <!-- HEADER -->
     <header class="h-16 bg-slate-900/60 border-b border-slate-800 px-6 flex items-center justify-between shrink-0">
-        <a href="commandes.html" class="flex items-center gap-3 group">
+        <a href="../commandes.html" class="flex items-center gap-3 group">
             <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500/20 transition">
                 <i class="fas fa-snowflake"></i>
             </div>
             <div>
                 <span class="font-bold text-sm block">SoufStock <span class="text-emerald-400">WMS</span></span>
-                <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Suivi & Lancement des Commandes</span>
+                <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Module de Lancement des Commandes</span>
             </div>
         </a>
-        <div class="text-xs text-slate-400 font-mono" id="liveClock">--:--:--</div>
+        <div class="flex items-center gap-4 bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl font-mono text-xs">
+            <span id="liveClock" class="text-emerald-400">--:--:--</span>
+        </div>
     </header>
 
     <!-- MAIN WRAPPER -->
-    <main class="flex-1 p-6 overflow-hidden flex flex-col gap-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-base font-bold text-slate-100 flex items-center gap-2">
-                    <i class="fas fa-list-check text-emerald-400">></i> Commandes Importées & Prêtes à Lancer
-                </h1>
-                <p class="text-xs text-slate-400">Gestion et pilotage des tournées et dispatching entrepôt.</p>
+    <main class="flex-1 p-6 overflow-hidden flex flex-col gap-5">
+        
+        <!-- BARRE DE FILTRE PAR DATE -->
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-lg">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+                <div>
+                    <h2 class="text-xs font-bold text-slate-100 uppercase tracking-wider">Filtrer par Date de Livraison</h2>
+                    <p class="text-[11px] text-slate-400">Sélectionnez la date pour afficher les commandes avec le statut <span class="text-emerald-400 font-bold">IMPORTEE</span></p>
+                </div>
             </div>
-            <button onclick="loadSuiviCommandes()" class="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition cursor-pointer">
-                <i class="fas fa-rotate"></i> Actualiser
-            </button>
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl">
+                    <i class="fas fa-filter text-emerald-400 text-xs"></i>
+                    <input type="date" id="filterDate" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono cursor-pointer">
+                </div>
+                <button onclick="loadSuiviCommandes()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
+                    <i class="fas fa-search"></i> Afficher
+                </button>
+                <button onclick="resetFilter()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer" title="Voir Tout">
+                    Tout voir
+                </button>
+            </div>
         </div>
 
         <!-- TABLE CONTAINER -->
@@ -59,17 +75,18 @@
                         <tr>
                             <th class="p-3.5">N° Commande</th>
                             <th class="p-3.5">Client / Réceptionnaire</th>
+                            <th class="p-3.5">Date Livraison</th>
                             <th class="p-3.5 text-center">Nb Produits (Postes)</th>
                             <th class="p-3.5 text-right">Total KG</th>
                             <th class="p-3.5 text-right text-emerald-400">Total Pièces</th>
                             <th class="p-3.5">Itinéraire / Tournée</th>
                             <th class="p-3.5">Statut</th>
-                            <th class="p-3.5 text-center">Actions (Détails & Lancement)</th>
+                            <th class="p-3.5 text-center">Actions & Lancement</th>
                         </tr>
                     </thead>
                     <tbody id="suiviTableBody" class="divide-y divide-slate-800/50 font-mono">
                         <tr>
-                            <td colspan="8" class="p-8 text-center text-slate-500">Chargement des données...</td>
+                            <td colspan="9" class="p-8 text-center text-slate-500">Sélectionnez une date ou cliquez sur Afficher...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -108,32 +125,40 @@
 
     <!-- APP SCRIPT -->
     <script type="module">
-        import supabase from './assets/js/core/supabase.js';
+        import supabase from '../assets/js/core/supabase.js';
+
+        // Set default date to today or let user choose
+        document.getElementById('filterDate').value = new Date().toISOString().split('T')[0];
 
         window.loadSuiviCommandes = async function() {
+            const selectedDate = document.getElementById('filterDate').value;
             const tbody = document.getElementById("suiviTableBody");
-            tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Chargement...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Chargement des commandes...</td></tr>`;
 
-            // Jib suivi commandes m3a calcul dyal nb postes w totaux mn commandes_excel
-            const { data: suiviList, error } = await supabase
+            let query = supabase
                 .from('suivi_commandes_lancer')
                 .select('*')
-                .order('date_livraison', { ascending: true });
+                .eq('statut', 'IMPORTEE'); // K-jib gha li ba9a IMPORTEE
+
+            if (selectedDate) {
+                query = query.eq('date_livraison', selectedDate);
+            }
+
+            const { data: suiviList, error } = await query.order('date_livraison', { ascending: true });
 
             if (error) {
                 console.error(error);
-                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-rose-400">Erreur de chargement: ${error.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-rose-400">Erreur de chargement: ${error.message}</td></tr>`;
                 return;
             }
 
             if (!suiviList || suiviList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-500">Aucune commande importée pour le moment.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-500">Aucune commande importée trouvée pour cette date (${selectedDate || 'Toutes'}).</td></tr>`;
                 return;
             }
 
             let html = "";
             for (let item of suiviList) {
-                // Jib la somme dyal KG, Pièces w le nombre dyal les postes mn commandes_excel b document_vente
                 const { data: details } = await supabase
                     .from('commandes_excel')
                     .select('quantite_commandee, nombre_pieces, "Poste"')
@@ -143,27 +168,23 @@
                 const totalKg = details ? details.reduce((acc, curr) => acc + Number(curr.quantite_commandee || 0), 0) : 0;
                 const totalPieces = details ? details.reduce((acc, curr) => acc + Number(curr.nombre_pieces || 0), 0) : 0;
 
-                const isLaunched = item.statut === 'LANCEE' || item.statut === 'EN_PICKING';
-                const badgeClass = isLaunched 
-                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' 
-                    : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-
                 html += `
                     <tr class="hover:bg-slate-800/30 transition">
                         <td class="p-3.5 font-bold text-emerald-400">${item.document_vente}</td>
                         <td class="p-3.5 text-slate-200">${item.client || 'Client Divers'}</td>
+                        <td class="p-3.5 text-sky-300 font-mono">${item.date_livraison || '-'}</td>
                         <td class="p-3.5 text-center font-bold text-sky-400">${nbPostes} Postes</td>
                         <td class="p-3.5 text-right font-bold text-slate-100">${totalKg.toFixed(2)} KG</td>
                         <td class="p-3.5 text-right font-bold text-emerald-400">${totalPieces} Pcs</td>
                         <td class="p-3.5 text-slate-300"><span class="bg-slate-950 px-2 py-1 rounded border border-slate-800 text-[11px]">${item.itineraire || 'Non assigné'}</span></td>
-                        <td class="p-3.5"><span class="border px-2.5 py-1 rounded-full text-[10px] font-bold ${badgeClass}">${item.statut}</span></td>
+                        <td class="p-3.5"><span class="border px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border-emerald-500/20">${item.statut}</span></td>
                         <td class="p-3.5 text-center flex items-center justify-center gap-2">
                             <!-- Zrr 1:achno kayn f commande -->
                             <button onclick="openDetails('${item.document_vente}')" class="bg-slate-800 hover:bg-slate-700 text-sky-400 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow" title="Voir ce qu'il y a dans la commande">
                                 <i class="fas fa-eye"></i> Articles
                             </button>
-                            <!-- Zrr 2: Itlaq la commande -->
-                            <button onclick="lancerCommande('${item.id}', '${item.document_vente}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow ${isLaunched ? 'opacity-50 pointer-events-none' : ''}">
+                            <!-- Zrr 2: Lonsi / Itlaq la commande -->
+                            <button onclick="lancerCommande('${item.id}', '${item.document_vente}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow">
                                 <i class="fas fa-play"></i> Lancer
                             </button>
                         </td>
@@ -171,6 +192,11 @@
                 `;
             }
             tbody.innerHTML = html;
+        };
+
+        window.resetFilter = function() {
+            document.getElementById('filterDate').value = '';
+            loadSuiviCommandes();
         };
 
         window.openDetails = async function(docVente) {
@@ -219,7 +245,7 @@
             const { data: { user } } = await supabase.auth.getUser();
             const userId = user ? user.id : null;
 
-            // Update f table suivi_commandes_lancer
+            // Update f table suivi_commandes_lancer l statut LANCEE
             const { error: errSuivi } = await supabase
                 .from('suivi_commandes_lancer')
                 .update({
@@ -234,21 +260,21 @@
                 return;
             }
 
-            // Update hta f commandes_excel bach ytzad fihom statut LANCEE
+            // Update hta f commandes_excel
             await supabase
                 .from('commandes_excel')
                 .update({ statut: 'LANCEE' })
                 .eq('document_vente', docVente);
 
             alert(`La commande ${docVente} a été lancée avec succès !`);
-            loadSuiviCommandes();
+            loadSuiviCommandes(); // R-freshili la liste bach t-tahyd mn had l-page (hit wllat LANCEE)
         };
 
         setInterval(() => {
             document.getElementById("liveClock").innerText = new Date().toLocaleTimeString('fr-FR');
         }, 1000);
 
-        // Init load
+        // Auto load on start
         loadSuiviCommandes();
     </script>
 </body>

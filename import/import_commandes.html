@@ -11,7 +11,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Supabase JS Client -->
+    <!-- Supabase JS Client (UMD fallback lakin kansta3mlo ES Module l-fuq) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
@@ -204,15 +204,16 @@
 
     <!-- SCRIPT APPLICATION COMPLET 100% -->
     <script type="module">
-        import supabase from './assets/js/core/supabase.js';
+        import supabase from '../assets/js/core/supabase.js';
 
         let kgDataRaw = [];
         let piecesDataRaw = [];
         let finalMatchedData = [];
         let detectedDeletions = [];
         let detectedModifications = [];
-        let activeImportId = 1; // ID actif par défaut
+        let activeImportId = 1;
 
+        // Horloge en temps réel avec secondes
         setInterval(() => {
             const now = new Date();
             document.getElementById("currentDate").innerText = now.toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
@@ -297,7 +298,6 @@
         async function performMatchingAndDelta() {
             if (kgDataRaw.length === 0 || piecesDataRaw.length === 0) return;
 
-            // 1. Mapping exact par Document + Poste + Article
             const piecesMap = new Map();
             piecesDataRaw.forEach(p => {
                 const key = `${p.document_vente}_${p.poste}_${p.article}`.toLowerCase();
@@ -317,7 +317,6 @@
                 };
             });
 
-            // 2. Interrogation Supabase pour Delta complet
             detectedDeletions = [];
             detectedModifications = [];
             const nowIso = new Date().toISOString();
@@ -331,7 +330,6 @@
                     const newSet = new Set(finalMatchedData.map(d => `${d.document_vente}_${d.poste}_${d.article}`.toLowerCase()));
                     const newMap = new Map(finalMatchedData.map(d => [`${d.document_vente}_${d.poste}_${d.article}`.toLowerCase(), d]));
 
-                    // A. Détection des suppressions
                     existingRows.forEach(ex => {
                         const exKey = `${ex.document_vente}_${ex.poste}_${ex.article}`.toLowerCase();
                         if (!newSet.has(exKey)) {
@@ -353,7 +351,6 @@
                                 date_suppression: nowIso
                             });
                         } else {
-                            // B. Détection des modifications (Doc + Poste + Article vérifiés)
                             const incoming = newMap.get(exKey);
                             if (incoming) {
                                 if (Number(incoming.quantite_commandee) !== Number(ex.quantite_commandee)) {
@@ -373,23 +370,6 @@
                                         date_action: nowIso
                                     });
                                 }
-                                if (incoming.designation_article !== ex.designation_article) {
-                                    detectedModifications.push({
-                                        historique_import_id: activeImportId,
-                                        document_vente: ex.document_vente,
-                                        ligne_commande: ex.poste,
-                                        article: ex.article,
-                                        designation_article: incoming.designation_article,
-                                        type_action: 'MODIFICATION_ARTICLE',
-                                        champ_modifie: 'designation_article',
-                                        ancienne_valeur: String(ex.designation_article),
-                                        nouvelle_valeur: String(incoming.designation_article),
-                                        ancienne_ligne: ex,
-                                        nouvelle_ligne: incoming,
-                                        statut_apres: 'MODIFIE',
-                                        date_action: nowIso
-                                    });
-                                }
                             }
                         }
                     });
@@ -398,7 +378,6 @@
                 console.warn("Base de données en attente ou injoignable, mode simulation active :", dbErr);
             }
 
-            // Affichage UI
             document.getElementById("rowCount").textContent = finalMatchedData.length;
             document.getElementById("deletedCount").textContent = detectedDeletions.length;
             document.getElementById("modifiedCount").textContent = detectedModifications.length;
@@ -440,19 +419,16 @@
             btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Synchronisation en cours...`;
 
             try {
-                // 1. Enregistrement des suppressions dans commandes_supprimees
                 if (detectedDeletions.length > 0) {
                     const { error: delErr } = await supabase.from('commandes_supprimees').insert(detectedDeletions);
                     if (delErr) throw delErr;
                 }
 
-                // 2. Enregistrement des modifications dans modifications_commandes
                 if (detectedModifications.length > 0) {
                     const { error: modErr } = await supabase.from('modifications_commandes').insert(detectedModifications);
                     if (modErr) throw modErr;
                 }
 
-                // 3. Upsert global des lignes validées
                 const batchSize = 500;
                 for (let i = 0; i < finalMatchedData.length; i += batchSize) {
                     const chunk = finalMatchedData.slice(i, i + batchSize);

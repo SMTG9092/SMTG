@@ -323,7 +323,6 @@
                     return;
                 }
 
-                // Enrichir avec quantite_commandee et client depuis commandes_excel
                 if (data && data.length > 0) {
                     const docVentes = [...new Set(data.map(d => d.document_vente).filter(Boolean))];
 
@@ -549,7 +548,7 @@
 
         function generateAutomaticPDF(targetRows) {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('l', 'mm', 'a4');
+            const doc = new jsPDF('p', 'mm', 'a4'); // Portrait A4
 
             const groupedByCommand = {};
             targetRows.forEach(item => {
@@ -564,42 +563,49 @@
                 groupedByCommand[cmd].items.push(item);
             });
 
-            let isFirstPage = true;
+            let startY = 15;
 
-            Object.values(groupedByCommand).forEach(group => {
-                if (!isFirstPage) {
+            Object.values(groupedByCommand).forEach((group, index) => {
+                const headerHeight = 22;
+                const rowHeight = 8;
+                const tableHeight = (group.items.length + 1) * rowHeight + 10;
+                const totalBlockHeight = headerHeight + tableHeight + 10;
+
+                if (startY + totalBlockHeight > 280 && index > 0) {
                     doc.addPage();
+                    startY = 15;
                 }
-                isFirstPage = false;
 
-                doc.setFontSize(14);
+                doc.setFontSize(12);
                 doc.setTextColor(15, 23, 42);
                 doc.setFont("helvetica", "bold");
-                doc.text("BON DE PRÉPARATION", 14, 15);
+                doc.text("BON DE PRÉPARATION", 14, startY);
 
-                doc.setFontSize(10);
+                doc.setFontSize(9);
                 doc.setTextColor(100, 116, 139);
-                doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 250, 15, { align: 'right' });
+                doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 196, startY, { align: 'right' });
+
+                startY += 3;
 
                 doc.setDrawColor(200, 200, 200);
                 doc.setFillColor(245, 247, 250);
-                doc.rect(14, 20, 269, 10, 'F');
+                doc.rect(14, startY, 182, 9, 'F');
                 
-                doc.setFontSize(10);
+                doc.setFontSize(9);
                 doc.setTextColor(15, 23, 42);
-                doc.text(`Commande: ${group.document_vente}  |  Client: ${group.client_nom}`, 18, 26.5);
+                doc.text(`Commande: ${group.document_vente}  |  Client: ${group.client_nom}`, 18, startY + 6);
+
+                startY += 11;
 
                 const tableColumns = ["Article", "KG", "Pieces", "Lot", "QTÉ Prép."];
                 
                 const tableRows = group.items.map(item => [
                     `${item.article || ''} ${item.designation_article ? '- ' + item.designation_article : ''}`,
-                    // KG: Quantité Commandée dyal l-client
                     item.quantite_commandee !== undefined && item.quantite_commandee !== null 
                         ? Number(item.quantite_commandee).toFixed(2) 
                         : '0.00',
                     item.pieces || '0',
                     item.lot || '',
-                    // QTÉ Prép.: Quantité Réservée mn reservations_stock
                     item.quantite_reservee !== undefined && item.quantite_reservee !== null
                         ? Number(item.quantite_reservee).toFixed(2)
                         : '0.00'
@@ -608,18 +614,21 @@
                 doc.autoTable({
                     head: [tableColumns],
                     body: tableRows,
-                    startY: 33,
+                    startY: startY,
                     theme: 'grid',
-                    styles: { fontSize: 9, cellPadding: 4, textColor: [15, 23, 42] },
+                    styles: { fontSize: 8, cellPadding: 3, textColor: [15, 23, 42] },
                     headStyles: { fillColor: [220, 225, 230], textColor: [15, 23, 42], fontStyle: 'bold' },
                     columnStyles: {
-                        0: { cellWidth: 120 },
-                        1: { cellWidth: 40, halign: 'right' },
-                        2: { cellWidth: 30, halign: 'center' },
-                        3: { cellWidth: 40, halign: 'center' },
-                        4: { cellWidth: 39, halign: 'right', fontStyle: 'bold' }
-                    }
+                        0: { cellWidth: 82 },
+                        1: { cellWidth: 25, halign: 'right' },
+                        2: { cellWidth: 20, halign: 'center' },
+                        3: { cellWidth: 30, halign: 'center' },
+                        4: { cellWidth: 25, halign: 'right', fontStyle: 'bold' }
+                    },
+                    margin: { left: 14, right: 14 }
                 });
+
+                startY = doc.lastAutoTable.finalY + 10;
             });
 
             doc.save(`Bon_Preparation_${new Date().toISOString().slice(0,10)}.pdf`);

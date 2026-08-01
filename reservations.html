@@ -289,7 +289,6 @@
             const tbody = document.getElementById("reservationsTableBody");
 
             try {
-                // Modification de la requête pour sélectionner uniquement id et statut de la table picking (évite l'erreur sur client_nom)
                 let query = supabase
                     .from('reservations_stock')
                     .select(`
@@ -528,7 +527,7 @@
 
         function generateAutomaticPDF(targetRows) {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'a4');
+            const doc = new jsPDF('l', 'mm', 'a4');
 
             const groupedByCommand = {};
             targetRows.forEach(item => {
@@ -536,7 +535,7 @@
                 if (!groupedByCommand[cmd]) {
                     groupedByCommand[cmd] = {
                         document_vente: cmd,
-                        client_nom: 'Client Divers',
+                        client_nom: item.client_nom || 'MAXI LV FES',
                         items: []
                     };
                 }
@@ -551,37 +550,50 @@
                 }
                 isFirstPage = false;
 
-                doc.setFontSize(16);
+                doc.setFontSize(14);
                 doc.setTextColor(15, 23, 42);
-                doc.text("SoufStock Enterprise - Bon de Transfert AB10", 14, 20);
+                doc.setFont("helvetica", "bold");
+                doc.text("BON DE PRÉPARATION", 14, 15);
 
                 doc.setFontSize(10);
                 doc.setTextColor(100, 116, 139);
-                doc.text(`Date d'édition : ${new Date().toLocaleDateString('fr-FR')}`, 14, 27);
+                doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 250, 15, { align: 'right' });
 
-                doc.setFontSize(12);
-                doc.setTextColor(16, 185, 129);
-                doc.text(`N° Commande : ${group.document_vente}`, 14, 38);
+                doc.setDrawColor(200, 200, 200);
+                doc.setFillColor(245, 247, 250);
+                doc.rect(14, 20, 269, 10, 'F');
+                
+                doc.setFontSize(10);
+                doc.setTextColor(15, 23, 42);
+                doc.text(`Commande: ${group.document_vente}  |  Client: ${group.client_nom}`, 18, 26.5);
 
-                const tableColumns = ["Article & Désignation", "Lot", "Quantité Demandée", "Quantité Transférée"];
+                const tableColumns = ["Article", "KG", "Pieces", "Lot", "QTÉ Prép."];
                 const tableRows = group.items.map(item => [
-                    `${item.article || ''}\n${item.designation_article || ''}`,
+                    `${item.article || ''} ${item.designation_article ? '- ' + item.designation_article : ''}`,
+                    Number(item.quantite_reservee || 0).toFixed(2),
+                    item.pieces || '0',
                     item.lot || '',
-                    Number(item.quantite_reservee || 0).toFixed(3),
-                    Number(item.quantite_reservee || 0).toFixed(3)
+                    ''
                 ]);
 
                 doc.autoTable({
                     head: [tableColumns],
                     body: tableRows,
-                    startY: 45,
+                    startY: 33,
                     theme: 'grid',
-                    styles: { fontSize: 9, cellPadding: 4 },
-                    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] }
+                    styles: { fontSize: 9, cellPadding: 4, textColor: [15, 23, 42] },
+                    headStyles: { fillColor: [220, 225, 230], textColor: [15, 23, 42], fontStyle: 'bold' },
+                    columnStyles: {
+                        0: { cellWidth: 120 },
+                        1: { cellWidth: 40, halign: 'right' },
+                        2: { cellWidth: 30, halign: 'center' },
+                        3: { cellWidth: 40, halign: 'center' },
+                        4: { cellWidth: 39, halign: 'center' }
+                    }
                 });
             });
 
-            doc.save(`Bon_Transfert_AB10_${new Date().toISOString().slice(0,10)}.pdf`);
+            doc.save(`Bon_Preparation_${new Date().toISOString().slice(0,10)}.pdf`);
         }
 
         window.exportToExcel = function() {

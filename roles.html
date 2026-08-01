@@ -138,7 +138,7 @@
                 </div>
             </div>
             <div class="flex items-center gap-3">
-                <button id="addRoleBtn" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-4.5 py-2.5 rounded-xl text-xs transition-all duration-300 flex items-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer">
+                <button id="openAddModalBtn" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-4.5 py-2.5 rounded-xl text-xs transition-all duration-300 flex items-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer">
                     <i class="fas fa-plus"></i> Nouveau Rôle
                 </button>
             </div>
@@ -181,12 +181,69 @@
         </main>
     </div>
 
+    <!-- MODAL AJOUT / MODIFICATION ROLE -->
+    <div id="roleModal" class="fixed inset-0 bg-darker/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="pro-card w-full max-w-lg rounded-2xl p-6 border border-bordercolor shadow-2xl relative">
+            <div class="flex items-center justify-between pb-4 mb-4 border-b border-bordercolor">
+                <h3 id="modalTitle" class="text-base font-black text-white flex items-center gap-2">
+                    <i class="fas fa-shield-alt text-emerald-400"></i> Ajouter un Nouveau Rôle
+                </h3>
+                <button id="closeModalBtn" class="text-slate-400 hover:text-white transition">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+
+            <form id="roleForm" class="space-y-4">
+                <input type="hidden" id="roleId">
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1.5">Code du Rôle</label>
+                        <input type="text" id="roleCode" required placeholder="ex: admin, storekeeper" class="w-full bg-dark border border-bordercolor rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-emerald-500 outline-none transition font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1.5">Nom du Rôle</label>
+                        <input type="text" id="roleNom" required placeholder="ex: Administrateur" class="w-full bg-dark border border-bordercolor rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-emerald-500 outline-none transition">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1.5">Couleur (Hex / Code)</label>
+                        <input type="text" id="roleCouleur" value="#10b981" placeholder="#10b981" class="w-full bg-dark border border-bordercolor rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-emerald-500 outline-none transition font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1.5">Ordre d'Affichage</label>
+                        <input type="number" id="roleOrdre" value="0" class="w-full bg-dark border border-bordercolor rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-emerald-500 outline-none transition font-mono">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1.5">Description</label>
+                    <textarea id="roleDescription" rows="3" placeholder="Description des privilèges de ce rôle..." class="w-full bg-dark border border-bordercolor rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-emerald-500 outline-none transition resize-none"></textarea>
+                </div>
+
+                <div class="flex items-center gap-3 pt-2">
+                    <input type="checkbox" id="roleActif" checked class="w-4 h-4 rounded accent-emerald-500 bg-dark border-bordercolor cursor-pointer">
+                    <label for="roleActif" class="text-xs font-bold text-slate-300 cursor-pointer">Rôle Actif</label>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-bordercolor">
+                    <button type="button" id="cancelModalBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-2.5 rounded-xl text-xs transition cursor-pointer">Annuler</button>
+                    <button type="submit" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-5 py-2.5 rounded-xl text-xs transition shadow-lg shadow-emerald-500/20 cursor-pointer">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- SCRIPTS -->
     <script type="module">
         import Navigation from '../assets/js/core/navigation.js';
         import SessionManager from '../assets/js/core/session.js';
         import supabase from '../assets/js/core/supabase.js';
-        import { Toast } from '../assets/js/core/utils.js';
+        import { Toast, Loader } from '../assets/js/core/utils.js';
+
+        let rolesData = [];
 
         document.addEventListener("DOMContentLoaded", async () => {
             await Navigation.init();
@@ -200,6 +257,66 @@
             }
 
             await loadRoles();
+
+            // Modal Controls
+            const modal = document.getElementById("roleModal");
+            const openBtn = document.getElementById("openAddModalBtn");
+            const closeBtn = document.getElementById("closeModalBtn");
+            const cancelBtn = document.getElementById("cancelModalBtn");
+            const form = document.getElementById("roleForm");
+
+            openBtn.addEventListener("click", () => {
+                document.getElementById("modalTitle").innerHTML = '<i class="fas fa-shield-alt text-emerald-400"></i> Ajouter un Nouveau Rôle';
+                document.getElementById("roleId").value = "";
+                form.reset();
+                document.getElementById("roleActif").checked = true;
+                modal.classList.remove("hidden");
+            });
+
+            const closeModal = () => modal.classList.add("hidden");
+            closeBtn.addEventListener("click", closeModal);
+            cancelBtn.addEventListener("click", closeModal);
+
+            // Form Submit (Create / Update)
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const id = document.getElementById("roleId").value;
+                const code = document.getElementById("roleCode").value.trim();
+                const nom = document.getElementById("roleNom").value.trim();
+                const couleur = document.getElementById("roleCouleur").value.trim();
+                const ordre_affichage = parseInt(document.getElementById("roleOrdre").value) || 0;
+                const description = document.getElementById("roleDescription").value.trim();
+                const actif = document.getElementById("roleActif").checked;
+
+                Loader.show("Enregistrement...", "Sauvegarde du rôle en cours");
+
+                try {
+                    if (id) {
+                        // Update
+                        const { error } = await supabase
+                            .from('roles')
+                            .update({ code, nom, couleur, ordre_affichage, description, actif, updated_at: new Date() })
+                            .eq('id', id);
+                        if (error) throw error;
+                        Toast.success("Rôles", "Rôle mis à jour avec succès.");
+                    } else {
+                        // Insert
+                        const { error } = await supabase
+                            .from('roles')
+                            .insert([{ code, nom, couleur, ordre_affichage, description, actif }]);
+                        if (error) throw error;
+                        Toast.success("Rôles", "Nouveau rôle créé avec succès.");
+                    }
+
+                    closeModal();
+                    await loadRoles();
+                } catch (err) {
+                    console.error("Erreur sauvegarde rôle:", err);
+                    Toast.error("Erreur", err.message || "Impossible d'enregistrer le rôle.");
+                } finally {
+                    Loader.hide();
+                }
+            });
 
             const logoutBtn = document.getElementById("logoutBtn");
             if (logoutBtn) {
@@ -217,18 +334,19 @@
                     .order('ordre_affichage', { ascending: true });
 
                 if (error) throw error;
+                rolesData = roles || [];
 
                 const tbody = document.getElementById('rolesTableBody');
                 const countBadge = document.getElementById('rolesCount');
-                if (countBadge) countBadge.textContent = `${roles ? roles.length : 0} Rôles`;
+                if (countBadge) countBadge.textContent = `${rolesData.length} Rôles`;
 
-                if (!roles || roles.length === 0) {
+                if (rolesData.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-500">Aucun rôle trouvé.</td></tr>`;
                     return;
                 }
 
                 let html = '';
-                roles.forEach(role => {
+                rolesData.forEach(role => {
                     const badgeColor = role.couleur || '#10b981';
                     html += `
                         <tr class="hover:bg-cardhover/50 transition-colors">
@@ -244,9 +362,12 @@
                                     ${role.actif ? 'ACTIF' : 'INACTIF'}
                                 </span>
                             </td>
-                            <td class="py-3.5 px-4 text-right">
-                                <button onclick="alert('Modification du rôle ID: ${role.id}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition" title="Modifier">
+                            <td class="py-3.5 px-4 text-right space-x-1">
+                                <button onclick="editRole(${role.id})" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition cursor-pointer" title="Modifier">
                                     <i class="fas fa-pen text-xs"></i>
+                                </button>
+                                <button onclick="deleteRole(${role.id})" class="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition cursor-pointer" title="Supprimer">
+                                    <i class="fas fa-trash text-xs"></i>
                                 </button>
                             </td>
                         </tr>
@@ -256,6 +377,40 @@
             } catch (err) {
                 console.error("Erreur chargement rôles:", err);
                 Toast.error("Rôles", "Erreur lors du chargement des rôles.");
+            }
+        }
+
+        // Global functions for inline actions
+        window.editRole = function(id) {
+            const role = rolesData.find(r => r.id === id);
+            if (!role) return;
+
+            document.getElementById("modalTitle").innerHTML = '<i class="fas fa-pen text-emerald-400"></i> Modifier le Rôle';
+            document.getElementById("roleId").value = role.id;
+            document.getElementById("roleCode").value = role.code || "";
+            document.getElementById("roleNom").value = role.nom || "";
+            document.getElementById("roleCouleur").value = role.couleur || "#10b981";
+            document.getElementById("roleOrdre").value = role.ordre_affichage ?? 0;
+            document.getElementById("roleDescription").value = role.description || "";
+            document.getElementById("roleActif").checked = role.actif;
+
+            document.getElementById("roleModal").classList.remove("hidden");
+        }
+
+        window.deleteRole = async function(id) {
+            if (!confirm("Voulez-vous vraiment supprimer ce rôle ?")) return;
+
+            Loader.show("Suppression...", "Suppression du rôle en cours");
+            try {
+                const { error } = await supabase.from('roles').delete().eq('id', id);
+                if (error) throw error;
+                Toast.success("Rôles", "Rôle supprimé avec succès.");
+                await loadRoles();
+            } catch (err) {
+                console.error("Erreur suppression:", err);
+                Toast.error("Erreur", "Impossible de supprimer ce rôle (peut-être lié à des utilisateurs).");
+            } finally {
+                Loader.hide();
             }
         }
     </script>

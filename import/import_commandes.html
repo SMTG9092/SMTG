@@ -328,8 +328,7 @@
 
                 return {
                     ...kg,
-                    nombre_pieces: matchedPieces,
-                    matched: matchedPieces > 0
+                    nombre_pieces: matchedPieces
                 };
             });
 
@@ -479,11 +478,19 @@
                     if (modErr) throw modErr;
                 }
 
-                // 4. Upsert sécurisé : Evite les doublons en se basant sur la clé unique (document_vente, Poste)
+                // 4. Upsert sécurisé : Nettoyage direct pour envoyer uniquement les colonnes existantes dans Supabase
                 const batchSize = 500;
                 for (let i = 0; i < finalMatchedData.length; i += batchSize) {
                     const chunk = finalMatchedData.slice(i, i + batchSize).map(item => ({
-                        ...item,
+                        document_vente: item.document_vente,
+                        Poste: item.Poste,
+                        article: item.article,
+                        designation_article: item.designation_article,
+                        quantite_commandee: item.quantite_commandee,
+                        nombre_pieces: item.nombre_pieces,
+                        nom_receptionnaire: item.nom_receptionnaire,
+                        unite: item.unite,
+                        itineraire: item.itineraire,
                         historique_import_id: importId,
                         est_modifie: detectedModifications.some(m => m.document_vente === item.document_vente && m.ligne_commande === item.Poste)
                     }));

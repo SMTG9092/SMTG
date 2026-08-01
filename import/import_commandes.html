@@ -189,6 +189,7 @@
                                     <th class="p-3">Article</th>
                                     <th class="p-3">Désignation</th>
                                     <th class="p-3">Itinéraire</th>
+                                    <th class="p-3">Heure</th>
                                     <th class="p-3 text-right">Qte (KG)</th>
                                     <th class="p-3 text-right text-emerald-400 font-bold">Nb Pièces</th>
                                     <th class="p-3">Statut DB</th>
@@ -312,6 +313,23 @@
             return !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : null;
         }
 
+        function parseExcelTime(val) {
+            if (val === undefined || val === null || val === '') return null;
+            // If Excel stores time as a fraction of a day (e.g., 0.352685...)
+            if (typeof val === 'number') {
+                const totalSeconds = Math.round(val * 86400);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+            const str = String(val).trim();
+            if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(str)) {
+                return str.length === 5 ? `${str}:00` : str;
+            }
+            return null;
+        }
+
         function handleFile(event, type) {
             const file = event.target.files[0];
             if (!file) return;
@@ -340,7 +358,7 @@
                         itineraire: String(getColumnValue(row, ['Description Itinéraire', 'Itinéraire', 'ITINERAIRE', 'ZONE DISTRIBUTION']) || '').trim(),
                         date_creation: parseExcelDate(getColumnValue(row, ['Date de création', 'DATE CREATION'])),
                         date_livraison: parseExcelDate(getColumnValue(row, ['Date de livraison', 'DATE LIVRAISON'])),
-                        heure_livraison: String(getColumnValue(row, ['Heure', 'HEURE', 'Heure livraison']) || '').trim() || null
+                        heure_livraison: parseExcelTime(getColumnValue(row, ['Heure', 'HEURE', 'Heure livraison']))
                     })).filter(item => item.document_vente && item.article);
 
                     if (type === 'KG') {
@@ -499,6 +517,7 @@
                         <td class="p-3 text-sky-400">${item.article}</td>
                         <td class="p-3 text-slate-200">${item.designation_article || '-'}</td>
                         <td class="p-3 text-slate-300">${item.itineraire || '-'}</td>
+                        <td class="p-3 text-sky-300">${item.heure_livraison || '-'}</td>
                         <td class="p-3 text-right font-bold text-slate-100">${item.quantite_commandee.toFixed(2)} KG</td>
                         <td class="p-3 text-right ${piecesClass}">${item.nombre_pieces} Pcs</td>
                         <td class="p-3"><span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-bold">Validé & Prêt</span></td>
@@ -554,7 +573,7 @@
                     if (modErr) throw modErr;
                 }
 
-                // 4. Upsert sécurisé avec mapping complet des colonnes Excel (Itinéraire, Dates, Heure)
+                // 4. Upsert sécurisé avec mapping correct du format heure
                 const batchSize = 500;
                 for (let i = 0; i < finalMatchedData.length; i += batchSize) {
                     const chunk = finalMatchedData.slice(i, i + batchSize).map(item => ({

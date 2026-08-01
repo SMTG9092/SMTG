@@ -211,7 +211,7 @@
         let finalMatchedData = [];
         let detectedDeletions = [];
         let detectedModifications = [];
-        let activeImportId = 1;
+        let currentFileName = '';
 
         // Horloge en temps réel
         setInterval(() => {
@@ -245,6 +245,10 @@
             const file = event.target.files[0];
             if (!file) return;
 
+            if (type === 'KG') {
+                currentFileName = file.name;
+            }
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
@@ -255,15 +259,14 @@
 
                     const parsed = rawJson.map(row => ({
                         document_vente: String(getColumnValue(row, ['Document de vente', 'NUCOMD', 'Doc Vente', 'Commande', 'Vbeln'])).trim(),
-                        poste: parseInt(getColumnValue(row, ['Poste', 'POS', 'Ligne de commande', 'Posnr']) || 0),
+                        Poste: parseInt(getColumnValue(row, ['Poste', 'POS', 'Ligne de commande', 'Posnr']) || 0),
                         article: String(getColumnValue(row, ['Article', 'Code Article', 'ART', 'Matnr'])).trim(),
                         designation_article: String(getColumnValue(row, ["Description d'article", 'DESIGNATION', 'Designation Article', 'Arktx'])).trim(),
                         quantite_commandee: parseFloat(getColumnValue(row, ['Quantité commandée (poste)', 'QT COMD', 'Quantite', 'QTE', 'Kwmeng']) || 0),
                         nombre_pieces: parseInt(getColumnValue(row, ['Nombre de pièces', 'NB PIECES', 'Pieces', 'Nombre pieces', 'Nbre pieces']) || 0),
-                        client: String(getColumnValue(row, ['Client', 'Nom Réceptionnaire', 'RECEPTIONNAIRE'])).trim(),
+                        nom_receptionnaire: String(getColumnValue(row, ['Client', 'Nom Réceptionnaire', 'RECEPTIONNAIRE'])).trim(),
                         unite: String(getColumnValue(row, ['Unité', 'UNITE']) || 'KG').trim(),
-                        itineraire: String(getColumnValue(row, ['Itinéraire', 'ITINERAIRE']) || '').trim(),
-                        magasin_source: String(getColumnValue(row, ['Magasin source', 'MAGASIN']) || '').trim()
+                        itineraire: String(getColumnValue(row, ['Itinéraire', 'ITINERAIRE']) || '').trim()
                     })).filter(item => item.document_vente && item.article);
 
                     if (type === 'KG') {
@@ -302,7 +305,7 @@
             const piecesMapArticle = new Map();
 
             piecesDataRaw.forEach(p => {
-                const exactKey = `${p.document_vente}_${p.poste}_${p.article}`.toLowerCase();
+                const exactKey = `${p.document_vente}_${p.Poste}_${p.article}`.toLowerCase();
                 piecesMapExact.set(exactKey, p.nombre_pieces);
                 if (p.article && p.nombre_pieces > 0) {
                     piecesMapArticle.set(p.article.toLowerCase(), p.nombre_pieces);
@@ -311,7 +314,7 @@
 
             let matchedCount = 0;
             finalMatchedData = kgDataRaw.map(kg => {
-                const exactKey = `${kg.document_vente}_${kg.poste}_${kg.article}`.toLowerCase();
+                const exactKey = `${kg.document_vente}_${kg.Poste}_${kg.article}`.toLowerCase();
                 let matchedPieces = 0;
 
                 if (piecesMapExact.has(exactKey)) {
@@ -331,11 +334,11 @@
                 };
             });
 
-            // ⭐ TRI STRICT : Document de Vente (alphabétique/croissant) pui Poste (numérique croissant) par Document
+            // ⭐ TRI STRICT : Document de Vente (croissant) puis Poste (croissant) par Document
             finalMatchedData.sort((a, b) => {
                 const docComp = a.document_vente.localeCompare(b.document_vente, undefined, { numeric: true, sensitivity: 'base' });
                 if (docComp !== 0) return docComp;
-                return (a.poste || 0) - (b.poste || 0);
+                return (a.Poste || 0) - (b.Poste || 0);
             });
 
             detectedDeletions = [];
@@ -345,26 +348,25 @@
             try {
                 const { data: existingRows, error } = await supabase
                     .from('commandes_excel')
-                    .select('document_vente, poste, article, quantite_commandee, nombre_pieces, designation_article, client, unite, magasin_source, itineraire');
+                    .select('document_vente, Poste, article, quantite_commandee, nombre_pieces, designation_article, nom_receptionnaire, unite, itineraire, statut');
 
+                // Simulation / Détection Delta par rapport à la base
                 if (!error && existingRows && existingRows.length > 0) {
-                    const newSet = new Set(finalMatchedData.map(d => `${d.document_vente}_${d.poste}_${d.article}`.toLowerCase()));
-                    const newMap = new Map(finalMatchedData.map(d => [`${d.document_vente}_${d.poste}_${d.article}`.toLowerCase(), d]));
+                    const newSet = new Set(finalMatchedData.map(d => `${d.document_vente}_${d.Poste}_${d.article}`.toLowerCase()));
+                    const newMap = new Map(finalMatchedData.map(d => [`${d.document_vente}_${d.Poste}_${d.article}`.toLowerCase(), d]));
 
                     existingRows.forEach(ex => {
-                        const exKey = `${ex.document_vente}_${ex.poste}_${ex.article}`.toLowerCase();
+                        const exKey = `${ex.document_vente}_${ex.Poste}_${ex.article}`.toLowerCase();
                         if (!newSet.has(exKey)) {
                             detectedDeletions.push({
-                                historique_import_id: activeImportId,
                                 document_vente: ex.document_vente,
-                                ligne_commande: ex.poste,
-                                client: ex.client,
+                                ligne_commande: ex.Poste,
+                                client: ex.nom_receptionnaire,
                                 article: ex.article,
                                 designation_article: ex.designation_article,
                                 quantite: ex.quantite_commandee,
                                 unite: ex.unite,
                                 itineraire: ex.itineraire,
-                                magasin_source: ex.magasin_source,
                                 motif_suppression: 'SUPPRIMEE_DEPUIS_SAP',
                                 origine_suppression: 'SAP',
                                 statut: 'EN_ATTENTE',
@@ -376,9 +378,8 @@
                             if (incoming) {
                                 if (Number(incoming.quantite_commandee) !== Number(ex.quantite_commandee)) {
                                     detectedModifications.push({
-                                        historique_import_id: activeImportId,
                                         document_vente: ex.document_vente,
-                                        ligne_commande: ex.poste,
+                                        ligne_commande: ex.Poste,
                                         article: ex.article,
                                         designation_article: ex.designation_article,
                                         type_action: 'MODIFICATION_QUANTITE',
@@ -387,6 +388,7 @@
                                         nouvelle_valeur: String(incoming.quantite_commandee),
                                         ancienne_ligne: ex,
                                         nouvelle_ligne: incoming,
+                                        statut_avant: ex.statut,
                                         statut_apres: 'MODIFIE',
                                         date_action: nowIso
                                     });
@@ -421,7 +423,7 @@
                 html += `
                     <tr class="hover:bg-slate-800/40">
                         <td class="p-3 text-emerald-400 font-bold">${item.document_vente}</td>
-                        <td class="p-3 text-amber-400">${item.poste || '-'}</td>
+                        <td class="p-3 text-amber-400">${item.Poste || '-'}</td>
                         <td class="p-3 text-sky-400">${item.article}</td>
                         <td class="p-3 text-slate-200">${item.designation_article || '-'}</td>
                         <td class="p-3 text-right font-bold text-slate-100">${item.quantite_commandee.toFixed(2)} KG</td>
@@ -441,20 +443,52 @@
             btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Synchronisation en cours...`;
 
             try {
+                // 1. Récupérer l'utilisateur connecté actuel via Supabase Auth
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    throw new Error("Aucun utilisateur authentifié. Veuillez vous connecter.");
+                }
+
+                const totalQty = finalMatchedData.reduce((acc, curr) => acc + (curr.quantite_commandee || 0), 0);
+                
+                // 2. Insérer l'historique d'import dans la table `historique_imports`
+                const { data: histData, error: histErr } = await supabase.from('historique_imports').insert([{
+                    type_import: 'COMMANDES_KG',
+                    mode_import: 'SYNCHRONISATION',
+                    nom_fichier: currentFileName || 'import_commandes.xlsx',
+                    utilisateur: user.id,
+                    total_lignes: finalMatchedData.length,
+                    nouvelles_lignes: finalMatchedData.length,
+                    lignes_modifiees: detectedModifications.length,
+                    lignes_supprimees: detectedDeletions.length,
+                    total_quantite: totalQty,
+                    statut: 'SUCCESS'
+                }]).select().single();
+
+                if (histErr) throw histErr;
+                const importId = histData.id;
+
+                // 3. Associer les suppressions et modifications à l'historique_import_id
                 if (detectedDeletions.length > 0) {
-                    const { error: delErr } = await supabase.from('commandes_supprimees').insert(detectedDeletions);
+                    const deletionsWithId = detectedDeletions.map(d => ({ ...d, historique_import_id: importId, utilisateur: user.id }));
+                    const { error: delErr } = await supabase.from('commandes_supprimees').insert(deletionsWithId);
                     if (delErr) throw delErr;
                 }
 
                 if (detectedModifications.length > 0) {
-                    const { error: modErr } = await supabase.from('modifications_commandes').insert(detectedModifications);
+                    const modificationsWithId = detectedModifications.map(m => ({ ...m, historique_import_id: importId, utilisateur: user.id }));
+                    const { error: modErr } = await supabase.from('modifications_commandes').insert(modificationsWithId);
                     if (modErr) throw modErr;
                 }
 
+                // 4. Insérer par batchs les données principales dans `commandes_excel` avec historique_import_id
                 const batchSize = 500;
                 for (let i = 0; i < finalMatchedData.length; i += batchSize) {
-                    const chunk = finalMatchedData.slice(i, i + batchSize);
-                    const { error } = await supabase.from('commandes_excel').upsert(chunk, { onConflict: 'document_vente,poste,article' });
+                    const chunk = finalMatchedData.slice(i, i + batchSize).map(item => ({
+                        ...item,
+                        historique_import_id: importId
+                    }));
+                    const { error } = await supabase.from('commandes_excel').upsert(chunk, { onConflict: 'document_vente,Poste' });
                     if (error) throw error;
                 }
 
@@ -475,6 +509,7 @@
             finalMatchedData = [];
             detectedDeletions = [];
             detectedModifications = [];
+            currentFileName = '';
             document.getElementById("welcomeState").classList.remove("hidden");
             document.getElementById("previewSection").classList.add("hidden");
             document.getElementById("actionContainer").classList.add("hidden");

@@ -138,7 +138,7 @@
                     <i class="fas fa-database animate-pulse"></i>
                 </div>
                 <h3 class="text-base font-bold text-slate-200">Prêt pour l'analyse synchronisée Supabase</h3>
-                <p class="text-xs text-slate-400 max-w-md mt-1">Importez vos fichiers KG et Pièces pour fusionner automatiquement le nombre exact de pièces par ligne.</p>
+                <p class="text-xs text-slate-400 max-w-md mt-1">Importez vos fichiers KG et Pièces pour trier et fusionner les données par Document de Vente et Poste.</p>
             </div>
 
             <!-- PREVIEW SECTION -->
@@ -147,7 +147,7 @@
                 <div class="flex items-center justify-between bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-md">
                     <div>
                         <h3 class="text-xs font-bold text-slate-100 flex items-center gap-2">
-                            <i class="fas fa-table text-emerald-400"></i> Résultat Delta & Analyse Pièces
+                            <i class="fas fa-table text-emerald-400"></i> Résultat Trié (Doc Vente & Poste)
                         </h3>
                         <p class="text-[11px] text-slate-400 mt-0.5">Lignes valides : <span id="rowCount" class="font-bold text-slate-200">0</span> | Suppressions : <span id="deletedCount" class="font-bold text-rose-400">0</span> | Modifications : <span id="modifiedCount" class="font-bold text-amber-400">0</span></p>
                     </div>
@@ -189,7 +189,7 @@
                                     <th class="p-3">Article</th>
                                     <th class="p-3">Désignation</th>
                                     <th class="p-3 text-right">Qte (KG)</th>
-                                    <th class="p-3 text-right text-emerald-400 font-bold">Nb Pièces (Extrait)</th>
+                                    <th class="p-3 text-right text-emerald-400 font-bold">Nb Pièces</th>
                                     <th class="p-3">Statut DB</th>
                                 </tr>
                             </thead>
@@ -298,7 +298,6 @@
         async function performMatchingAndDelta() {
             if (kgDataRaw.length === 0 || piecesDataRaw.length === 0) return;
 
-            // Création d'une Map robuste pour chercher par Document + Poste + Article ou par Article seul si besoin
             const piecesMapExact = new Map();
             const piecesMapArticle = new Map();
 
@@ -315,16 +314,11 @@
                 const exactKey = `${kg.document_vente}_${kg.poste}_${kg.article}`.toLowerCase();
                 let matchedPieces = 0;
 
-                // 1. Tenter le matching exact (Doc + Poste + Article)
                 if (piecesMapExact.has(exactKey)) {
                     matchedPieces = piecesMapExact.get(exactKey);
-                } 
-                // 2. Si non trouvé exactement, chercher via le fichier pièces si le champ 'nombre_pieces' est présent dans la ligne KG elle-même
-                else if (kg.nombre_pieces > 0) {
+                } else if (kg.nombre_pieces > 0) {
                     matchedPieces = kg.nombre_pieces;
-                }
-                // 3. Fallback sur l'article si le document/poste diffère légèrement
-                else if (piecesMapArticle.has(kg.article.toLowerCase())) {
+                } else if (piecesMapArticle.has(kg.article.toLowerCase())) {
                     matchedPieces = piecesMapArticle.get(kg.article.toLowerCase());
                 }
 
@@ -335,6 +329,13 @@
                     nombre_pieces: matchedPieces,
                     matched: matchedPieces > 0
                 };
+            });
+
+            // ⭐ TRI STRICT : Document de Vente (alphabétique/croissant) pui Poste (numérique croissant) par Document
+            finalMatchedData.sort((a, b) => {
+                const docComp = a.document_vente.localeCompare(b.document_vente, undefined, { numeric: true, sensitivity: 'base' });
+                if (docComp !== 0) return docComp;
+                return (a.poste || 0) - (b.poste || 0);
             });
 
             detectedDeletions = [];

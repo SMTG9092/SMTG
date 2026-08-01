@@ -230,14 +230,12 @@
         document.addEventListener("DOMContentLoaded", async () => {
             initLiveClock();
 
-            // Initialiser le champ date avec la date d'aujourd'hui (format YYYY-MM-DD)
             const todayStr = new Date().toISOString().split('T')[0];
             const dateInput = document.getElementById("filterDateInput");
             if (dateInput) {
                 dateInput.value = todayStr;
                 currentDateFilter = todayStr;
 
-                // Écouter les changements de date
                 dateInput.addEventListener("change", async (e) => {
                     currentDateFilter = e.target.value;
                     currentPage = 1;
@@ -275,14 +273,12 @@
         }
 
         function applyFilters(query) {
-            // Filtrage par date de création (basé sur le champ created_at de Supabase)
             if (currentDateFilter) {
                 const startOfDay = `${currentDateFilter}T00:00:00`;
                 const endOfDay = `${currentDateFilter}T23:59:59`;
                 query = query.gte('created_at', startOfDay).lte('created_at', endOfDay);
             }
 
-            // Filtrage par recherche textuelle
             if (currentSearch !== "") {
                 query = query.or(`document_vente.ilike.%${currentSearch}%,article.ilike.%${currentSearch}%,lot.ilike.%${currentSearch}%`);
             }
@@ -293,6 +289,7 @@
             const tbody = document.getElementById("reservationsTableBody");
 
             try {
+                // Modification de la requête pour sélectionner uniquement id et statut de la table picking (évite l'erreur sur client_nom)
                 let query = supabase
                     .from('reservations_stock')
                     .select(`
@@ -310,7 +307,7 @@
                         unite,
                         statut,
                         created_at,
-                        picking:picking_id ( id, statut, client_nom )
+                        picking:picking_id ( id, statut )
                     `, { count: 'exact' });
 
                 query = applyFilters(query);
@@ -323,7 +320,7 @@
 
                 if (error) {
                     console.error("Erreur:", error);
-                    tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-red-400 text-xs"><i class="fas fa-exclamation-triangle mr-2"></i> Erreur lors du chargement des données.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-red-400 text-xs"><i class="fas fa-exclamation-triangle mr-2"></i> Erreur lors du chargement des données : ${error.message}</td></tr>`;
                     return;
                 }
 
@@ -341,7 +338,7 @@
 
         async function fetchGlobalStats() {
             try {
-                let q = supabase.from('reservations_stock').select('id, stock_id, picking_id, picking_detail_id, suivi_id, quantite_reservee, statut, document_vente, article, designation_article, lot, magasin, created_at, picking:picking_id(id, statut, client_nom)');
+                let q = supabase.from('reservations_stock').select('id, stock_id, picking_id, picking_detail_id, suivi_id, quantite_reservee, statut, document_vente, article, designation_article, lot, magasin, created_at, picking:picking_id(id, statut)');
                 q = applyFilters(q);
                 const { data, error } = await q.limit(10000);
                 if (error || !data) return;
@@ -518,7 +515,6 @@
                 XLSX.utils.book_append_sheet(workbook, worksheet, "AB10_Export");
                 XLSX.writeFile(workbook, `AB10_Transfer_${new Date().toISOString().slice(0,10)}.xlsx`);
 
-                // --- GENERATION AUTOMATIQUE DU PDF PERSONNALISE ---
                 generateAutomaticPDF(targetRows);
 
                 alert(`Traitement réussi ! ${targetRows.length} ligne(s) sélectionnées ont été basculées à TERMINE / TRANSFEREE_AB10.`);
@@ -540,7 +536,7 @@
                 if (!groupedByCommand[cmd]) {
                     groupedByCommand[cmd] = {
                         document_vente: cmd,
-                        client_nom: (item.picking && item.picking.client_nom) ? item.picking.client_nom : 'Client Divers',
+                        client_nom: 'Client Divers',
                         items: []
                     };
                 }
@@ -566,9 +562,6 @@
                 doc.setFontSize(12);
                 doc.setTextColor(16, 185, 129);
                 doc.text(`N° Commande : ${group.document_vente}`, 14, 38);
-                doc.setFontSize(11);
-                doc.setTextColor(51, 65, 85);
-                doc.text(`Client : ${group.client_nom}`, 14, 45);
 
                 const tableColumns = ["Article & Désignation", "Lot", "Quantité Demandée", "Quantité Transférée"];
                 const tableRows = group.items.map(item => [
@@ -581,7 +574,7 @@
                 doc.autoTable({
                     head: [tableColumns],
                     body: tableRows,
-                    startY: 52,
+                    startY: 45,
                     theme: 'grid',
                     styles: { fontSize: 9, cellPadding: 4 },
                     headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] }

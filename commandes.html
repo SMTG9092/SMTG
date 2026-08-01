@@ -227,7 +227,7 @@
         import supabase from '../assets/js/core/supabase.js';
 
         let allCommandes = [];
-        let selectedRowId = null; // Khasyat tahdid ligne (sélection)
+        let selectedRowId = null;
 
         setInterval(() => {
             const now = new Date();
@@ -235,16 +235,13 @@
             document.getElementById("currentTime").innerText = now.toTimeString().split(' ')[0];
         }, 1000);
 
-        // Initialisation des dates par défaut : Du Jour J jusqu'à +6 jours
+        // Initialisation des dates par défaut : Uniquement "Aujourd'hui" (Lyom bohedo)
         function initDefaultDates() {
             const today = new Date();
-            const futureDate = new Date();
-            futureDate.setDate(today.getDate() + 6);
-
             const formatDate = (d) => d.toISOString().split('T')[0];
 
             document.getElementById("filterDateDebut").value = formatDate(today);
-            document.getElementById("filterDateFin").value = formatDate(futureDate);
+            document.getElementById("filterDateFin").value = formatDate(today);
         }
 
         async function fetchCommandes() {
@@ -280,7 +277,7 @@
         function renderTable(data) {
             const tbody = document.getElementById("commandesTableBody");
             if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-500">Aucune commande trouvée pour cette période.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-500">Aucune commande trouvée pour cette date.</td></tr>`;
                 return;
             }
 
@@ -324,13 +321,11 @@
             tbody.innerHTML = html;
         }
 
-        // Khasyat Tahdid (Sélection d'une ligne)
         window.selectRow = function(id) {
-            selectedRowId = selectedRowId === id ? null : id; // Toggle selection
+            selectedRowId = selectedRowId === id ? null : id;
             applyFilters();
         };
 
-        // Khasyat Filtrer par même date de livraison cliquée
         window.filterBySameDate = function(dateStr) {
             if (!dateStr) return;
             document.getElementById("filterDateDebut").value = dateStr;
@@ -338,7 +333,6 @@
             applyFilters();
         };
 
-        // Global scope for modal
         window.openEditModal = function(id) {
             const item = allCommandes.find(c => c.id === id);
             if (!item) return;
@@ -396,7 +390,6 @@
             }
         });
 
-        // Filter & Search Logic
         function applyFilters() {
             const query = document.getElementById("searchInput").value.toLowerCase();
             const statut = document.getElementById("filterStatut").value;

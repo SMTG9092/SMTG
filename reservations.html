@@ -327,13 +327,11 @@
                     const docVentes = [...new Set(data.map(d => d.document_vente).filter(Boolean))];
 
                     if (docVentes.length > 0) {
-                        // 1. Njibo Client w Date Livraison mn suivi_commandes_lancer
                         const { data: suiviData } = await supabase
                             .from('suivi_commandes_lancer')
                             .select('document_vente, client, date_livraison')
                             .in('document_vente', docVentes);
 
-                        // 2. Njibo Quantité commandée mn commandes_excel
                         const { data: cmdData } = await supabase
                             .from('commandes_excel')
                             .select('document_vente, article, quantite_commandee')
@@ -582,8 +580,31 @@
             Object.values(groupedByCommand).forEach((group, index) => {
                 const headerHeight = 15;
                 const rowHeight = 8;
-                const tableHeight = (group.items.length + 1) * rowHeight + 10;
                 
+                // Regroupement dial les articles li m3awdin
+                const articleMap = {};
+                group.items.forEach(item => {
+                    const artKey = item.article || '';
+                    if (!articleMap[artKey]) {
+                        articleMap[artKey] = {
+                            articleText: `${item.article || ''} ${item.designation_article ? '- ' + item.designation_article : ''}`,
+                            lots: []
+                        };
+                    }
+                    articleMap[artKey].lots.push({
+                        lot: item.lot || '',
+                        kg: item.quantite_commandee !== undefined && item.quantite_commandee !== null ? Number(item.quantite_commandee).toFixed(2) : '0.00',
+                        pieces: item.pieces || '0',
+                        qtePrep: item.quantite_reservee !== undefined && item.quantite_reservee !== null ? Number(item.quantite_reservee).toFixed(2) : '0.00'
+                    });
+                });
+
+                let totalRowsCount = 0;
+                Object.values(articleMap).forEach(art => {
+                    totalRowsCount += art.lots.length;
+                });
+
+                const tableHeight = (totalRowsCount + 1) * rowHeight + 10;
                 let needsMainHeader = false;
                 const totalBlockHeight = (startY === 15 ? 12 : 0) + headerHeight + tableHeight + 10;
 
@@ -620,18 +641,19 @@
                 startY += 11;
 
                 const tableColumns = ["Article", "KG", "Pieces", "Lot", "QTÉ Prép."];
-                
-                const tableRows = group.items.map(item => [
-                    `${item.article || ''} ${item.designation_article ? '- ' + item.designation_article : ''}`,
-                    item.quantite_commandee !== undefined && item.quantite_commandee !== null 
-                        ? Number(item.quantite_commandee).toFixed(2) 
-                        : '0.00',
-                    item.pieces || '0',
-                    item.lot || '',
-                    item.quantite_reservee !== undefined && item.quantite_reservee !== null
-                        ? Number(item.quantite_reservee).toFixed(2)
-                        : '0.00'
-                ]);
+                const tableRows = [];
+
+                Object.values(articleMap).forEach(art => {
+                    art.lots.forEach((l, lotIdx) => {
+                        tableRows.push([
+                            lotIdx === 0 ? art.articleText : '',
+                            l.kg,
+                            l.pieces,
+                            l.lot,
+                            l.qtePrep
+                        ]);
+                    });
+                });
 
                 doc.autoTable({
                     head: [tableColumns],

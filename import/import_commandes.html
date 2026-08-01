@@ -213,7 +213,6 @@
         let detectedModifications = [];
         let currentFileName = '';
 
-        // Horloge en temps réel
         setInterval(() => {
             const now = new Date();
             document.getElementById("currentDate").innerText = now.toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
@@ -334,7 +333,7 @@
                 };
             });
 
-            // ⭐ TRI STRICT : Document de Vente (croissant) puis Poste (croissant) par Document
+            // ⭐ TRI STRICT : Document de Vente (croissant) puis Poste (croissant)
             finalMatchedData.sort((a, b) => {
                 const docComp = a.document_vente.localeCompare(b.document_vente, undefined, { numeric: true, sensitivity: 'base' });
                 if (docComp !== 0) return docComp;
@@ -350,7 +349,6 @@
                     .from('commandes_excel')
                     .select('document_vente, Poste, article, quantite_commandee, nombre_pieces, designation_article, nom_receptionnaire, unite, itineraire, statut');
 
-                // Simulation / Détection Delta par rapport à la base
                 if (!error && existingRows && existingRows.length > 0) {
                     const newSet = new Set(finalMatchedData.map(d => `${d.document_vente}_${d.Poste}_${d.article}`.toLowerCase()));
                     const newMap = new Map(finalMatchedData.map(d => [`${d.document_vente}_${d.Poste}_${d.article}`.toLowerCase(), d]));
@@ -398,7 +396,7 @@
                     });
                 }
             } catch (dbErr) {
-                console.warn("Base de données en attente ou injoignable, mode simulation active :", dbErr);
+                console.warn("Base de données en attente ou injoignable :", dbErr);
             }
 
             document.getElementById("rowCount").textContent = finalMatchedData.length;
@@ -443,7 +441,6 @@
             btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Synchronisation en cours...`;
 
             try {
-                // 1. Récupérer l'utilisateur connecté actuel via Supabase Auth
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) {
                     throw new Error("Aucun utilisateur authentifié. Veuillez vous connecter.");
@@ -451,7 +448,7 @@
 
                 const totalQty = finalMatchedData.reduce((acc, curr) => acc + (curr.quantite_commandee || 0), 0);
                 
-                // 2. Insérer l'historique d'import dans la table `historique_imports`
+                // 1. Enregistrer l'historique d'import
                 const { data: histData, error: histErr } = await supabase.from('historique_imports').insert([{
                     type_import: 'COMMANDES_KG',
                     mode_import: 'SYNCHRONISATION',
@@ -468,31 +465,37 @@
                 if (histErr) throw histErr;
                 const importId = histData.id;
 
-                // 3. Associer les suppressions et modifications à l'historique_import_id
+                // 2. Enregistrer les suppressions si elles existent
                 if (detectedDeletions.length > 0) {
                     const deletionsWithId = detectedDeletions.map(d => ({ ...d, historique_import_id: importId, utilisateur: user.id }));
                     const { error: delErr } = await supabase.from('commandes_supprimees').insert(deletionsWithId);
                     if (delErr) throw delErr;
                 }
 
+                // 3. Enregistrer les modifications si elles existent
                 if (detectedModifications.length > 0) {
                     const modificationsWithId = detectedModifications.map(m => ({ ...m, historique_import_id: importId, utilisateur: user.id }));
                     const { error: modErr } = await supabase.from('modifications_commandes').insert(modificationsWithId);
                     if (modErr) throw modErr;
                 }
 
-                // 4. Insérer par batchs les données principales dans `commandes_excel` avec historique_import_id
+                // 4. Upsert sécurisé : Evite les doublons en se basant sur la clé unique (document_vente, Poste)
                 const batchSize = 500;
                 for (let i = 0; i < finalMatchedData.length; i += batchSize) {
                     const chunk = finalMatchedData.slice(i, i + batchSize).map(item => ({
                         ...item,
-                        historique_import_id: importId
+                        historique_import_id: importId,
+                        est_modifie: detectedModifications.some(m => m.document_vente === item.document_vente && m.ligne_commande === item.Poste)
                     }));
-                    const { error } = await supabase.from('commandes_excel').upsert(chunk, { onConflict: 'document_vente,Poste' });
+                    
+                    const { error } = await supabase.from('commandes_excel').upsert(chunk, { 
+                        onConflict: 'document_vente,Poste',
+                        ignoreDuplicates: false 
+                    });
                     if (error) throw error;
                 }
 
-                alert(`Succès total ! Enregistré avec succès dans Supabase :\n- ${finalMatchedData.length} lignes traitées\n- ${detectedDeletions.length} suppressions consignées\n- ${detectedModifications.length} modifications tracées.`);
+                alert(`Succès total ! Synchronisation effectuée sans doublons :\n- ${finalMatchedData.length} lignes traitées\n- ${detectedDeletions.length} suppressions\n- ${detectedModifications.length} modifications.`);
                 resetAll();
             } catch (err) {
                 console.error(err);

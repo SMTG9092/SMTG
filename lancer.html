@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lancement des Commandes par Date - SoufStock WMS</title>
+    <title>Lancement des Commandes par Période - SoufStock WMS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -42,22 +42,30 @@
     <!-- MAIN WRAPPER -->
     <main class="flex-1 p-6 overflow-hidden flex flex-col gap-5">
         
-        <!-- BARRE DE FILTRE PAR DATE -->
+        <!-- BARRE DE FILTRE PAR INTERVALLE DE DATES -->
         <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-lg">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                    <i class="fas fa-calendar-day"></i>
+                    <i class="fas fa-calendar-days"></i>
                 </div>
                 <div>
-                    <h2 class="text-xs font-bold text-slate-100 uppercase tracking-wider">Filtrer par Date de Livraison</h2>
-                    <p class="text-[11px] text-slate-400">Sélectionnez la date pour afficher les commandes avec le statut <span class="text-emerald-400 font-bold">IMPORTEE</span></p>
+                    <h2 class="text-xs font-bold text-slate-100 uppercase tracking-wider">Filtrer par Intervalle de Dates</h2>
+                    <p class="text-[11px] text-slate-400">Afficher les commandes <span class="text-emerald-400 font-bold">IMPORTEE</span> entre les deux dates</p>
                 </div>
             </div>
-            <div class="flex items-center gap-3">
+            
+            <div class="flex flex-wrap items-center gap-3">
+                <!-- Date Début -->
                 <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl">
-                    <i class="fas fa-filter text-emerald-400 text-xs"></i>
-                    <input type="date" id="filterDate" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono cursor-pointer">
+                    <span class="text-[10px] text-slate-400 uppercase">Du:</span>
+                    <input type="date" id="dateDebut" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono cursor-pointer">
                 </div>
+                <!-- Date Fin -->
+                <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl">
+                    <span class="text-[10px] text-slate-400 uppercase">Au:</span>
+                    <input type="date" id="dateFin" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono cursor-pointer">
+                </div>
+
                 <button onclick="loadSuiviCommandes()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
                     <i class="fas fa-search"></i> Afficher
                 </button>
@@ -86,7 +94,7 @@
                     </thead>
                     <tbody id="suiviTableBody" class="divide-y divide-slate-800/50 font-mono">
                         <tr>
-                            <td colspan="9" class="p-8 text-center text-slate-500">Sélectionnez une date ou cliquez sur Afficher...</td>
+                            <td colspan="9" class="p-8 text-center text-slate-500">Sélectionnez la période et cliquez sur Afficher...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -127,21 +135,29 @@
     <script type="module">
         import supabase from '../assets/js/core/supabase.js';
 
-        // Set default date to today or let user choose
-        document.getElementById('filterDate').value = new Date().toISOString().split('T')[0];
+        // Initialiser les inputs par défaut (ex: du 01/08/2026 l 02/08/2026 wla l'yon)
+        const todayStr = new Date().toISOString().split('T')[0];
+        document.getElementById('dateDebut').value = todayStr;
+        document.getElementById('dateFin').value = todayStr;
 
         window.loadSuiviCommandes = async function() {
-            const selectedDate = document.getElementById('filterDate').value;
+            const dateDebut = document.getElementById('dateDebut').value;
+            const dateFin = document.getElementById('dateFin').value;
             const tbody = document.getElementById("suiviTableBody");
+            
             tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Chargement des commandes...</td></tr>`;
 
             let query = supabase
                 .from('suivi_commandes_lancer')
                 .select('*')
-                .eq('statut', 'IMPORTEE'); // K-jib gha li ba9a IMPORTEE
+                .eq('statut', 'IMPORTEE');
 
-            if (selectedDate) {
-                query = query.eq('date_livraison', selectedDate);
+            // Filtrage b l'intervalle d tarikh (gte = Greater Than or Equal, lte = Less Than or Equal)
+            if (dateDebut) {
+                query = query.gte('date_livraison', dateDebut);
+            }
+            if (dateFin) {
+                query = query.lte('date_livraison', dateFin);
             }
 
             const { data: suiviList, error } = await query.order('date_livraison', { ascending: true });
@@ -153,7 +169,7 @@
             }
 
             if (!suiviList || suiviList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-500">Aucune commande importée trouvée pour cette date (${selectedDate || 'Toutes'}).</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-500">Aucune commande importée trouvée entre ${dateDebut || '...'} et ${dateFin || '...'}.</td></tr>`;
                 return;
             }
 
@@ -179,11 +195,11 @@
                         <td class="p-3.5 text-slate-300"><span class="bg-slate-950 px-2 py-1 rounded border border-slate-800 text-[11px]">${item.itineraire || 'Non assigné'}</span></td>
                         <td class="p-3.5"><span class="border px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border-emerald-500/20">${item.statut}</span></td>
                         <td class="p-3.5 text-center flex items-center justify-center gap-2">
-                            <!-- Zrr 1:achno kayn f commande -->
-                            <button onclick="openDetails('${item.document_vente}')" class="bg-slate-800 hover:bg-slate-700 text-sky-400 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow" title="Voir ce qu'il y a dans la commande">
+                            <!-- Zrr 1: Articles -->
+                            <button onclick="openDetails('${item.document_vente}')" class="bg-slate-800 hover:bg-slate-700 text-sky-400 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow" title="Voir les articles">
                                 <i class="fas fa-eye"></i> Articles
                             </button>
-                            <!-- Zrr 2: Lonsi / Itlaq la commande -->
+                            <!-- Zrr 2: Lancer -->
                             <button onclick="lancerCommande('${item.id}', '${item.document_vente}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow">
                                 <i class="fas fa-play"></i> Lancer
                             </button>
@@ -195,7 +211,8 @@
         };
 
         window.resetFilter = function() {
-            document.getElementById('filterDate').value = '';
+            document.getElementById('dateDebut').value = '';
+            document.getElementById('dateFin').value = '';
             loadSuiviCommandes();
         };
 
@@ -245,7 +262,6 @@
             const { data: { user } } = await supabase.auth.getUser();
             const userId = user ? user.id : null;
 
-            // Update f table suivi_commandes_lancer l statut LANCEE
             const { error: errSuivi } = await supabase
                 .from('suivi_commandes_lancer')
                 .update({
@@ -260,21 +276,19 @@
                 return;
             }
 
-            // Update hta f commandes_excel
             await supabase
                 .from('commandes_excel')
                 .update({ statut: 'LANCEE' })
                 .eq('document_vente', docVente);
 
             alert(`La commande ${docVente} a été lancée avec succès !`);
-            loadSuiviCommandes(); // R-freshili la liste bach t-tahyd mn had l-page (hit wllat LANCEE)
+            loadSuiviCommandes();
         };
 
         setInterval(() => {
             document.getElementById("liveClock").innerText = new Date().toLocaleTimeString('fr-FR');
         }, 1000);
 
-        // Auto load on start
         loadSuiviCommandes();
     </script>
 </body>

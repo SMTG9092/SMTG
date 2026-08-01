@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des Commandes - SoufStock Enterprise ERP/WMS</title>
+    <title>Gestion des Commandes Excel - SoufStock WMS</title>
     
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <!-- Tailwind CSS Play CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
         tailwind.config = {
@@ -17,27 +18,16 @@
             theme: {
                 extend: {
                     colors: {
-                        slate: {
-                            950: '#020617',
-                            900: '#0f172a',
-                            800: '#1e293b',
-                            700: '#334155',
-                            400: '#94a3b8',
-                            300: '#cbd5e1',
-                            100: '#f1f5f9'
-                        },
-                        emerald: {
-                            500: '#10b981',
-                            600: '#059669',
-                            400: '#34d399',
-                            300: '#6ee7b7'
-                        }
+                        slate: { 950: '#020617', 900: '#0f172a', 800: '#1e293b', 700: '#334155', 400: '#94a3b8', 300: '#cbd5e1', 100: '#f1f5f9' },
+                        emerald: { 600: '#059669', 500: '#10b981', 400: '#34d399', 300: '#6ee7b7' },
+                        amber: { 500: '#f59e0b', 400: '#fbbf24' },
+                        rose: { 500: '#f43f5e', 400: '#fb7185' },
+                        sky: { 500: '#0ea5e9', 400: '#38bdf8' }
                     }
                 }
             }
         }
     </script>
-
     <style>
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #090d16; }
@@ -48,575 +38,338 @@
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans antialiased h-screen flex flex-col overflow-hidden">
 
-    <!-- MAIN CONTAINER (FULL WIDTH) -->
-    <div class="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
+    <!-- HEADER -->
+    <header class="h-16 bg-slate-900/60 border-b border-slate-800/80 px-6 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                <i class="fas fa-boxes-stacked text-base"></i>
+            </div>
+            <div>
+                <span class="font-bold text-sm tracking-wide block text-slate-100">SoufStock <span class="text-emerald-400 font-normal">WMS</span></span>
+                <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Module de Gestion des Commandes Excel</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button id="btnRefresh" class="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 cursor-pointer shadow-sm">
+                <i class="fas fa-rotate"></i> Actualiser
+            </button>
+            <div class="bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl text-right">
+                <span id="currentDate" class="text-[11px] font-medium text-slate-300 block">Chargement...</span>
+                <span id="currentTime" class="text-[10px] text-emerald-400 font-mono block">00:00:00</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <div class="flex-1 flex flex-col overflow-hidden p-6 gap-6 bg-slate-950">
         
-        <!-- HEADER -->
-        <header class="h-20 bg-slate-900/40 border-b border-slate-800/80 px-8 flex items-center justify-between shrink-0">
-            <div class="flex items-center gap-4">
-                <a href="../index-stock.html" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow-sm group">
-                    <i class="fas fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
-                    <span>Retour au Hub</span>
-                </a>
-
+        <!-- KPI METRICS -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 shrink-0">
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between shadow-lg">
                 <div>
-                    <h1 id="pageTitle" class="text-xl font-bold tracking-tight text-slate-100">Synthèse des Commandes</h1>
-                    <div id="breadcrumb" class="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
-                        <span>Accueil</span>
-                        <span>/</span>
-                        <strong class="text-slate-300">Commandes</strong>
-                    </div>
+                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Total Commandes</span>
+                    <span id="kpiTotalCmd" class="text-xl font-bold font-mono text-slate-100 mt-0.5 block">0</span>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                    <i class="fas fa-file-invoice text-base"></i>
                 </div>
             </div>
-            
-            <div class="flex items-center gap-4">
-                <div class="bg-slate-900/80 border border-slate-800 px-4 py-2 rounded-xl text-right">
-                    <span id="currentDate" class="text-xs font-medium text-slate-300 block">Jeudi 30 juillet 2026</span>
-                    <span id="currentTime" class="text-[10px] text-emerald-400 font-mono block">15:51:00</span>
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between shadow-lg">
+                <div>
+                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Quantité Totale (KG)</span>
+                    <span id="kpiTotalKg" class="text-xl font-bold font-mono text-emerald-400 mt-0.5 block">0.00</span>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                    <i class="fas fa-weight-scale text-base"></i>
                 </div>
             </div>
-        </header>
-
-        <!-- PAGE BODY (FULL WIDTH STRETCHED) -->
-        <main class="flex-1 px-6 py-6 overflow-hidden flex flex-col">
-            <div class="w-full h-full flex flex-col gap-6 overflow-hidden">
-                
-                <!-- FILTER & CONTROLS BAR (SHRINK-0) -->
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col gap-4 shrink-0">
-                    <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-                        <div>
-                            <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
-                                <i class="fas fa-layer-group text-emerald-400"></i> Suivi Global par Document de Vente
-                            </h2>
-                            <p class="text-xs text-slate-400 mt-1">
-                                Synthèse consolidée des réceptionnaires, itinéraires, articles, quantités globales et pièces.
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- HORIZONTAL DATES BAR -->
-                    <div class="flex items-center gap-2 overflow-x-auto pb-2 pt-1 scrollbar-thin" id="datesQuickBar"></div>
-                    
-                    <!-- Search & Filter Controls Grid -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-2 border-t border-slate-800/80">
-                        <div class="relative flex items-center">
-                            <i class="fas fa-search absolute left-3.5 text-slate-500 text-sm"></i>
-                            <input type="text" id="searchInput" placeholder="N° Document / Réceptionnaire..." 
-                                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition shadow-inner">
-                        </div>
-
-                        <select id="statusFilter" class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500 transition shadow-inner cursor-pointer">
-                            <option value="">Tous les statuts</option>
-                            <option value="IMPORTEE">IMPORTEE</option>
-                            <option value="CONTROLEE">CONTROLEE</option>
-                            <option value="LANCEE">LANCEE</option>
-                            <option value="EN_PICKING">EN_PICKING</option>
-                            <option value="PREPAREE">PREPAREE</option>
-                            <option value="EN_AB10">EN_AB10</option>
-                            <option value="EXPEDIEE">EXPEDIEE</option>
-                            <option value="ANNULEE">ANNULEE</option>
-                        </select>
-
-                        <select id="itineraireFilter" class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500 transition shadow-inner cursor-pointer font-mono">
-                            <option value="">Tous les itinéraires</option>
-                        </select>
-
-                        <div class="flex items-center gap-2 col-span-1 sm:col-span-2 lg:col-span-2">
-                            <button id="searchBtn" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-sm cursor-pointer">
-                                <i class="fas fa-filter"></i> Filtrer
-                            </button>
-                            <button id="resetBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2 cursor-pointer" title="Réinitialiser les filtres">
-                                <i class="fas fa-redo-alt"></i> Réinitialiser
-                            </button>
-                        </div>
-                    </div>
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between shadow-lg">
+                <div>
+                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Total Pièces</span>
+                    <span id="kpiTotalPieces" class="text-xl font-bold font-mono text-sky-400 mt-0.5 block">0</span>
                 </div>
-
-                <!-- TABLE CONTAINER (FULL WIDTH & STRETCHED) -->
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex-1 flex flex-col min-h-0">
-                    <div class="overflow-y-auto flex-1">
-                        <table class="w-full text-left border-collapse text-sm">
-                            <thead class="sticky top-0 z-10">
-                                <tr class="bg-slate-950 text-slate-400 uppercase text-[11px] tracking-wider border-b border-slate-800 font-semibold shadow-sm">
-                                    <th class="p-4">N° Document</th>
-                                    <th class="p-4">Réceptionnaire</th>
-                                    <th class="p-4">Itinéraire</th>
-                                    <th class="p-4 text-center">Nbr Articles</th>
-                                    <th class="p-4 text-center">Qté Globale (Cmd)</th>
-                                    <th class="p-4 text-center">Total Pièces</th>
-                                    <th class="p-4 text-center">Date Livraison</th>
-                                    <th class="p-4 text-center">Statut</th>
-                                    <th class="p-4 text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="ordersTableBody" class="divide-y divide-slate-800/50">
-                                <tr>
-                                    <td colspan="9" class="p-12 text-center text-slate-400 text-xs">
-                                        <i class="fas fa-spinner fa-spin mr-2 text-emerald-500 text-base"></i> Chargement des données...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <!-- Pagination / Footer info -->
-                    <div class="bg-slate-950/60 border-t border-slate-800 px-6 py-3 flex items-center justify-between text-xs text-slate-400 shrink-0">
-                        <span id="rowCount">Affichage de 0 éléments</span>
-                        <div class="flex items-center gap-2">
-                            <button id="prevPageBtn" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition disabled:opacity-50 cursor-pointer">Précédent</button>
-                            <span id="pageIndicator" class="font-mono text-slate-300">Page 1 / 1</span>
-                            <button id="nextPageBtn" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition disabled:opacity-50 cursor-pointer">Suivant</button>
-                        </div>
-                    </div>
+                <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                    <i class="fas fa-cubes text-base"></i>
                 </div>
-
             </div>
-        </main>
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between shadow-lg">
+                <div>
+                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Modifications / Delta</span>
+                    <span id="kpiModified" class="text-xl font-bold font-mono text-amber-400 mt-0.5 block">0</span>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                    <i class="fas fa-triangle-exclamation text-base"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- FILTERS BAR -->
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-md shrink-0">
+            <div class="flex items-center gap-3 flex-1 min-w-[280px]">
+                <div class="relative w-full">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-500">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" id="searchInput" placeholder="Rechercher par Document de vente, Article, Client..." class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 font-mono">
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <select id="filterStatut" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500/50 font-mono">
+                    <option value="">Tous les statuts</option>
+                    <option value="IMPORTEE">IMPORTEE</option>
+                    <option value="CONTROLEE">CONTROLEE</option>
+                    <option value="LANCEE">LANCEE</option>
+                    <option value="EN_PICKING">EN_PICKING</option>
+                    <option value="PREPAREE">PREPAREE</option>
+                    <option value="EXPEDIEE">EXPEDIEE</option>
+                    <option value="ANNULEE">ANNULEE</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- TABLE SECTION -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl flex-1 flex flex-col">
+            <div class="overflow-x-auto flex-1">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="sticky top-0 bg-slate-950 z-10 text-slate-400 uppercase text-[10px]">
+                        <tr class="border-b border-slate-800">
+                            <th class="p-3">Doc Vente</th>
+                            <th class="p-3">Poste</th>
+                            <th class="p-3">Client / Réceptionnaire</th>
+                            <th class="p-3">Article</th>
+                            <th class="p-3">Désignation</th>
+                            <th class="p-3">Itinéraire</th>
+                            <th class="p-3">Heure</th>
+                            <th class="p-3 text-right">Qte (KG)</th>
+                            <th class="p-3 text-right text-sky-400 font-bold">Pièces</th>
+                            <th class="p-3 text-center">Statut</th>
+                            <th class="p-3 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="commandesTableBody" class="divide-y divide-slate-800/50 font-mono">
+                        <tr>
+                            <td colspan="11" class="p-8 text-center text-slate-500">Chargement des données depuis Supabase...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 
-    <!-- MODAL DETAILS COMMANDE -->
-    <div id="orderDetailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] mx-4 animate-in fade-in zoom-in-95 duration-200">
-            <!-- Modal Header -->
-            <div class="px-6 py-4 bg-slate-950/60 border-b border-slate-800 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                        <i class="fas fa-file-invoice text-lg"></i>
+    <!-- MODAL EDIT / DETAIL -->
+    <div id="editModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-slate-900 border border-slate-800 w-[500px] rounded-2xl p-6 shadow-2xl flex flex-col gap-4 transform scale-95 transition-transform duration-300" id="editModalBox">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+                    <i class="fas fa-pen-to-square text-emerald-400"></i> Modifier Commande & Statut
+                </h3>
+                <button id="closeModalBtn" class="text-slate-400 hover:text-slate-100 cursor-pointer"><i class="fas fa-xmark text-sm"></i></button>
+            </div>
+            <form id="editForm" class="flex flex-col gap-3 text-xs">
+                <input type="hidden" id="editId">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Document de Vente</label>
+                        <input type="text" id="editDocVente" readonly class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-400 font-mono">
                     </div>
                     <div>
-                        <h3 class="text-base font-bold text-slate-100" id="modalDocTitle">Détails du Document</h3>
-                        <p class="text-xs text-slate-400" id="modalDocSubtitle">Chargement des informations...</p>
+                        <label class="text-[10px] text-slate-400 block mb-1">Poste</label>
+                        <input type="text" id="editPoste" readonly class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-400 font-mono">
                     </div>
                 </div>
-                <button type="button" id="closeModalBtn" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 flex items-center justify-center transition cursor-pointer">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-
-            <!-- Modal Body -->
-            <div class="p-6 overflow-y-auto flex-1 flex flex-col gap-6">
-                <!-- Info Cards Summary -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-3.5">
-                        <span class="text-[10px] font-medium text-slate-400 block">Réceptionnaire</span>
-                        <strong class="text-xs text-slate-200 mt-1 block truncate" id="modalRecip">-</strong>
-                    </div>
-                    <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-3.5">
-                        <span class="text-[10px] font-medium text-slate-400 block">Itinéraire</span>
-                        <strong class="text-xs text-slate-200 font-mono mt-1 block truncate" id="modalItin">-</strong>
-                    </div>
-                    <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-3.5">
-                        <span class="text-[10px] font-medium text-slate-400 block">Date de Livraison</span>
-                        <strong class="text-xs text-emerald-400 font-mono mt-1 block" id="modalDate">-</strong>
-                    </div>
-                    <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-3.5">
-                        <span class="text-[10px] font-medium text-slate-400 block">Statut Actuel</span>
-                        <div class="mt-1" id="modalStatutBadge">-</div>
-                    </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Statut</label>
+                    <select id="editStatut" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-100 font-mono focus:outline-none focus:border-emerald-500/50">
+                        <option value="IMPORTEE">IMPORTEE</option>
+                        <option value="CONTROLEE">CONTROLEE</option>
+                        <option value="LANCEE">LANCEE</option>
+                        <option value="EN_PICKING">EN_PICKING</option>
+                        <option value="PREPAREE">PREPAREE</option>
+                        <option value="EXPEDIEE">EXPEDIEE</option>
+                        <option value="ANNULEE">ANNULEE</option>
+                    </select>
                 </div>
-
-                <!-- Articles Table Inside Modal -->
-                <div class="flex flex-col gap-2">
-                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                        <i class="fas fa-boxes text-emerald-400"></i> Articles Commandés & Pièces
-                    </h4>
-                    <div class="border border-slate-800 rounded-xl overflow-hidden bg-slate-950/40">
-                        <table class="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr class="bg-slate-950/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800 font-semibold">
-                                    <th class="p-3">Code Article</th>
-                                    <th class="p-3">Désignation</th>
-                                    <th class="p-3 text-center">Qté Commandée</th>
-                                    <th class="p-3 text-center">Nombre de Pièces</th>
-                                </tr>
-                            </thead>
-                            <tbody id="modalArticlesTableBody" class="divide-y divide-slate-800/50">
-                                <tr>
-                                    <td colspan="4" class="p-8 text-center text-slate-400">Chargement...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Quantité Préparée (KG)</label>
+                    <input type="number" step="0.001" id="editQtePrep" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-100 font-mono focus:outline-none focus:border-emerald-500/50">
                 </div>
-            </div>
-
-            <!-- Modal Footer -->
-            <div class="px-6 py-4 bg-slate-950/60 border-t border-slate-800 flex items-center justify-end">
-                <button type="button" id="closeModalFooterBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer">
-                    Fermer
-                </button>
-            </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Commentaire</label>
+                    <textarea id="editCommentaire" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-100 font-mono focus:outline-none focus:border-emerald-500/50"></textarea>
+                </div>
+                <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+                    <button type="button" id="cancelModalBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl font-semibold transition cursor-pointer">Annuler</button>
+                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-semibold transition cursor-pointer shadow-lg">Enregistrer</button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <!-- SCRIPTS -->
+    <!-- SCRIPT MODULE -->
     <script type="module">
         import supabase from '../assets/js/core/supabase.js';
 
-        let currentPage = 1;
-        const pageSize = 50;
-        let selectedFilterDates = [];
+        let allCommandes = [];
 
-        document.addEventListener("DOMContentLoaded", async () => {
-            initQuickDatesBar();
-            await loadItinerairesDropdown();
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById("currentDate").innerText = now.toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+            document.getElementById("currentTime").innerText = now.toTimeString().split(' ')[0];
+        }, 1000);
 
-            const searchBtn = document.getElementById("searchBtn");
-            const resetBtn = document.getElementById("resetBtn");
-            const searchInput = document.getElementById("searchInput");
-            const statusFilter = document.getElementById("statusFilter");
-            const itineraireFilter = document.getElementById("itineraireFilter");
-            const closeModalBtn = document.getElementById("closeModalBtn");
-            const closeModalFooterBtn = document.getElementById("closeModalFooterBtn");
-            const orderDetailModal = document.getElementById("orderDetailModal");
-
-            if (searchBtn) searchBtn.addEventListener("click", () => { currentPage = 1; loadOrders(); });
-            if (searchInput) searchInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { currentPage = 1; loadOrders(); } });
-            if (statusFilter) statusFilter.addEventListener("change", () => { currentPage = 1; loadOrders(); });
-            if (itineraireFilter) itineraireFilter.addEventListener("change", () => { currentPage = 1; loadOrders(); });
-
-            if (closeModalBtn) closeModalBtn.addEventListener("click", () => orderDetailModal.classList.add('hidden'));
-            if (closeModalFooterBtn) closeModalFooterBtn.addEventListener("click", () => orderDetailModal.classList.add('hidden'));
-            if (orderDetailModal) {
-                orderDetailModal.addEventListener("click", (e) => {
-                    if (e.target === orderDetailModal) orderDetailModal.classList.add('hidden');
-                });
-            }
-
-            if (resetBtn) {
-                resetBtn.addEventListener("click", () => {
-                    searchInput.value = "";
-                    statusFilter.value = "";
-                    itineraireFilter.value = "";
-                    selectedFilterDates = [];
-                    
-                    document.querySelectorAll('.date-quick-btn').forEach((b, idx) => {
-                        if (idx === 0) {
-                            b.classList.remove('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
-                            b.classList.add('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
-                        } else {
-                            b.classList.remove('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
-                            b.classList.add('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
-                        }
-                    });
-
-                    currentPage = 1;
-                    loadOrders();
-                });
-            }
-
-            document.getElementById("prevPageBtn").addEventListener("click", () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    loadOrders();
-                }
-            });
-
-            document.getElementById("nextPageBtn").addEventListener("click", () => {
-                currentPage++;
-                loadOrders();
-            });
-
-            loadOrders();
-        });
-
-        async function loadItinerairesDropdown() {
+        async function fetchCommandes() {
             try {
-                const { data, error } = await supabase.from('commandes_excel').select('itineraire');
-                if (error) throw error;
-
-                if (data) {
-                    const uniqueItineraires = [...new Set(data.map(item => item.itineraire).filter(Boolean))].sort();
-                    const select = document.getElementById("itineraireFilter");
-                    
-                    let html = '<option value="">Tous les itinéraires</option>';
-                    uniqueItineraires.forEach(it => {
-                        html += `<option value="${it}">${it}</option>`;
-                    });
-                    select.innerHTML = html;
-                }
-            } catch (err) {
-                console.error("Erreur chargement itinéraires:", err);
-            }
-        }
-
-        function initQuickDatesBar() {
-            const bar = document.getElementById("datesQuickBar");
-            if (!bar) return;
-
-            let html = `
-                <button type="button" data-date="" class="date-quick-btn shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500 text-slate-950 border border-emerald-400 transition shadow-sm cursor-pointer">
-                    <i class="fas fa-globe mr-1"></i> Tous les jours
-                </button>
-            `;
-
-            let today = new Date();
-            for (let i = 0; i < 15; i++) {
-                let d = new Date(today);
-                d.setDate(today.getDate() + i);
-                
-                let yyyy = d.getFullYear();
-                let mm = String(d.getMonth() + 1).padStart(2, '0');
-                let dd = String(d.getDate()).padStart(2, '0');
-                let dateStr = `${yyyy}-${mm}-${dd}`;
-                let displayStr = `${dd}/${mm}/${yyyy}`;
-
-                let label = i === 0 ? `Aujourd'hui (${displayStr})` : (i === 1 ? `Demain (${displayStr})` : displayStr);
-
-                html += `
-                    <button type="button" data-date="${dateStr}" class="date-quick-btn shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-950/80 hover:bg-slate-800 text-slate-300 border border-slate-800 transition shadow-inner cursor-pointer font-mono">
-                        ${label}
-                    </button>
-                `;
-            }
-
-            bar.innerHTML = html;
-
-            document.querySelectorAll('.date-quick-btn').forEach(btn => {
-                btn.addEventListener("click", (e) => {
-                    const dVal = btn.getAttribute('data-date');
-                    const allBtn = document.querySelector('.date-quick-btn[data-date=""]');
-
-                    if (dVal === "") {
-                        selectedFilterDates = [];
-                        document.querySelectorAll('.date-quick-btn').forEach(b => {
-                            b.classList.remove('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
-                            b.classList.add('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
-                        });
-                        allBtn.classList.remove('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
-                        allBtn.classList.add('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
-                    } else {
-                        allBtn.classList.remove('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
-                        allBtn.classList.add('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
-
-                        if (selectedFilterDates.includes(dVal)) {
-                            selectedFilterDates = selectedFilterDates.filter(item => item !== dVal);
-                            btn.classList.remove('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
-                            btn.classList.add('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
-
-                            if (selectedFilterDates.length === 0) {
-                                allBtn.classList.remove('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
-                                allBtn.classList.add('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
-                            }
-                        } else {
-                            selectedFilterDates.push(dVal);
-                            btn.classList.remove('bg-slate-950/80', 'text-slate-300', 'border-slate-800');
-                            btn.classList.add('bg-emerald-500', 'text-slate-950', 'font-bold', 'border-emerald-400');
-                        }
-                    }
-
-                    currentPage = 1;
-                    loadOrders();
-                });
-            });
-        }
-
-        async function loadOrders() {
-            const tbody = document.getElementById("ordersTableBody");
-            const searchVal = document.getElementById("searchInput").value.trim();
-            const statusVal = document.getElementById("statusFilter").value;
-            const itineraireVal = document.getElementById("itineraireFilter").value;
-
-            tbody.innerHTML = `<tr><td colspan="9" class="p-12 text-center text-slate-400 text-xs"><i class="fas fa-spinner fa-spin mr-2 text-emerald-500"></i> Synthèse en cours...</td></tr>`;
-
-            try {
-                let query = supabase.from('commandes_excel').select('*');
-
-                if (searchVal) {
-                    query = query.or(`document_vente.ilike.%${searchVal}%,nom_receptionnaire.ilike.%${searchVal}%`);
-                }
-                if (statusVal) {
-                    query = query.eq('statut', statusVal);
-                }
-                if (itineraireVal) {
-                    query = query.eq('itineraire', itineraireVal);
-                }
-                if (selectedFilterDates.length > 0) {
-                    query = query.in('date_livraison', selectedFilterDates);
-                }
-
-                const { data: excelData, error: excelError } = await query;
-                if (excelError) throw excelError;
-
-                if (!excelData || excelData.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="9" class="p-12 text-center text-slate-400 text-xs">Aucune commande trouvée avec ces critères.</td></tr>`;
-                    document.getElementById("rowCount").textContent = "Affichage de 0 éléments";
-                    document.getElementById("pageIndicator").textContent = "Page 1 / 1";
-                    return;
-                }
-
-                const docNumbers = [...new Set(excelData.map(item => item.document_vente))];
-                const { data: piecesData } = await supabase
-                    .from('commandes_clients_pieces')
-                    .select('document_vente, nombre_pieces')
-                    .in('document_vente', docNumbers);
-
-                let piecesMap = new Map();
-                if (piecesData) {
-                    piecesData.forEach(p => {
-                        const doc = p.document_vente;
-                        const currentSum = piecesMap.get(doc) || 0;
-                        piecesMap.set(doc, currentSum + Number(p.nombre_pieces || 0));
-                    });
-                }
-
-                let groupedMap = new Map();
-                excelData.forEach(item => {
-                    const doc = item.document_vente;
-                    if (!groupedMap.has(doc)) {
-                        groupedMap.set(doc, {
-                            document_vente: doc,
-                            nom_receptionnaire: item.nom_receptionnaire || '-',
-                            itineraire: item.itineraire || '-',
-                            date_livraison: item.date_livraison || '-',
-                            statut: item.statut || 'IMPORTEE',
-                            articlesCount: 0,
-                            totalQty: 0
-                        });
-                    }
-                    let group = groupedMap.get(doc);
-                    group.articlesCount += 1;
-                    group.totalQty += Number(item.quantite_commandee || 0);
-                });
-
-                let groupedArray = Array.from(groupedMap.values());
-
-                const totalCount = groupedArray.length;
-                const totalPages = Math.ceil(totalCount / pageSize) || 1;
-                const fromRange = (currentPage - 1) * pageSize;
-                const paginatedData = groupedArray.slice(fromRange, fromRange + pageSize);
-
-                let html = "";
-                paginatedData.forEach(group => {
-                    const totalPieces = piecesMap.get(group.document_vente) || 0;
-
-                    let badgeColor = "bg-slate-500/10 text-slate-400 border-slate-500/20";
-                    const st = (group.statut || "").toUpperCase();
-                    if (st === 'IMPORTEE') badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/20";
-                    else if (st === 'LANCEE' || st === 'EN_PICKING') badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
-                    else if (st === 'PREPAREE' || st === 'CONTROLEE') badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
-                    else if (st === 'EXPEDIEE') badgeColor = "bg-sky-500/10 text-sky-400 border-sky-500/20";
-                    else if (st === 'ANNULEE') badgeColor = "bg-red-500/10 text-red-400 border-red-500/20";
-
-                    html += `
-                        <tr class="hover:bg-slate-800/35 transition">
-                            <td class="p-4 font-mono font-bold text-emerald-400 text-xs">${group.document_vente}</td>
-                            <td class="p-4 font-semibold text-slate-200 text-xs">${group.nom_receptionnaire}</td>
-                            <td class="p-4 text-slate-300 text-xs">${group.itineraire}</td>
-                            <td class="p-4 text-center font-mono font-semibold text-sky-400 text-xs">${group.articlesCount} article(s)</td>
-                            <td class="p-4 text-center font-mono font-bold text-slate-200 text-xs">${group.totalQty.toLocaleString()}</td>
-                            <td class="p-4 text-center font-mono font-bold text-emerald-400 text-xs">${totalPieces.toLocaleString()} pcs</td>
-                            <td class="p-4 text-center font-mono text-slate-300 text-xs">${group.date_livraison}</td>
-                            <td class="p-4 text-center">
-                                <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold border ${badgeColor}">${group.statut}</span>
-                            </td>
-                            <td class="p-4 text-center">
-                                <button type="button" onclick="openOrderDetails('${group.document_vente}')" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-emerald-500/20 text-slate-300 hover:text-emerald-400 border border-slate-700 hover:border-emerald-500/40 transition flex items-center justify-center mx-auto shadow-sm cursor-pointer" title="Afficher les détails">
-                                    <i class="fas fa-eye text-xs"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                });
-
-                tbody.innerHTML = html;
-
-                document.getElementById("rowCount").textContent = `Affichage de ${paginatedData.length} sur ${totalCount} documents`;
-                document.getElementById("pageIndicator").textContent = `Page ${currentPage} / ${totalPages}`;
-                
-                document.getElementById("prevPageBtn").disabled = currentPage <= 1;
-                document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
-
-            } catch (err) {
-                console.error("Erreur synthèse commandes:", err);
-                tbody.innerHTML = `<tr><td colspan="9" class="p-12 text-center text-red-400 text-xs">Erreur lors de la génération de la synthèse.</td></tr>`;
-            }
-        }
-
-        window.openOrderDetails = async function(docVente) {
-            const modal = document.getElementById("orderDetailModal");
-            const modalDocTitle = document.getElementById("modalDocTitle");
-            const modalDocSubtitle = document.getElementById("modalDocSubtitle");
-            const modalRecip = document.getElementById("modalRecip");
-            const modalItin = document.getElementById("modalItin");
-            const modalDate = document.getElementById("modalDate");
-            const modalStatutBadge = document.getElementById("modalStatutBadge");
-            const modalArticlesBody = document.getElementById("modalArticlesTableBody");
-
-            modalDocTitle.textContent = `Document : ${docVente}`;
-            modalDocSubtitle.textContent = "Chargement des lignes articles...";
-            modalRecip.textContent = "-";
-            modalItin.textContent = "-";
-            modalDate.textContent = "-";
-            modalStatutBadge.innerHTML = "-";
-            modalArticlesBody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2 text-emerald-500"></i> Chargement...</td></tr>`;
-
-            modal.classList.remove('hidden');
-
-            try {
-                const { data: articlesData, error: artError } = await supabase
+                const { data, error } = await supabase
                     .from('commandes_excel')
                     .select('*')
-                    .eq('document_vente', docVente);
+                    .order('document_vente', { ascending: true })
+                    .order('Poste', { ascending: true });
 
-                if (artError) throw artError;
-
-                const { data: piecesData, error: pieceError } = await supabase
-                    .from('commandes_clients_pieces')
-                    .select('*')
-                    .eq('document_vente', docVente);
-
-                if (pieceError) throw pieceError;
-
-                if (articlesData && articlesData.length > 0) {
-                    const first = articlesData[0];
-                    modalRecip.textContent = first.nom_receptionnaire || '-';
-                    modalItin.textContent = first.itineraire || '-';
-                    modalDate.textContent = first.date_livraison || '-';
-
-                    let st = (first.statut || 'IMPORTEE').toUpperCase();
-                    let badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/20";
-                    if (st === 'LANCEE' || st === 'EN_PICKING') badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
-                    else if (st === 'PREPAREE' || st === 'CONTROLEE') badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
-                    else if (st === 'EXPEDIEE') badgeColor = "bg-sky-500/10 text-sky-400 border-sky-500/20";
-                    else if (st === 'ANNULEE') badgeColor = "bg-red-500/10 text-red-400 border-red-500/20";
-
-                    modalStatutBadge.innerHTML = `<span class="px-2.5 py-1 rounded-full text-[10px] font-semibold border ${badgeColor}">${first.statut}</span>`;
-                    modalDocSubtitle.textContent = `${articlesData.length} article(s) trouvé(s) pour ce document`;
-
-                    let piecesMap = new Map();
-                    if (piecesData) {
-                        piecesData.forEach(p => {
-                            const pCode = p.code_article || p.article_code || p.sku || p.reference || '';
-                            if (pCode) piecesMap.set(String(pCode).trim(), Number(p.nombre_pieces || 0));
-                        });
-                    }
-
-                    let rowsHtml = "";
-                    articlesData.forEach(art => {
-                        const codeArt = art.code_article || art.article_code || art.sku || art.reference || art.code || '-';
-                        const designation = art.designation_article || art.libelle_article || art.designation || art.libelle || 'Article sans désignation';
-                        const qteCmd = Number(art.quantite_commandee || art.quantite || art.qty || 0);
-                        const nbrPcs = piecesMap.get(String(codeArt).trim()) ?? '-';
-
-                        rowsHtml += `
-                            <tr class="hover:bg-slate-800/30 transition">
-                                <td class="p-3 font-mono font-bold text-emerald-400">${codeArt}</td>
-                                <td class="p-3 text-slate-200">${designation}</td>
-                                <td class="p-3 text-center font-mono font-semibold text-slate-100">${qteCmd.toLocaleString()}</td>
-                                <td class="p-3 text-center font-mono font-bold text-sky-400">${nbrPcs !== '-' ? Number(nbrPcs).toLocaleString() + ' pcs' : '-'}</td>
-                            </tr>
-                        `;
-                    });
-                    modalArticlesBody.innerHTML = rowsHtml;
-                } else {
-                    modalArticlesBody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400">Aucun détail trouvé.</td></tr>`;
-                }
-
+                if (error) throw error;
+                allCommandes = data || [];
+                renderTable(allCommandes);
+                updateKPIs(allCommandes);
             } catch (err) {
-                console.error("Erreur chargement détails document:", err);
-                modalArticlesBody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-400">Erreur lors de la récupération des détails.</td></tr>`;
+                console.error("Erreur de chargement :", err);
+                document.getElementById("commandesTableBody").innerHTML = `<tr><td colspan="11" class="p-8 text-center text-rose-400">Erreur lors de la récupération des données Supabase.</td></tr>`;
             }
+        }
+
+        function updateKPIs(data) {
+            const totalCmd = data.length;
+            const totalKg = data.reduce((acc, curr) => acc + (Number(curr.quantite_commandee) || 0), 0);
+            const totalPieces = data.reduce((acc, curr) => acc + (Number(curr.nombre_pieces) || 0), 0);
+            const modifiedCount = data.filter(curr => curr.est_modifie).length;
+
+            document.getElementById("kpiTotalCmd").textContent = totalCmd.toLocaleString();
+            document.getElementById("kpiTotalKg").textContent = totalKg.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById("kpiTotalPieces").textContent = totalPieces.toLocaleString();
+            document.getElementById("kpiModified").textContent = modifiedCount.toLocaleString();
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById("commandesTableBody");
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-500">Aucune commande trouvée.</td></tr>`;
+                return;
+            }
+
+            let html = "";
+            data.forEach(item => {
+                let badgeColor = "bg-slate-800 text-slate-300 border-slate-700";
+                if (item.statut === 'IMPORTEE') badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+                else if (item.statut === 'EXPEDIEE') badgeColor = "bg-sky-500/10 text-sky-400 border-sky-500/20";
+                else if (item.statut === 'ANNULEE') badgeColor = "bg-rose-500/10 text-rose-400 border-rose-500/20";
+                else if (item.statut === 'EN_PICKING' || item.statut === 'LANCEE') badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+
+                html += `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="p-3 text-emerald-400 font-bold">${item.document_vente}</td>
+                        <td class="p-3 text-amber-400">${item.Poste}</td>
+                        <td class="p-3 text-slate-200">${item.nom_receptionnaire || '-'}</td>
+                        <td class="p-3 text-sky-400">${item.article}</td>
+                        <td class="p-3 text-slate-300 truncate max-w-[200px]" title="${item.designation_article || ''}">${item.designation_article || '-'}</td>
+                        <td class="p-3 text-slate-400">${item.itineraire || '-'}</td>
+                        <td class="p-3 text-slate-400">${item.heure_livraison || '-'}</td>
+                        <td class="p-3 text-right font-bold text-slate-100">${Number(item.quantite_commandee).toFixed(2)}</td>
+                        <td class="p-3 text-right font-bold text-sky-400">${item.nombre_pieces || 0}</td>
+                        <td class="p-3 text-center"><span class="border px-2 py-0.5 rounded text-[10px] font-bold ${badgeColor}">${item.statut}</span></td>
+                        <td class="p-3 text-center">
+                            <button onclick="window.openEditModal('${item.id}')" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white transition inline-flex items-center justify-center cursor-pointer shadow-sm">
+                                <i class="fas fa-pen text-[10px]"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // Global scope for inline onclick
+        window.openEditModal = function(id) {
+            const item = allCommandes.find(c => c.id === id);
+            if (!item) return;
+
+            document.getElementById("editId").value = item.id;
+            document.getElementById("editDocVente").value = item.document_vente;
+            document.getElementById("editPoste").value = item.Poste;
+            document.getElementById("editStatut").value = item.statut || 'IMPORTEE';
+            document.getElementById("editQtePrep").value = item.quantite_preparee || 0;
+            document.getElementById("editCommentaire").value = item.commentaire || '';
+
+            const modal = document.getElementById("editModal");
+            const box = document.getElementById("editModalBox");
+            modal.classList.remove("hidden");
+            setTimeout(() => {
+                modal.classList.remove("opacity-0");
+                box.classList.remove("scale-95");
+                box.classList.add("scale-100");
+            }, 10);
         };
+
+        function closeEditModal() {
+            const modal = document.getElementById("editModal");
+            const box = document.getElementById("editModalBox");
+            modal.classList.add("opacity-0");
+            box.classList.remove("scale-100");
+            box.classList.add("scale-95");
+            setTimeout(() => {
+                modal.classList.add("hidden");
+            }, 300);
+        }
+
+        document.getElementById("closeModalBtn").addEventListener("click", closeEditModal);
+        document.getElementById("cancelModalBtn").addEventListener("click", closeEditModal);
+
+        document.getElementById("editForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const id = document.getElementById("editId").value;
+            const statut = document.getElementById("editStatut").value;
+            const quantite_preparee = parseFloat(document.getElementById("editQtePrep").value) || 0;
+            const commentaire = document.getElementById("editCommentaire").value;
+
+            try {
+                const { error } = await supabase
+                    .from('commandes_excel')
+                    .update({ statut, quantite_preparee, commentaire, updated_at: new Date().toISOString() })
+                    .eq('id', id);
+
+                if (error) throw error;
+                closeEditModal();
+                fetchCommandes();
+            } catch (err) {
+                console.error("Erreur de mise à jour :", err);
+                alert("Erreur lors de la mise à jour : " + err.message);
+            }
+        });
+
+        // Filter & Search Logic
+        function applyFilters() {
+            const query = document.getElementById("searchInput").value.toLowerCase();
+            const statut = document.getElementById("filterStatut").value;
+
+            const filtered = allCommandes.filter(item => {
+                const matchQuery = 
+                    (item.document_vente && item.document_vente.toLowerCase().includes(query)) ||
+                    (item.article && item.article.toLowerCase().includes(query)) ||
+                    (item.nom_receptionnaire && item.nom_receptionnaire.toLowerCase().includes(query)) ||
+                    (item.designation_article && item.designation_article.toLowerCase().includes(query));
+                
+                const matchStatut = statut === "" || item.statut === statut;
+
+                return matchQuery && matchStatut;
+            });
+
+            renderTable(filtered);
+        }
+
+        document.getElementById("searchInput").addEventListener("input", applyFilters);
+        document.getElementById("filterStatut").addEventListener("change", applyFilters);
+        document.getElementById("btnRefresh").addEventListener("click", fetchCommandes);
+
+        // Initial load
+        fetchCommandes();
     </script>
 </body>
 </html>

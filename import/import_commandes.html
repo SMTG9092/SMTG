@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Import Engine & Diff Delta - SoufStock ERP/WMS</title>
+    <title>Smart Import Engine & Delta - SoufStock ERP/WMS</title>
     
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -48,7 +48,7 @@
             </div>
             <div>
                 <span class="font-bold text-sm tracking-wide block text-slate-100">SoufStock <span class="text-emerald-400 font-normal">WMS</span></span>
-                <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Smart Import & Delta Tracking Engine</span>
+                <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Smart Import & Delta Database Engine</span>
             </div>
         </div>
         <div class="flex items-center gap-4 bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl">
@@ -122,7 +122,7 @@
             <!-- ACTIONS -->
             <div id="actionContainer" class="hidden flex flex-col gap-2 mt-auto pt-4 border-t border-slate-800">
                 <button id="btnAnalyze" class="w-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-md">
-                    <i class="fas fa-network-wired"></i> Lancer le Matching & Delta
+                    <i class="fas fa-network-wired"></i> Lancer le Matching & Delta DB
                 </button>
                 <button id="btnSave" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg cursor-pointer">
                     <i class="fas fa-save"></i> Enregistrer & Synchroniser
@@ -135,10 +135,10 @@
             
             <div id="welcomeState" class="flex-1 flex flex-col items-center justify-center text-center p-12 border-2 border-dashed border-slate-800/80 rounded-2xl bg-slate-900/20">
                 <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-2xl mb-4">
-                    <i class="fas fa-chart-line animate-pulse"></i>
+                    <i class="fas fa-database animate-pulse"></i>
                 </div>
-                <h3 class="text-base font-bold text-slate-200">Prêt pour l'analyse d'importation</h3>
-                <p class="text-xs text-slate-400 max-w-md mt-1">Importez vos fichiers pour lancer le matching intelligent et détecter automatiquement les articles supprimés ou modifiés par rapport à la base.</p>
+                <h3 class="text-base font-bold text-slate-200">Prêt pour l'analyse connectée à Supabase</h3>
+                <p class="text-xs text-slate-400 max-w-md mt-1">Importez vos fichiers pour lancer le matching intelligent, vérifier les suppressions dans <strong>commandes_supprimees</strong> et tracer les modifications dans <strong>modifications_commandes</strong>.</p>
             </div>
 
             <!-- PREVIEW SECTION -->
@@ -147,7 +147,7 @@
                 <div class="flex items-center justify-between bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-md">
                     <div>
                         <h3 class="text-xs font-bold text-slate-100 flex items-center gap-2">
-                            <i class="fas fa-table text-emerald-400"></i> Analyse d'impact & Synchronisation
+                            <i class="fas fa-table text-emerald-400"></i> Résultat de la synchronisation Base de Données
                         </h3>
                         <p class="text-[11px] text-slate-400 mt-0.5">Lignes valides : <span id="rowCount" class="font-bold text-slate-200">0</span> | Suppressions détectées : <span id="deletedCount" class="font-bold text-rose-400">0</span> | Modifications : <span id="modifiedCount" class="font-bold text-amber-400">0</span></p>
                     </div>
@@ -156,23 +156,23 @@
                 <!-- RAPPORT STATS -->
                 <div id="analysisReportBox" class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-3 shadow-lg">
                     <h4 class="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
-                        <i class="fas fa-shield-halved"></i> Rapport Delta (Comparaison Base vs Fichiers Gdid)
+                        <i class="fas fa-shield-halved"></i> Rapport Delta Connecté (Supabase)
                     </h4>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-mono">
                         <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                            <span class="text-slate-400 block text-[9px]">Total Lignes Importées</span>
+                            <span class="text-slate-400 block text-[9px]">Total Lignes Fichiers</span>
                             <span id="anaTotal" class="text-slate-100 font-bold text-sm">0</span>
                         </div>
                         <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                            <span class="text-slate-400 block text-[9px]">Articles Supprimés (SAP)</span>
+                            <span class="text-slate-400 block text-[9px]">Suppressions (`commandes_supprimees`)</span>
                             <span id="anaDeleted" class="text-rose-400 font-bold text-sm">0</span>
                         </div>
                         <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                            <span class="text-slate-400 block text-[9px]">Articles Modifiés</span>
+                            <span class="text-slate-400 block text-[9px]">Modifications (`modifications_commandes`)</span>
                             <span id="anaModified" class="text-amber-400 font-bold text-sm">0</span>
                         </div>
                         <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                            <span class="text-slate-400 block text-[9px]">Total Pièces Synchronisées</span>
+                            <span class="text-slate-400 block text-[9px]">Total Pièces Injectées</span>
                             <span id="anaSumPieces" class="text-sky-400 font-bold text-sm">0</span>
                         </div>
                     </div>
@@ -190,7 +190,7 @@
                                     <th class="p-3">Désignation</th>
                                     <th class="p-3 text-right">Qte (KG)</th>
                                     <th class="p-3 text-right text-emerald-400">Nb Pièces</th>
-                                    <th class="p-3">État / Delta</th>
+                                    <th class="p-3">Statut DB</th>
                                 </tr>
                             </thead>
                             <tbody id="previewBody" class="divide-y divide-slate-800/50 font-mono"></tbody>
@@ -202,7 +202,7 @@
         </main>
     </div>
 
-    <!-- SCRIPT LOGIQUE DELTA & MATCHING -->
+    <!-- SCRIPT APPLICATION -->
     <script type="module">
         import supabase from './assets/js/core/supabase.js';
 
@@ -211,6 +211,7 @@
         let finalMatchedData = [];
         let detectedDeletions = [];
         let detectedModifications = [];
+        let activeImportId = 1; // ID de l'historique d'import actif (à lier selon votre table historique_imports)
 
         setInterval(() => {
             const now = new Date();
@@ -258,7 +259,7 @@
                         designation_article: String(getColumnValue(row, ["Description d'article", 'DESIGNATION', 'Designation Article'])).trim(),
                         quantite_commandee: parseFloat(getColumnValue(row, ['Quantité commandée (poste)', 'QT COMD', 'Quantite', 'QTE']) || 0),
                         nombre_pieces: parseInt(getColumnValue(row, ['Nombre de pièces', 'NB PIECES', 'Pieces']) || 0),
-                        nom_receptionnaire: String(getColumnValue(row, ['Nom Réceptionnaire', 'RECEPTIONNAIRE', 'Client'])).trim()
+                        client: String(getColumnValue(row, ['Client', 'Nom Réceptionnaire', 'RECEPTIONNAIRE'])).trim()
                     })).filter(item => item.document_vente && item.article);
 
                     if (type === 'KG') {
@@ -284,7 +285,7 @@
 
                 } catch (err) {
                     console.error(err);
-                    alert("Erreur lors de la lecture du fichier Excel.");
+                    alert("Erreur de lecture du fichier.");
                 }
             };
             reader.readAsArrayBuffer(file);
@@ -293,7 +294,7 @@
         async function performMatchingAndDelta() {
             if (kgDataRaw.length === 0 || piecesDataRaw.length === 0) return;
 
-            // 1. Map des pièces par "doc_poste_article"
+            // 1. Mapping Pièces par "doc_poste_article"
             const piecesMap = new Map();
             piecesDataRaw.forEach(p => {
                 const key = `${p.document_vente}_${p.poste}_${p.article}`.toLowerCase();
@@ -313,55 +314,62 @@
                 };
             });
 
-            // 2. Interrogation de Supabase pour chercher l'état actuel en base et faire la Delta (Suppressions & Modifications)
+            // 2. Interrogation Supabase pour Delta (commandes_supprimees & modifications_commandes)
             detectedDeletions = [];
             detectedModifications = [];
 
             try {
-                // On récupère les commandes actives en base de données pour comparer
                 const { data: existingRows, error } = await supabase
-                    .from('commandes_excel') // ou votre table principale active
-                    .select('document_vente, poste, article, quantite_commandee, designation_article');
+                    .from('commandes_excel')
+                    .select('document_vente, poste, article, quantite_commandee, designation_article, client');
 
                 if (!error && existingRows && existingRows.length > 0) {
                     const newSet = new Set(finalMatchedData.map(d => `${d.document_vente}_${d.poste}_${d.article}`.toLowerCase()));
                     const newMap = new Map(finalMatchedData.map(d => [`${d.document_vente}_${d.poste}_${d.article}`.toLowerCase(), d]));
 
-                    // A. Détection des suppressions (existaient en base, n'existent plus dans les fichiers gdid)
+                    // A. Détection des suppressions
                     existingRows.forEach(ex => {
                         const exKey = `${ex.document_vente}_${ex.poste}_${ex.article}`.toLowerCase();
                         if (!newSet.has(exKey)) {
                             detectedDeletions.push({
+                                historique_import_id: activeImportId,
                                 document_vente: ex.document_vente,
                                 ligne_commande: ex.poste,
                                 article: ex.article,
                                 designation_article: ex.designation_article,
                                 quantite: ex.quantite_commandee,
+                                client: ex.client,
                                 motif_suppression: 'SUPPRIMEE_DEPUIS_SAP',
-                                origine_suppression: 'SAP'
+                                origine_suppression: 'SAP',
+                                statut: 'EN_ATTENTE',
+                                ancienne_ligne: ex
                             });
                         } else {
-                            // B. Détection des modifications (existent partout mais une valeur a changé ex: Quantité)
+                            // B. Détection des modifications (ex: Quantité ou Article)
                             const incoming = newMap.get(exKey);
                             if (incoming && Number(incoming.quantite_commandee) !== Number(ex.quantite_commandee)) {
                                 detectedModifications.push({
+                                    historique_import_id: activeImportId,
                                     document_vente: ex.document_vente,
                                     ligne_commande: ex.poste,
                                     article: ex.article,
+                                    designation_article: ex.designation_article,
                                     type_action: 'MODIFICATION_QUANTITE',
                                     champ_modifie: 'quantite_commandee',
                                     ancienne_valeur: String(ex.quantite_commandee),
-                                    nouvelle_valeur: String(incoming.quantite_commandee)
+                                    nouvelle_valeur: String(incoming.quantite_commandee),
+                                    ancienne_ligne: ex,
+                                    nouvelle_ligne: incoming
                                 });
                             }
                         }
                     });
                 }
             } catch (dbErr) {
-                console.warn("Base de données non accessible pour Delta automatique, mode hors-ligne UI actif :", dbErr);
+                console.warn("Connexion base de données en cours, mode delta simulé ou en attente :", dbErr);
             }
 
-            // Affichage UI & Rapport
+            // UI update
             document.getElementById("rowCount").textContent = finalMatchedData.length;
             document.getElementById("deletedCount").textContent = detectedDeletions.length;
             document.getElementById("modifiedCount").textContent = detectedModifications.length;
@@ -388,7 +396,7 @@
                         <td class="p-3 text-slate-200">${item.designation_article || '-'}</td>
                         <td class="p-3 text-right font-bold text-slate-100">${item.quantite_commandee.toFixed(2)} KG</td>
                         <td class="p-3 text-right font-bold text-emerald-300">${item.nombre_pieces} Pcs</td>
-                        <td class="p-3"><span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-bold">Actif / Synchro</span></td>
+                        <td class="p-3"><span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-bold">Prêt Synchro</span></td>
                     </tr>
                 `;
             });
@@ -400,20 +408,22 @@
 
             const btn = document.getElementById("btnSave");
             btn.disabled = true;
-            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Synchronisation en cours...`;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Enregistrement en cours...`;
 
             try {
-                // 1. Enregistrer les suppressions détectées dans commandes_supprimees
+                // 1. Insertion des suppressions dans commandes_supprimees
                 if (detectedDeletions.length > 0) {
-                    await supabase.from('commandes_supprimees').insert(detectedDeletions);
+                    const { error: delError } = await supabase.from('commandes_supprimees').insert(detectedDeletions);
+                    if (delError) throw delError;
                 }
 
-                // 2. Enregistrer les modifications détectées dans modifications_commandes
+                // 2. Insertion des modifications dans modifications_commandes
                 if (detectedModifications.length > 0) {
-                    await supabase.from('modifications_commandes').insert(detectedModifications);
+                    const { error: modError } = await supabase.from('modifications_commandes').insert(detectedModifications);
+                    if (modError) throw modError;
                 }
 
-                // 3. Upsert des données combinées actulaïsées
+                // 3. Upsert des données principales
                 const batchSize = 500;
                 for (let i = 0; i < finalMatchedData.length; i += batchSize) {
                     const chunk = finalMatchedData.slice(i, i + batchSize);
@@ -421,11 +431,11 @@
                     if (error) throw error;
                 }
 
-                alert(`Succès ! Synchronisation terminée : ${finalMatchedData.length} lignes traitées, ${detectedDeletions.length} suppressions consignées, ${detectedModifications.length} modifications enregistrées.`);
+                alert(`Succès ! Données synchronisées avec succès.\n- ${finalMatchedData.length} lignes traitées\n- ${detectedDeletions.length} suppressions consignées\n- ${detectedModifications.length} modifications enregistrées.`);
                 resetAll();
             } catch (err) {
                 console.error(err);
-                alert(`Erreur lors de l'enregistrement Supabase : ${err.message || JSON.stringify(err)}`);
+                alert(`Erreur d'enregistrement Supabase : ${err.message || JSON.stringify(err)}`);
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = `<i class="fas fa-save"></i> Enregistrer & Synchroniser`;

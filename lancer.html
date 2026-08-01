@@ -52,7 +52,7 @@
                         <i class="fas fa-calendar-days"></i>
                     </div>
                     <div>
-                        <h2 class="text-xs font-bold text-slate-100 uppercase tracking-wider">Filtrer par Période</h2>
+                        <h2 class="text-xs font-bold text-slate-100 uppercase tracking-wider">Filtrer par Période (Aujourd'hui & Demain)</h2>
                         <p class="text-[11px] text-slate-400">Gestion et Lancement des Commandes</p>
                     </div>
                 </div>
@@ -86,7 +86,7 @@
                 </div>
                 <!-- Lancée -->
                 <div class="text-center border-r border-slate-800 pr-1">
-                    <span class="text-[9px] text-slate-400 uppercase block tracking-wider" title="Lancées & En Picking">Lancée</span>
+                    <span class="text-[9px] text-slate-400 uppercase block tracking-wider" title="Lancées">Lancée</span>
                     <span id="statLancee" class="text-base font-bold font-mono text-emerald-400">0</span>
                 </div>
                 <!-- En Picking -->
@@ -162,10 +162,16 @@
     <script type="module">
         import supabase from '../assets/js/core/supabase.js';
 
-        // Set Default Dates to Today (2026-08-01)
-        const todayStr = new Date().toISOString().split('T')[0];
+        // Set Default Dates: Du = Aujourd'hui, Au = Demain (Rada)
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        
+        const demain = new Date(today);
+        demain.setDate(demain.getDate() + 1);
+        const demainStr = demain.toISOString().split('T')[0];
+
         document.getElementById('dateDebut').value = todayStr;
-        document.getElementById('dateFin').value = todayStr;
+        document.getElementById('dateFin').value = demainStr;
 
         window.loadSuiviCommandes = async function() {
             const dateDebut = document.getElementById('dateDebut').value;

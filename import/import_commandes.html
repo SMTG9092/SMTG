@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Import Engine - Match KG & Pièces - SoufStock ERP/WMS</title>
+    <title>Smart Import Engine & Diff Delta - SoufStock ERP/WMS</title>
     
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Tailwind CSS Play CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS pour Lire les fichiers Excel -->
+    <!-- SheetJS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -40,7 +40,7 @@
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans antialiased h-screen flex flex-col overflow-hidden">
 
-    <!-- HEADER PRINCIPAL -->
+    <!-- HEADER -->
     <header class="h-16 bg-slate-900/60 border-b border-slate-800/80 px-6 flex items-center justify-between shrink-0">
         <div class="flex items-center gap-4">
             <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
@@ -48,10 +48,9 @@
             </div>
             <div>
                 <span class="font-bold text-sm tracking-wide block text-slate-100">SoufStock <span class="text-emerald-400 font-normal">WMS</span></span>
-                <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Smart Import Engine - Match Intelligent</span>
+                <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Smart Import & Delta Tracking Engine</span>
             </div>
         </div>
-        
         <div class="flex items-center gap-4 bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl">
             <div class="text-right">
                 <span id="currentDate" class="text-[11px] font-medium text-slate-300 block">Chargement...</span>
@@ -60,10 +59,10 @@
         </div>
     </header>
 
-    <!-- CONTAINER GLOBAL -->
+    <!-- CONTAINER -->
     <div class="flex-1 flex overflow-hidden">
         
-        <!-- SIDEBAR LATÉRALE GAUCHE -->
+        <!-- SIDEBAR -->
         <aside class="w-[380px] bg-slate-900/50 border-r border-slate-800/80 flex flex-col p-5 gap-5 overflow-y-auto shrink-0">
             <div class="flex items-center justify-between pb-3 border-b border-slate-800">
                 <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
@@ -82,17 +81,17 @@
                         </div>
                         <div>
                             <h3 class="text-xs font-bold text-slate-100">Fichier Référence (KG)</h3>
-                            <p class="text-[10px] text-slate-400">Base principale des commandes</p>
+                            <p class="text-[10px] text-slate-400">Commandes SAP en KG</p>
                         </div>
                     </div>
                     <span id="badgeKg" class="text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full font-mono">En attente</span>
                 </div>
                 <div class="border border-dashed border-slate-800 rounded-lg p-3 text-center bg-slate-950/40 my-2 group-hover:border-emerald-500/30 transition">
-                    <p class="text-[11px] text-slate-300">Cliquez pour choisir le fichier KG</p>
-                    <p id="fileKgName" class="text-[10px] text-emerald-400 font-mono mt-1 hidden font-bold">Aucun fichier</p>
+                    <p class="text-[11px] text-slate-300">Sélectionner le fichier KG</p>
+                    <p id="fileKgName" class="text-[10px] text-emerald-400 font-mono mt-1 hidden font-bold">Aucun</p>
                 </div>
                 <button type="button" class="w-full bg-slate-800 group-hover:bg-emerald-600 text-slate-200 group-hover:text-white py-2 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2 mt-2 pointer-events-none">
-                    <i class="fas fa-folder-open"></i> Sélectionner Fichier KG
+                    <i class="fas fa-folder-open"></i> Parcourir KG
                 </button>
             </div>
 
@@ -105,75 +104,75 @@
                             <i class="fas fa-boxes-stacked"></i>
                         </div>
                         <div>
-                            <h3 class="text-xs font-bold text-slate-100">Fichier Pièces (Source Pièces)</h3>
-                            <p class="text-[10px] text-slate-400">Pour extraction du Nb Pièces</p>
+                            <h3 class="text-xs font-bold text-slate-100">Fichier Pièces</h3>
+                            <p class="text-[10px] text-slate-400">Pour extraction Nb Pièces</p>
                         </div>
                     </div>
                     <span id="badgePieces" class="text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full font-mono">En attente</span>
                 </div>
                 <div class="border border-dashed border-slate-800 rounded-lg p-3 text-center bg-slate-950/40 my-2 group-hover:border-emerald-500/30 transition">
-                    <p class="text-[11px] text-slate-300">Cliquez pour choisir le fichier Pièces</p>
-                    <p id="filePiecesName" class="text-[10px] text-emerald-400 font-mono mt-1 hidden font-bold">Aucun fichier</p>
+                    <p class="text-[11px] text-slate-300">Sélectionner le fichier Pièces</p>
+                    <p id="filePiecesName" class="text-[10px] text-emerald-400 font-mono mt-1 hidden font-bold">Aucun</p>
                 </div>
                 <button type="button" class="w-full bg-slate-800 group-hover:bg-emerald-600 text-slate-200 group-hover:text-white py-2 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2 mt-2 pointer-events-none">
-                    <i class="fas fa-folder-open"></i> Sélectionner Fichier Pièces
+                    <i class="fas fa-folder-open"></i> Parcourir Pièces
                 </button>
             </div>
 
-            <!-- BOUTONS ACTION -->
+            <!-- ACTIONS -->
             <div id="actionContainer" class="hidden flex flex-col gap-2 mt-auto pt-4 border-t border-slate-800">
                 <button id="btnAnalyze" class="w-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-md">
-                    <i class="fas fa-network-wired"></i> Lancer le Matching (KG + Pièces)
+                    <i class="fas fa-network-wired"></i> Lancer le Matching & Delta
                 </button>
                 <button id="btnSave" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg cursor-pointer">
-                    <i class="fas fa-save"></i> Enregistrer dans Supabase
+                    <i class="fas fa-save"></i> Enregistrer & Synchroniser
                 </button>
             </div>
         </aside>
 
-        <!-- CONTENU PRINCIPAL -->
+        <!-- MAIN CONTENT -->
         <main class="flex-1 p-6 overflow-y-auto flex flex-col gap-6 bg-slate-950">
             
             <div id="welcomeState" class="flex-1 flex flex-col items-center justify-center text-center p-12 border-2 border-dashed border-slate-800/80 rounded-2xl bg-slate-900/20">
                 <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-2xl mb-4">
-                    <i class="fas fa-random animate-pulse"></i>
+                    <i class="fas fa-chart-line animate-pulse"></i>
                 </div>
-                <h3 class="text-base font-bold text-slate-200">En attente de synchronisation des fichiers</h3>
-                <p class="text-xs text-slate-400 max-w-md mt-1">Importez le fichier <strong>KG</strong> et le fichier <strong>Pièces</strong>. Le système fera un rapprochement intelligent par <strong>Doc Vente</strong> et <strong>Article</strong> pour récupérer les pièces automatiquement.</p>
+                <h3 class="text-base font-bold text-slate-200">Prêt pour l'analyse d'importation</h3>
+                <p class="text-xs text-slate-400 max-w-md mt-1">Importez vos fichiers pour lancer le matching intelligent et détecter automatiquement les articles supprimés ou modifiés par rapport à la base.</p>
             </div>
 
-            <!-- SECTION APERÇU -->
+            <!-- PREVIEW SECTION -->
             <div id="previewSection" class="hidden flex flex-col gap-6">
                 
                 <div class="flex items-center justify-between bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-md">
                     <div>
                         <h3 class="text-xs font-bold text-slate-100 flex items-center gap-2">
-                            <i class="fas fa-table text-emerald-400"></i> Résultat du Matching : <span class="text-emerald-400">Lignes synchronisées</span>
+                            <i class="fas fa-table text-emerald-400"></i> Analyse d'impact & Synchronisation
                         </h3>
-                        <p class="text-[11px] text-slate-400 mt-0.5">Total lignes traitées : <span id="rowCount" class="font-bold text-slate-200">0</span> | Matchs réussis avec Pièces : <span id="matchCount" class="font-bold text-emerald-400">0</span></p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Lignes valides : <span id="rowCount" class="font-bold text-slate-200">0</span> | Suppressions détectées : <span id="deletedCount" class="font-bold text-rose-400">0</span> | Modifications : <span id="modifiedCount" class="font-bold text-amber-400">0</span></p>
                     </div>
                 </div>
 
-                <!-- RAPPORT -->
-                <div id="analysisReportBox" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-3 shadow-lg">
+                <!-- RAPPORT STATS -->
+                <div id="analysisReportBox" class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-3 shadow-lg">
                     <h4 class="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
-                        <i class="fas fa-shield-halved"></i> Rapport de concordance des articles
+                        <i class="fas fa-shield-halved"></i> Rapport Delta (Comparaison Base vs Fichiers Gdid)
                     </h4>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-mono">
                         <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                            <span class="text-slate-400 block text-[9px]">Total Lignes KG</span>
+                            <span class="text-slate-400 block text-[9px]">Total Lignes Importées</span>
                             <span id="anaTotal" class="text-slate-100 font-bold text-sm">0</span>
                         </div>
                         <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                            <span class="text-slate-400 block text-[9px]">Articles Matchés (Pièces OK)</span>
-                            <span id="anaMatched" class="text-emerald-400 font-bold text-sm">0</span>
+                            <span class="text-slate-400 block text-[9px]">Articles Supprimés (SAP)</span>
+                            <span id="anaDeleted" class="text-rose-400 font-bold text-sm">0</span>
                         </div>
                         <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                            <span class="text-slate-400 block text-[9px]">Sans Correspondance Pièces</span>
-                            <span id="anaMissing" class="text-rose-400 font-bold text-sm">0</span>
+                            <span class="text-slate-400 block text-[9px]">Articles Modifiés</span>
+                            <span id="anaModified" class="text-amber-400 font-bold text-sm">0</span>
                         </div>
                         <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                            <span class="text-slate-400 block text-[9px]">Total Pièces Injectées</span>
+                            <span class="text-slate-400 block text-[9px]">Total Pièces Synchronisées</span>
                             <span id="anaSumPieces" class="text-sky-400 font-bold text-sm">0</span>
                         </div>
                     </div>
@@ -190,8 +189,8 @@
                                     <th class="p-3">Article</th>
                                     <th class="p-3">Désignation</th>
                                     <th class="p-3 text-right">Qte (KG)</th>
-                                    <th class="p-3 text-right text-emerald-400">Nb Pièces (Extrait)</th>
-                                    <th class="p-3">Statut Match</th>
+                                    <th class="p-3 text-right text-emerald-400">Nb Pièces</th>
+                                    <th class="p-3">État / Delta</th>
                                 </tr>
                             </thead>
                             <tbody id="previewBody" class="divide-y divide-slate-800/50 font-mono"></tbody>
@@ -203,11 +202,15 @@
         </main>
     </div>
 
-    <!-- SCRIPT DE MATCHING -->
-    <script>
+    <!-- SCRIPT LOGIQUE DELTA & MATCHING -->
+    <script type="module">
+        import supabase from './assets/js/core/supabase.js';
+
         let kgDataRaw = [];
         let piecesDataRaw = [];
         let finalMatchedData = [];
+        let detectedDeletions = [];
+        let detectedModifications = [];
 
         setInterval(() => {
             const now = new Date();
@@ -222,8 +225,8 @@
         document.getElementById("filePiecesInput").addEventListener("change", (e) => handleFile(e, 'PIECES'));
 
         document.getElementById("btnReset").addEventListener("click", resetAll);
-        document.getElementById("btnAnalyze").addEventListener("click", performMatching);
-        document.getElementById("btnSave", () => alert("Enregistrement prêt !"));
+        document.getElementById("btnAnalyze").addEventListener("click", performMatchingAndDelta);
+        document.getElementById("btnSave").addEventListener("click", saveToSupabaseWithDelta);
 
         function getColumnValue(row, possibleNames) {
             const keys = Object.keys(row);
@@ -250,7 +253,7 @@
 
                     const parsed = rawJson.map(row => ({
                         document_vente: String(getColumnValue(row, ['Document de vente', 'NUCOMD', 'Doc Vente', 'Commande'])).trim(),
-                        poste: String(getColumnValue(row, ['Poste', 'POS'])).trim(),
+                        poste: parseInt(getColumnValue(row, ['Poste', 'POS']) || 0),
                         article: String(getColumnValue(row, ['Article', 'Code Article', 'ART'])).trim(),
                         designation_article: String(getColumnValue(row, ["Description d'article", 'DESIGNATION', 'Designation Article'])).trim(),
                         quantite_commandee: parseFloat(getColumnValue(row, ['Quantité commandée (poste)', 'QT COMD', 'Quantite', 'QTE']) || 0),
@@ -276,61 +279,100 @@
 
                     if (kgDataRaw.length > 0 && piecesDataRaw.length > 0) {
                         document.getElementById("actionContainer").classList.remove("hidden");
-                        performMatching();
+                        performMatchingAndDelta();
                     }
 
                 } catch (err) {
                     console.error(err);
-                    alert("Erreur de lecture du fichier Excel.");
+                    alert("Erreur lors de la lecture du fichier Excel.");
                 }
             };
             reader.readAsArrayBuffer(file);
         }
 
-        function performMatching() {
+        async function performMatchingAndDelta() {
             if (kgDataRaw.length === 0 || piecesDataRaw.length === 0) return;
 
-            // Création d'une Map indexée par "DocVente_Article" (ou avec Poste si disponible) pour un matching ultra-rapide et précis
+            // 1. Map des pièces par "doc_poste_article"
             const piecesMap = new Map();
             piecesDataRaw.forEach(p => {
-                const key = `${p.document_vente}_${p.article}`.toLowerCase();
+                const key = `${p.document_vente}_${p.poste}_${p.article}`.toLowerCase();
                 piecesMap.set(key, p.nombre_pieces);
             });
 
             let matchedCount = 0;
             finalMatchedData = kgDataRaw.map(kg => {
-                const key = `${kg.document_vente}_${kg.article}`.toLowerCase();
-                let matchedPieces = 0;
-                let hasMatch = false;
-
-                if (piecesMap.has(key)) {
-                    matchedPieces = piecesMap.get(key);
-                    hasMatch = true;
-                    matchedCount++;
-                }
+                const key = `${kg.document_vente}_${kg.poste}_${kg.article}`.toLowerCase();
+                let matchedPieces = piecesMap.has(key) ? piecesMap.get(key) : 0;
+                if (matchedPieces > 0) matchedCount++;
 
                 return {
                     ...kg,
                     nombre_pieces: matchedPieces,
-                    matched: hasMatch
+                    matched: matchedPieces > 0
                 };
             });
 
-            // Affichage UI
+            // 2. Interrogation de Supabase pour chercher l'état actuel en base et faire la Delta (Suppressions & Modifications)
+            detectedDeletions = [];
+            detectedModifications = [];
+
+            try {
+                // On récupère les commandes actives en base de données pour comparer
+                const { data: existingRows, error } = await supabase
+                    .from('commandes_excel') // ou votre table principale active
+                    .select('document_vente, poste, article, quantite_commandee, designation_article');
+
+                if (!error && existingRows && existingRows.length > 0) {
+                    const newSet = new Set(finalMatchedData.map(d => `${d.document_vente}_${d.poste}_${d.article}`.toLowerCase()));
+                    const newMap = new Map(finalMatchedData.map(d => [`${d.document_vente}_${d.poste}_${d.article}`.toLowerCase(), d]));
+
+                    // A. Détection des suppressions (existaient en base, n'existent plus dans les fichiers gdid)
+                    existingRows.forEach(ex => {
+                        const exKey = `${ex.document_vente}_${ex.poste}_${ex.article}`.toLowerCase();
+                        if (!newSet.has(exKey)) {
+                            detectedDeletions.push({
+                                document_vente: ex.document_vente,
+                                ligne_commande: ex.poste,
+                                article: ex.article,
+                                designation_article: ex.designation_article,
+                                quantite: ex.quantite_commandee,
+                                motif_suppression: 'SUPPRIMEE_DEPUIS_SAP',
+                                origine_suppression: 'SAP'
+                            });
+                        } else {
+                            // B. Détection des modifications (existent partout mais une valeur a changé ex: Quantité)
+                            const incoming = newMap.get(exKey);
+                            if (incoming && Number(incoming.quantite_commandee) !== Number(ex.quantite_commandee)) {
+                                detectedModifications.push({
+                                    document_vente: ex.document_vente,
+                                    ligne_commande: ex.poste,
+                                    article: ex.article,
+                                    type_action: 'MODIFICATION_QUANTITE',
+                                    champ_modifie: 'quantite_commandee',
+                                    ancienne_valeur: String(ex.quantite_commandee),
+                                    nouvelle_valeur: String(incoming.quantite_commandee)
+                                });
+                            }
+                        }
+                    });
+                }
+            } catch (dbErr) {
+                console.warn("Base de données non accessible pour Delta automatique, mode hors-ligne UI actif :", dbErr);
+            }
+
+            // Affichage UI & Rapport
             document.getElementById("rowCount").textContent = finalMatchedData.length;
-            document.getElementById("matchCount").textContent = matchedCount;
+            document.getElementById("deletedCount").textContent = detectedDeletions.length;
+            document.getElementById("modifiedCount").textContent = detectedModifications.length;
+
             document.getElementById("welcomeState").classList.add("hidden");
             document.getElementById("previewSection").classList.remove("hidden");
 
-            // Stats Rapport
-            const missingCount = finalMatchedData.length - matchedCount;
-            const totalPiecesSum = finalMatchedData.reduce((acc, curr) => acc + curr.nombre_pieces, 0);
-
             document.getElementById("anaTotal").textContent = finalMatchedData.length;
-            document.getElementById("anaMatched").textContent = matchedCount;
-            document.getElementById("anaMissing").textContent = missingCount;
-            document.getElementById("anaSumPieces").textContent = totalPiecesSum;
-            document.getElementById("analysisReportBox").classList.remove("hidden");
+            document.getElementById("anaDeleted").textContent = detectedDeletions.length;
+            document.getElementById("anaModified").textContent = detectedModifications.length;
+            document.getElementById("anaSumPieces").textContent = finalMatchedData.reduce((acc, curr) => acc + curr.nombre_pieces, 0);
 
             renderPreview(finalMatchedData.slice(0, 100));
         }
@@ -338,10 +380,6 @@
         function renderPreview(data) {
             let html = "";
             data.forEach(item => {
-                const badgeStatus = item.matched 
-                    ? `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-bold"><i class="fas fa-check"></i> Trouvé</span>` 
-                    : `<span class="bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded text-[10px] font-bold"><i class="fas fa-xmark"></i> Non trouvé</span>`;
-
                 html += `
                     <tr class="hover:bg-slate-800/40">
                         <td class="p-3 text-emerald-400 font-bold">${item.document_vente}</td>
@@ -350,20 +388,58 @@
                         <td class="p-3 text-slate-200">${item.designation_article || '-'}</td>
                         <td class="p-3 text-right font-bold text-slate-100">${item.quantite_commandee.toFixed(2)} KG</td>
                         <td class="p-3 text-right font-bold text-emerald-300">${item.nombre_pieces} Pcs</td>
-                        <td class="p-3">${badgeStatus}</td>
+                        <td class="p-3"><span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-bold">Actif / Synchro</span></td>
                     </tr>
                 `;
             });
             document.getElementById("previewBody").innerHTML = html;
         }
 
+        window.saveToSupabaseWithDelta = async function() {
+            if (finalMatchedData.length === 0) return;
+
+            const btn = document.getElementById("btnSave");
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Synchronisation en cours...`;
+
+            try {
+                // 1. Enregistrer les suppressions détectées dans commandes_supprimees
+                if (detectedDeletions.length > 0) {
+                    await supabase.from('commandes_supprimees').insert(detectedDeletions);
+                }
+
+                // 2. Enregistrer les modifications détectées dans modifications_commandes
+                if (detectedModifications.length > 0) {
+                    await supabase.from('modifications_commandes').insert(detectedModifications);
+                }
+
+                // 3. Upsert des données combinées actulaïsées
+                const batchSize = 500;
+                for (let i = 0; i < finalMatchedData.length; i += batchSize) {
+                    const chunk = finalMatchedData.slice(i, i + batchSize);
+                    const { error } = await supabase.from('commandes_excel').upsert(chunk, { onConflict: 'document_vente,poste,article' });
+                    if (error) throw error;
+                }
+
+                alert(`Succès ! Synchronisation terminée : ${finalMatchedData.length} lignes traitées, ${detectedDeletions.length} suppressions consignées, ${detectedModifications.length} modifications enregistrées.`);
+                resetAll();
+            } catch (err) {
+                console.error(err);
+                alert(`Erreur lors de l'enregistrement Supabase : ${err.message || JSON.stringify(err)}`);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-save"></i> Enregistrer & Synchroniser`;
+            }
+        }
+
         function resetAll() {
             kgDataRaw = [];
             piecesDataRaw = [];
             finalMatchedData = [];
+            detectedDeletions = [];
+            detectedModifications = [];
             document.getElementById("welcomeState").classList.remove("hidden");
             document.getElementById("previewSection").classList.add("hidden");
-            document.getElementById("analysisReportBox").classList.add("hidden");
             document.getElementById("actionContainer").classList.add("hidden");
             document.getElementById("fileKgInput").value = "";
             document.getElementById("filePiecesInput").value = "";

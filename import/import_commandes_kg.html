@@ -3,17 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Importation Combinée - SoufStock ERP/WMS</title>
+    <title>Importation Combinée & Analyse - SoufStock ERP/WMS</title>
     
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <!-- Tailwind CSS Play CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <!-- SheetJS pour Lire les fichiers Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -24,7 +21,9 @@
                 extend: {
                     colors: {
                         slate: { 950: '#020617', 900: '#0f172a', 800: '#1e293b', 700: '#334155', 400: '#94a3b8', 300: '#cbd5e1', 100: '#f1f5f9' },
-                        emerald: { 600: '#059669', 500: '#10b981', 400: '#34d399', 300: '#6ee7b7' }
+                        emerald: { 600: '#059669', 500: '#10b981', 400: '#34d399', 300: '#6ee7b7' },
+                        amber: { 500: '#f59e0b', 400: '#fbbf24' },
+                        rose: { 500: '#f43f5e', 400: '#fb7185' }
                     }
                 }
             }
@@ -47,8 +46,8 @@
                 <span>Retour au Hub</span>
             </a>
             <div>
-                <h1 class="text-xl font-bold tracking-tight text-slate-100">Smart Import Engine - Double Fichier</h1>
-                <p class="text-xs text-slate-400">Importez vos commandes KG et vos fichiers Pièces séparément.</p>
+                <h1 class="text-xl font-bold tracking-tight text-slate-100">Smart Import Engine - Contrôle & Analyse</h1>
+                <p class="text-xs text-slate-400">Importez, analysez et validez vos fichiers SAP avant l'intégration.</p>
             </div>
         </div>
         <div class="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl text-right">
@@ -128,19 +127,47 @@
         </div>
 
         <!-- APERÇU ET ACTIONS -->
-        <div id="previewSection" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col gap-4">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div id="previewSection" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col gap-6">
+            <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
                 <div>
                     <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
                         <i class="fas fa-table text-emerald-400"></i> Aperçu du fichier : <span id="activeTypeLabel" class="text-emerald-400"></span> (<span id="rowCount">0</span> lignes)
                     </h3>
-                    <p class="text-xs text-slate-400">Vérifiez les données avant de lancer l'enregistrement dans Supabase.</p>
+                    <p class="text-xs text-slate-400">Analysez la cohérence des données avant de les injecter dans Supabase.</p>
                 </div>
                 <div class="flex items-center gap-3">
+                    <button onclick="analyzeData()" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer">
+                        <i class="fas fa-chart-pie"></i> Analyser les Données
+                    </button>
                     <button onclick="cancelPreview()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer">Annuler</button>
                     <button onclick="saveToSupabase()" id="btnSave" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg cursor-pointer">
                         <i class="fas fa-save"></i> Enregistrer dans Supabase
                     </button>
+                </div>
+            </div>
+
+            <!-- RAPPORT D'ANALYSE (CACHÉ PAR DÉFAUT) -->
+            <div id="analysisReportBox" class="hidden bg-slate-950 border border-slate-800 rounded-xl p-5 flex flex-col gap-4">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                    <i class="fas fa-shield-halved"></i> Rapport d'analyse et de cohérence
+                </h4>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono">
+                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-800">
+                        <span class="text-slate-400 block text-[10px]">Total Lignes</span>
+                        <span id="anaTotal" class="text-slate-100 font-bold text-sm">0</span>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-800">
+                        <span class="text-slate-400 block text-[10px]">Commandes Uniques</span>
+                        <span id="anaDocs" class="text-emerald-400 font-bold text-sm">0</span>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-800">
+                        <span class="text-slate-400 block text-[10px]">Lignes Anormales (Qte ≤ 0)</span>
+                        <span id="anaErrors" class="text-rose-400 font-bold text-sm">0</span>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-800">
+                        <span class="text-slate-400 block text-[10px]">Total Quantité / Pièces</span>
+                        <span id="anaSum" class="text-sky-400 font-bold text-sm">0</span>
+                    </div>
                 </div>
             </div>
 
@@ -213,6 +240,7 @@
                     document.getElementById("activeTypeLabel").textContent = type === 'KG' ? "Commandes KG" : "Commandes Pièces";
                     document.getElementById("rowCount").textContent = currentParsedData.length;
                     document.getElementById("previewSection").classList.remove("hidden");
+                    document.getElementById("analysisReportBox").classList.add("hidden"); // cacher l'ancien rapport
 
                     renderPreview(currentParsedData.slice(0, 50));
                 } catch (err) {
@@ -221,6 +249,22 @@
                 }
             };
             reader.readAsArrayBuffer(file);
+        }
+
+        window.analyzeData = function() {
+            if (currentParsedData.length === 0) return;
+
+            const totalLignes = currentParsedData.length;
+            const uniqueDocs = new Set(currentParsedData.map(d => d.document_vente)).size;
+            const errorRows = currentParsedData.filter(d => d.quantite_commandee <= 0 && d.nombre_pieces <= 0).length;
+            const sumQty = currentParsedData.reduce((acc, curr) => acc + (curr.quantite_commandee || 0), 0);
+
+            document.getElementById("anaTotal").textContent = totalLignes;
+            document.getElementById("anaDocs").textContent = uniqueDocs;
+            document.getElementById("anaErrors").textContent = errorRows;
+            document.getElementById("anaSum").textContent = sumQty.toFixed(2);
+
+            document.getElementById("analysisReportBox").classList.remove("hidden");
         }
 
         function renderPreview(data) {
@@ -244,6 +288,7 @@
         window.cancelPreview = function() {
             currentParsedData = [];
             document.getElementById("previewSection").classList.add("hidden");
+            document.getElementById("analysisReportBox").classList.add("hidden");
             document.getElementById("fileKgInput").value = "";
             document.getElementById("filePiecesInput").value = "";
             document.getElementById("fileKgName").classList.add("hidden");

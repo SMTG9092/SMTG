@@ -188,6 +188,7 @@
                                     <th class="p-3">Poste</th>
                                     <th class="p-3">Article</th>
                                     <th class="p-3">Désignation</th>
+                                    <th class="p-3">Itinéraire</th>
                                     <th class="p-3 text-right">Qte (KG)</th>
                                     <th class="p-3 text-right text-emerald-400 font-bold">Nb Pièces</th>
                                     <th class="p-3">Statut DB</th>
@@ -202,6 +203,20 @@
         </main>
     </div>
 
+    <!-- PRO MAX CUSTOM MODAL -->
+    <div id="proModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-slate-900 border border-slate-800 w-[440px] rounded-2xl p-6 shadow-2xl flex flex-col items-center text-center transform scale-95 transition-transform duration-300" id="proModalBox">
+            <div id="modalIconContainer" class="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-2xl mb-4 shadow-inner">
+                <i id="modalIcon" class="fas fa-check-circle"></i>
+            </div>
+            <h3 id="modalTitle" class="text-base font-bold text-slate-100 mb-1">Succès de Synchronisation</h3>
+            <p id="modalMessage" class="text-xs text-slate-400 mb-6 leading-relaxed font-mono whitespace-pre-line"></p>
+            <button id="modalCloseBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-lg">
+                <i class="fas fa-check"></i> OK, Compris
+            </button>
+        </div>
+    </div>
+
     <!-- SCRIPT APPLICATION MODULE -->
     <script type="module">
         import supabase from '../assets/js/core/supabase.js';
@@ -212,6 +227,46 @@
         let detectedDeletions = [];
         let detectedModifications = [];
         let currentFileName = '';
+
+        function showProModal(title, message, type = 'success') {
+            const modal = document.getElementById("proModal");
+            const box = document.getElementById("proModalBox");
+            const titleEl = document.getElementById("modalTitle");
+            const msgEl = document.getElementById("modalMessage");
+            const iconEl = document.getElementById("modalIcon");
+            const iconContainer = document.getElementById("modalIconContainer");
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+
+            if (type === 'error') {
+                iconContainer.className = "w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 text-2xl mb-4 shadow-inner";
+                iconEl.className = "fas fa-triangle-exclamation";
+            } else {
+                iconContainer.className = "w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-2xl mb-4 shadow-inner";
+                iconEl.className = "fas fa-check-circle";
+            }
+
+            modal.classList.remove("hidden");
+            setTimeout(() => {
+                modal.classList.remove("opacity-0");
+                box.classList.remove("scale-95");
+                box.classList.add("scale-100");
+            }, 10);
+        }
+
+        function hideProModal() {
+            const modal = document.getElementById("proModal");
+            const box = document.getElementById("proModalBox");
+            modal.classList.add("opacity-0");
+            box.classList.remove("scale-100");
+            box.classList.add("scale-95");
+            setTimeout(() => {
+                modal.classList.add("hidden");
+            }, 300);
+        }
+
+        document.getElementById("modalCloseBtn").addEventListener("click", hideProModal);
 
         setInterval(() => {
             const now = new Date();
@@ -240,6 +295,23 @@
             return '';
         }
 
+        function parseExcelDate(val) {
+            if (!val) return null;
+            if (typeof val === 'number') {
+                const date = new Date((val - (25567 + 2))*86400*1000);
+                return !isNaN(date.getTime()) ? date.toISOString().split('T')[0] : null;
+            }
+            const str = String(val).trim();
+            if (str.includes('/')) {
+                const parts = str.split('/');
+                if (parts.length === 3) {
+                    return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                }
+            }
+            const d = new Date(str);
+            return !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : null;
+        }
+
         function handleFile(event, type) {
             const file = event.target.files[0];
             if (!file) return;
@@ -265,7 +337,10 @@
                         nombre_pieces: parseInt(getColumnValue(row, ['Nombre de pièces', 'NB PIECES', 'Pieces', 'Nombre pieces', 'Nbre pieces']) || 0),
                         nom_receptionnaire: String(getColumnValue(row, ['Client', 'Nom Réceptionnaire', 'RECEPTIONNAIRE'])).trim(),
                         unite: String(getColumnValue(row, ['Unité', 'UNITE']) || 'KG').trim(),
-                        itineraire: String(getColumnValue(row, ['Itinéraire', 'ITINERAIRE']) || '').trim()
+                        itineraire: String(getColumnValue(row, ['Description Itinéraire', 'Itinéraire', 'ITINERAIRE', 'ZONE DISTRIBUTION']) || '').trim(),
+                        date_creation: parseExcelDate(getColumnValue(row, ['Date de création', 'DATE CREATION'])),
+                        date_livraison: parseExcelDate(getColumnValue(row, ['Date de livraison', 'DATE LIVRAISON'])),
+                        heure_livraison: String(getColumnValue(row, ['Heure', 'HEURE', 'Heure livraison']) || '').trim() || null
                     })).filter(item => item.document_vente && item.article);
 
                     if (type === 'KG') {
@@ -291,7 +366,7 @@
 
                 } catch (err) {
                     console.error(err);
-                    alert("Erreur critique lors de la lecture du fichier Excel.");
+                    showProModal("Erreur de Lecture", "Erreur critique lors de la lecture du fichier Excel.", "error");
                 }
             };
             reader.readAsArrayBuffer(file);
@@ -423,6 +498,7 @@
                         <td class="p-3 text-amber-400">${item.Poste || '-'}</td>
                         <td class="p-3 text-sky-400">${item.article}</td>
                         <td class="p-3 text-slate-200">${item.designation_article || '-'}</td>
+                        <td class="p-3 text-slate-300">${item.itineraire || '-'}</td>
                         <td class="p-3 text-right font-bold text-slate-100">${item.quantite_commandee.toFixed(2)} KG</td>
                         <td class="p-3 text-right ${piecesClass}">${item.nombre_pieces} Pcs</td>
                         <td class="p-3"><span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-bold">Validé & Prêt</span></td>
@@ -478,7 +554,7 @@
                     if (modErr) throw modErr;
                 }
 
-                // 4. Upsert sécurisé : Nettoyage direct pour envoyer uniquement les colonnes existantes dans Supabase
+                // 4. Upsert sécurisé avec mapping complet des colonnes Excel (Itinéraire, Dates, Heure)
                 const batchSize = 500;
                 for (let i = 0; i < finalMatchedData.length; i += batchSize) {
                     const chunk = finalMatchedData.slice(i, i + batchSize).map(item => ({
@@ -491,6 +567,9 @@
                         nom_receptionnaire: item.nom_receptionnaire,
                         unite: item.unite,
                         itineraire: item.itineraire,
+                        date_creation: item.date_creation,
+                        date_livraison: item.date_livraison,
+                        heure_livraison: item.heure_livraison,
                         historique_import_id: importId,
                         est_modifie: detectedModifications.some(m => m.document_vente === item.document_vente && m.ligne_commande === item.Poste)
                     }));
@@ -502,11 +581,15 @@
                     if (error) throw error;
                 }
 
-                alert(`Succès total ! Synchronisation effectuée sans doublons :\n- ${finalMatchedData.length} lignes traitées\n- ${detectedDeletions.length} suppressions\n- ${detectedModifications.length} modifications.`);
+                showProModal(
+                    "Synchronisation Réussie",
+                    `Succès total ! Données synchronisées sans doublons :\n• ${finalMatchedData.length} lignes traitées\n• ${detectedDeletions.length} suppressions\n• ${detectedModifications.length} modifications`,
+                    "success"
+                );
                 resetAll();
             } catch (err) {
                 console.error(err);
-                alert(`Erreur d'insertion Supabase : ${err.message || JSON.stringify(err)}`);
+                showProModal("Erreur Supabase", `Erreur d'insertion : ${err.message || JSON.stringify(err)}`, "error");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = `<i class="fas fa-save"></i> Enregistrer & Synchroniser`;

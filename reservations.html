@@ -61,9 +61,9 @@
         <!-- HEADER -->
         <header class="h-20 bg-slate-900/40 border-b border-slate-800/80 px-8 flex items-center justify-between shrink-0">
             <div class="flex items-center gap-6">
-                <a href="index-stock.html" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow-sm group">
+                <a href="parametres.html" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow-sm group">
                     <i class="fas fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
-                    <span>Retour au Hub</span>
+                    <span>Retour Paramètres</span>
                 </a>
 
                 <div>
@@ -230,14 +230,12 @@
         document.addEventListener("DOMContentLoaded", async () => {
             initLiveClock();
 
-            // Initialiser le champ date avec la date d'aujourd'hui (format YYYY-MM-DD)
             const todayStr = new Date().toISOString().split('T')[0];
             const dateInput = document.getElementById("filterDateInput");
             if (dateInput) {
                 dateInput.value = todayStr;
                 currentDateFilter = todayStr;
 
-                // Écouter les changements de date
                 dateInput.addEventListener("change", async (e) => {
                     currentDateFilter = e.target.value;
                     currentPage = 1;
@@ -275,14 +273,12 @@
         }
 
         function applyFilters(query) {
-            // Filtrage par date de création (basé sur le champ created_at de Supabase)
             if (currentDateFilter) {
                 const startOfDay = `${currentDateFilter}T00:00:00`;
                 const endOfDay = `${currentDateFilter}T23:59:59`;
                 query = query.gte('created_at', startOfDay).lte('created_at', endOfDay);
             }
 
-            // Filtrage par recherche textuelle
             if (currentSearch !== "") {
                 query = query.or(`document_vente.ilike.%${currentSearch}%,article.ilike.%${currentSearch}%,lot.ilike.%${currentSearch}%`);
             }
@@ -310,7 +306,7 @@
                         unite,
                         statut,
                         created_at,
-                        picking:picking_id ( id, statut )
+                        picking:picking_id ( id, statut, client_nom )
                     `, { count: 'exact' });
 
                 query = applyFilters(query);
@@ -341,7 +337,7 @@
 
         async function fetchGlobalStats() {
             try {
-                let q = supabase.from('reservations_stock').select('id, stock_id, picking_id, picking_detail_id, suivi_id, quantite_reservee, statut, document_vente, article, designation_article, lot, magasin, created_at, picking:picking_id(id, statut)');
+                let q = supabase.from('reservations_stock').select('id, stock_id, picking_id, picking_detail_id, suivi_id, quantite_reservee, statut, document_vente, article, designation_article, lot, magasin, created_at, picking:picking_id(id, statut, client_nom)');
                 q = applyFilters(q);
                 const { data, error } = await q.limit(10000);
                 if (error || !data) return;
@@ -491,6 +487,7 @@
                     console.error("Erreur insertion AB10:", errAb10);
                 }
 
+                // --- 1. EXPORT EXCEL EXACT (Sans aucune modification) ---
                 const aggregatedMap = new Map();
 
                 targetRows.forEach(item => {
@@ -512,11 +509,13 @@
                 });
 
                 const excelData = Array.from(aggregatedMap.values());
-
                 const worksheet = XLSX.utils.json_to_sheet(excelData);
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, "AB10_Export");
                 XLSX.writeFile(workbook, `AB10_Transfer_${new Date().toISOString().slice(0,10)}.xlsx`);
+
+                // --- 2. GENERATION AUTOMATIQUE DU PDF PERSONNALISE ---
+                generateAutomaticPDF(targetRows);
 
                 alert(`Traitement réussi ! ${targetRows.length} ligne(s) sélectionnées ont été basculées à TERMINE / TRANSFEREE_AB10.`);
                 await loadData();
@@ -525,6 +524,73 @@
                 console.error("Erreur lors du traitement de la sélection:", err);
                 alert("Une erreur est survenue lors de l'exécution.");
             }
+        }
+
+        // Fonction pour générer le PDF personnalisé par commande et téléchargement automatique
+        function generateAutomaticPDF(targetRows) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+
+            // Grouper les lignes par Numéro de Commande (document_vente)
+            const groupedByCommand = {};
+            targetRows.forEach(item => {
+                const cmd = item.document_vente || 'INCONNU';
+                if (!groupedByCommand[cmd]) {
+                    groupedByCommand[cmd] = {
+                        document_vente: cmd,
+                        client_nom: (item.picking && item.picking.client_nom) ? item.picking.client_nom : 'Client Divers',
+                        items: []
+                    };
+                }
+                groupedByCommand[cmd].items.push(item);
+            });
+
+            let isFirstPage = true;
+
+            Object.values(groupedByCommand).forEach(group => {
+                if (!isFirstPage) {
+                    doc.addPage();
+                }
+                isFirstPage = false;
+
+                // En-tête du document PDF
+                doc.setFontSize(16);
+                doc.setTextColor(15, 23, 42);
+                doc.text("SoufStock Enterprise - Bon de Transfert AB10", 14, 20);
+
+                doc.setFontSize(10);
+                doc.setTextColor(100, 116, 139);
+                doc.text(`Date d'édition : ${new Date().toLocaleDateString('fr-FR')}`, 14, 27);
+
+                // Numéro de commande & Nom du client
+                doc.setFontSize(12);
+                doc.setTextColor(16, 185, 129); // emerald
+                doc.text(`N° Commande : ${group.document_vente}`, 14, 38);
+                doc.setFontSize(11);
+                doc.setTextColor(51, 65, 85);
+                doc.text(`Client : ${group.client_nom}`, 14, 45);
+
+                // Construction du tableau demandé
+                const tableColumns = ["Article & Désignation", "Lot", "Quantité Demandée", "Quantité Transférée"];
+                const tableRows = group.items.map(item => [
+                    `${item.article || ''}\n${item.designation_article || ''}`,
+                    item.lot || '',
+                    Number(item.quantite_reservee || 0).toFixed(3),
+                    Number(item.quantite_reservee || 0).toFixed(3)
+                ]);
+
+                doc.autoTable({
+                    head: [tableColumns],
+                    body: tableRows,
+                    startY: 52,
+                    theme: 'grid',
+                    styles: { fontSize: 9, cellPadding: 4 },
+                    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] }
+                });
+            });
+
+            // Sauvegarde automatique du PDF
+            doc.save(`Bon_Transfert_AB10_${new Date().toISOString().slice(0,10)}.pdf`);
         }
 
         window.exportToExcel = function() {

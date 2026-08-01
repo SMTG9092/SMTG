@@ -98,7 +98,7 @@
 
         </div>
 
-        <!-- TABLE CONTAINER (Affiche gha IMPORTEE bach t-tkon9abl lil-taadil w l-lancement) -->
+        <!-- TABLE CONTAINER -->
         <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl flex-1 flex flex-col">
             <div class="p-3 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs">
                 <span class="font-bold text-slate-300"><i class="fas fa-list-check text-emerald-400 mr-2"></i> Commandes en attente de lancement (Statut : IMPORTEE)</span>
@@ -162,13 +162,21 @@
     <script type="module">
         import supabase from '../assets/js/core/supabase.js';
 
-        // Set Default Dates: Du = Aujourd'hui, Au = Demain (Rada)
+        // 1. Fonction correcte de formatage Local YYYY-MM-DD (Evite les problèmes de décalage UTC)
+        function getLocalDateString(dateObj) {
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // 2. Set Default Dates: Du = Aujourd'hui, Au = Demain (Rada)
         const today = new Date();
-        const todayStr = today.toISOString().split('T')[0];
+        const todayStr = getLocalDateString(today);
         
         const demain = new Date(today);
         demain.setDate(demain.getDate() + 1);
-        const demainStr = demain.toISOString().split('T')[0];
+        const demainStr = getLocalDateString(demain);
 
         document.getElementById('dateDebut').value = todayStr;
         document.getElementById('dateFin').value = demainStr;
@@ -180,7 +188,7 @@
             
             tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Chargement...</td></tr>`;
 
-            // 1. Jib l-hisaiyat kamlin (Statistiques dyal la période)
+            // 3. Jib l-hisaiyat kamlin (Statistiques dyal la période)
             let queryStats = supabase.from('suivi_commandes_lancer').select('statut');
             if (dateDebut) queryStats = queryStats.gte('date_livraison', dateDebut);
             if (dateFin) queryStats = queryStats.lte('date_livraison', dateFin);
@@ -203,7 +211,7 @@
                 document.getElementById('statPicking').textContent = 0;
             }
 
-            // 2. Jib gha les commandes li fiha statut IMPORTEE bach ytzhro f la table l-taadil
+            // 4. Jib gha les commandes li fiha statut IMPORTEE bach ytzhro f la table l-taadil
             let query = supabase
                 .from('suivi_commandes_lancer')
                 .select('*')

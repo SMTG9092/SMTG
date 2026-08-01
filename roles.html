@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Rôles - SoufStock Enterprise ERP/WMS Pro Max</title>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darker: '#010309',
+                        dark: '#070b14',
+                        cardbg: '#0d1322',
+                        cardhover: '#131c38',
+                        bordercolor: '#1e293b',
+                        neonemerald: '#10b981'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- BLOCKAGE TOTAL MN L-ASL BACH MATBANCH LA PAGE BIDA -->
+    <style>
+        html { background-color: #010309; display: none; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #010309; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+        body { background-color: #010309; color: #f8fafc; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+        
+        .bg-cyber-grid {
+            background-image: linear-gradient(to right, rgba(30, 41, 59, 0.15) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(30, 41, 59, 0.15) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .pro-card {
+            background: linear-gradient(135deg, rgba(13, 19, 34, 0.95) 0%, rgba(3, 7, 18, 0.98) 100%);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glow-effect {
+            position: absolute;
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.06) 0%, transparent 70%);
+            pointer-events: none;
+            filter: blur(60px);
+        }
+    </style>
+
+    <!-- VERIFICATION SYNCHRONISÉE ULTRA-RAPIDE -->
+    <script type="module">
+        import SecurityManager from '../assets/js/core/security.js';
+        
+        window.alert = function(msg) {};
+
+        try {
+            const authorized = await SecurityManager.protectPage('roles');
+            if (!authorized) {
+                window.location.replace('dashboard.html');
+            } else {
+                document.documentElement.style.display = 'block';
+            }
+        } catch (e) {
+            window.location.replace('dashboard.html');
+        }
+    </script>
+</head>
+<body class="bg-darker text-slate-100 font-sans antialiased min-h-screen flex overflow-hidden selection:bg-emerald-500 selection:text-slate-950">
+
+    <!-- SIDEBAR PRO MAX -->
+    <aside class="w-72 bg-dark/95 border-r border-bordercolor flex flex-col h-screen p-5 select-none shrink-0 backdrop-blur-2xl z-20 shadow-2xl">
+        <div class="flex items-center gap-3.5 px-2 mb-8">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 via-teal-500/10 to-transparent border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-xl shadow-emerald-500/10">
+                <i class="fas fa-shield-alt text-xl animate-pulse"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-1.5">
+                    <span class="font-black text-base tracking-wider text-white">SoufStock</span>
+                    <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-black px-1.5 py-0.5 rounded tracking-widest uppercase">PRO MAX</span>
+                </div>
+                <span class="text-[10px] text-slate-400 font-semibold tracking-widest uppercase block mt-0.5">Enterprise WMS Core</span>
+            </div>
+        </div>
+        
+        <nav id="sidebarNav" class="flex-1 overflow-y-auto pr-1 space-y-1.5">
+            <!-- Dynamic Sidebar -->
+        </nav>
+
+        <div class="pt-4 mt-auto border-t border-bordercolor/80">
+            <div class="bg-cardbg/90 border border-bordercolor rounded-2xl p-4 mb-3 shadow-inner relative overflow-hidden">
+                <div class="absolute -right-4 -bottom-4 w-16 h-16 bg-emerald-500/5 rounded-full blur-xl"></div>
+                <div class="flex items-center gap-2.5">
+                    <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50 animate-ping"></div>
+                    <span id="sidebarUserName" class="block text-xs font-black text-slate-100 truncate uppercase tracking-wider">CHARGEMENT...</span>
+                </div>
+                <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-800/80 text-[10px] text-slate-400">
+                    <span class="font-mono text-emerald-400">SESSION_ACTIVE</span>
+                    <span class="flex items-center gap-1"><i class="fas fa-lock text-[9px]"></i> TLS 1.3</span>
+                </div>
+            </div>
+            <button id="logoutBtn" class="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl py-2.5 px-3 text-xs font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer group shadow-lg shadow-red-500/5">
+                <i class="fas fa-power-off group-hover:rotate-90 transition-transform duration-300"></i> Déconnexion Sécurisée
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTAINER -->
+    <div class="flex-1 flex flex-col h-screen min-w-0 overflow-hidden relative bg-cyber-grid">
+        
+        <!-- HEADER PRO MAX -->
+        <header class="h-20 bg-dark/70 border-b border-bordercolor px-10 flex items-center justify-between shrink-0 backdrop-blur-xl z-10 shadow-sm">
+            <div class="flex items-center gap-4">
+                <div>
+                    <h1 class="text-xl font-black tracking-tight text-white flex items-center gap-2.5">
+                        <i class="fas fa-shield-alt text-emerald-400 text-lg"></i> Gestion des Rôles & Sécurité
+                    </h1>
+                    <div class="text-xs text-slate-400 flex items-center gap-2 mt-1 font-medium">
+                        <span class="hover:text-white transition">Accueil</span>
+                        <i class="fas fa-chevron-right text-[8px] text-slate-600"></i>
+                        <strong class="text-emerald-400 font-bold">Rôles</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button id="addRoleBtn" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-4.5 py-2.5 rounded-xl text-xs transition-all duration-300 flex items-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer">
+                    <i class="fas fa-plus"></i> Nouveau Rôle
+                </button>
+            </div>
+        </header>
+
+        <!-- PAGE BODY -->
+        <main class="flex-1 p-8 overflow-y-auto pt-6 relative z-10">
+            <div class="glow-effect top-10 left-1/4"></div>
+
+            <div class="max-w-7xl w-full mx-auto">
+                <div class="pro-card rounded-2xl p-6 border border-bordercolor shadow-2xl">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-base font-black text-white flex items-center gap-2">
+                            <i class="fas fa-list text-emerald-400"></i> Liste des Rôles Enregistrés
+                        </h2>
+                        <span id="rolesCount" class="text-xs font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-lg">0 Rôles</span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-bordercolor text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                                    <th class="py-3.5 px-4">Ordre</th>
+                                    <th class="py-3.5 px-4">Code</th>
+                                    <th class="py-3.5 px-4">Nom du Rôle</th>
+                                    <th class="py-3.5 px-4">Description</th>
+                                    <th class="py-3.5 px-4">Statut</th>
+                                    <th class="py-3.5 px-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rolesTableBody" class="divide-y divide-bordercolor/60 text-xs text-slate-300">
+                                <tr>
+                                    <td colspan="6" class="text-center py-8 text-slate-500">Chargement des rôles...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script type="module">
+        import Navigation from '../assets/js/core/navigation.js';
+        import SessionManager from '../assets/js/core/session.js';
+        import supabase from '../assets/js/core/supabase.js';
+        import { Toast } from '../assets/js/core/utils.js';
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await Navigation.init();
+
+            const profile = await SessionManager.getProfile();
+            if (profile) {
+                const userNameEl = document.getElementById("sidebarUserName");
+                if (userNameEl) {
+                    userNameEl.textContent = profile.nom_complet || profile.username || profile.email || "UTILISATEUR";
+                }
+            }
+
+            await loadRoles();
+
+            const logoutBtn = document.getElementById("logoutBtn");
+            if (logoutBtn) {
+                logoutBtn.addEventListener("click", async () => {
+                    await SessionManager.logout();
+                });
+            }
+        });
+
+        async function loadRoles() {
+            try {
+                const { data: roles, error } = await supabase
+                    .from('roles')
+                    .select('*')
+                    .order('ordre_affichage', { ascending: true });
+
+                if (error) throw error;
+
+                const tbody = document.getElementById('rolesTableBody');
+                const countBadge = document.getElementById('rolesCount');
+                if (countBadge) countBadge.textContent = `${roles ? roles.length : 0} Rôles`;
+
+                if (!roles || roles.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-500">Aucun rôle trouvé.</td></tr>`;
+                    return;
+                }
+
+                let html = '';
+                roles.forEach(role => {
+                    const badgeColor = role.couleur || '#10b981';
+                    html += `
+                        <tr class="hover:bg-cardhover/50 transition-colors">
+                            <td class="py-3.5 px-4 font-mono text-slate-400">${role.ordre_affichage ?? 0}</td>
+                            <td class="py-3.5 px-4 font-mono font-bold text-emerald-400">${role.code}</td>
+                            <td class="py-3.5 px-4 font-bold text-white flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full inline-block" style="background-color: ${badgeColor};"></span>
+                                ${role.nom}
+                            </td>
+                            <td class="py-3.5 px-4 text-slate-400">${role.description || '-'}</td>
+                            <td class="py-3.5 px-4">
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-black ${role.actif ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}">
+                                    ${role.actif ? 'ACTIF' : 'INACTIF'}
+                                </span>
+                            </td>
+                            <td class="py-3.5 px-4 text-right">
+                                <button onclick="alert('Modification du rôle ID: ${role.id}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition" title="Modifier">
+                                    <i class="fas fa-pen text-xs"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+            } catch (err) {
+                console.error("Erreur chargement rôles:", err);
+                Toast.error("Rôles", "Erreur lors du chargement des rôles.");
+            }
+        }
+    </script>
+</body>
+</html>

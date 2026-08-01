@@ -323,6 +323,29 @@
                     return;
                 }
 
+                // Enrichir avec quantite_commandee et client depuis commandes_excel si possible
+                if (data && data.length > 0) {
+                    const docVentes = [...new Set(data.map(d => d.document_vente).filter(Boolean))];
+                    const articles = [...new Set(data.map(d => d.article).filter(Boolean))];
+
+                    if (docVentes.length > 0) {
+                        const { data: cmdData } = await supabase
+                            .from('commandes_excel')
+                            .select('document_vente, article, client, quantite_commandee')
+                            .in('document_vente', docVentes);
+
+                        if (cmdData && cmdData.length > 0) {
+                            data.forEach(item => {
+                                const found = cmdData.find(c => c.document_vente === item.document_vente && c.article === item.article);
+                                if (found) {
+                                    item.quantite_commandee = found.quantite_commandee;
+                                    item.client = found.client;
+                                }
+                            });
+                        }
+                    }
+                }
+
                 totalRecords = count || 0;
                 currentTableData = data || [];
                 renderTable(currentTableData);
@@ -535,7 +558,7 @@
                 if (!groupedByCommand[cmd]) {
                     groupedByCommand[cmd] = {
                         document_vente: cmd,
-                        client_nom: item.client_nom || 'MAXI LV FES',
+                        client_nom: item.client || 'MAXI LV FES',
                         items: []
                     };
                 }
@@ -568,9 +591,12 @@
                 doc.text(`Commande: ${group.document_vente}  |  Client: ${group.client_nom}`, 18, 26.5);
 
                 const tableColumns = ["Article", "KG", "Pieces", "Lot", "QTÉ Prép."];
+                
                 const tableRows = group.items.map(item => [
                     `${item.article || ''} ${item.designation_article ? '- ' + item.designation_article : ''}`,
-                    Number(item.quantite_reservee || 0).toFixed(2),
+                    item.quantite_commandee !== undefined && item.quantite_commandee !== null 
+                        ? Number(item.quantite_commandee).toFixed(2) 
+                        : Number(item.quantite_reservee || 0).toFixed(2),
                     item.pieces || '0',
                     item.lot || '',
                     ''

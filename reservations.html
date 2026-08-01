@@ -581,7 +581,6 @@
                 const headerHeight = 15;
                 const rowHeight = 8;
                 
-                // Regroupement dial les articles li m3awdin
                 const articleMap = {};
                 group.items.forEach(item => {
                     const artKey = item.article || '';
@@ -647,8 +646,8 @@
                     art.lots.forEach((l, lotIdx) => {
                         tableRows.push([
                             lotIdx === 0 ? art.articleText : '',
-                            l.kg,
-                            l.pieces,
+                            lotIdx === 0 ? l.kg : '',       // 0.00 ban ghir f la première ligne
+                            lotIdx === 0 ? l.pieces : '',   // 0 ban ghir f la première ligne
                             l.lot,
                             l.qtePrep
                         ]);

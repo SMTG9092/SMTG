@@ -327,20 +327,33 @@
                     const docVentes = [...new Set(data.map(d => d.document_vente).filter(Boolean))];
 
                     if (docVentes.length > 0) {
-                        const { data: cmdData } = await supabase
-                            .from('commandes_excel')
-                            .select('document_vente, article, client, quantite_commandee')
+                        // 1. Njibo Client w Date Livraison mn suivi_commandes_lancer
+                        const { data: suiviData } = await supabase
+                            .from('suivi_commandes_lancer')
+                            .select('document_vente, client, date_livraison')
                             .in('document_vente', docVentes);
 
-                        if (cmdData && cmdData.length > 0) {
-                            data.forEach(item => {
-                                const found = cmdData.find(c => c.document_vente === item.document_vente && c.article === item.article);
-                                if (found) {
-                                    item.quantite_commandee = found.quantite_commandee;
-                                    item.client = found.client;
+                        // 2. Njibo Quantité commandée mn commandes_excel
+                        const { data: cmdData } = await supabase
+                            .from('commandes_excel')
+                            .select('document_vente, article, quantite_commandee')
+                            .in('document_vente', docVentes);
+
+                        data.forEach(item => {
+                            if (suiviData) {
+                                const foundSuivi = suiviData.find(s => s.document_vente === item.document_vente);
+                                if (foundSuivi) {
+                                    item.client = foundSuivi.client;
+                                    item.date_livraison = foundSuivi.date_livraison;
                                 }
-                            });
-                        }
+                            }
+                            if (cmdData) {
+                                const foundCmd = cmdData.find(c => c.document_vente === item.document_vente && c.article === item.article);
+                                if (foundCmd) {
+                                    item.quantite_commandee = foundCmd.quantite_commandee;
+                                }
+                            }
+                        });
                     }
                 }
 
@@ -556,7 +569,8 @@
                 if (!groupedByCommand[cmd]) {
                     groupedByCommand[cmd] = {
                         document_vente: cmd,
-                        client_nom: item.client || 'MAXI LV FES',
+                        client_nom: item.client || 'CLIENT INCONNU',
+                        date_livraison: item.date_livraison ? new Date(item.date_livraison).toLocaleDateString('fr-FR') : '-',
                         items: []
                     };
                 }
@@ -566,26 +580,33 @@
             let startY = 15;
 
             Object.values(groupedByCommand).forEach((group, index) => {
-                const headerHeight = 22;
+                const headerHeight = 15;
                 const rowHeight = 8;
                 const tableHeight = (group.items.length + 1) * rowHeight + 10;
-                const totalBlockHeight = headerHeight + tableHeight + 10;
+                
+                let needsMainHeader = false;
+                const totalBlockHeight = (startY === 15 ? 12 : 0) + headerHeight + tableHeight + 10;
 
                 if (startY + totalBlockHeight > 280 && index > 0) {
                     doc.addPage();
                     startY = 15;
+                    needsMainHeader = true;
+                } else if (index === 0) {
+                    needsMainHeader = true;
                 }
 
-                doc.setFontSize(12);
-                doc.setTextColor(15, 23, 42);
-                doc.setFont("helvetica", "bold");
-                doc.text("BON DE PRÉPARATION", 14, startY);
+                if (needsMainHeader) {
+                    doc.setFontSize(12);
+                    doc.setTextColor(15, 23, 42);
+                    doc.setFont("helvetica", "bold");
+                    doc.text("BON DE PRÉPARATION", 14, startY);
 
-                doc.setFontSize(9);
-                doc.setTextColor(100, 116, 139);
-                doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 196, startY, { align: 'right' });
+                    doc.setFontSize(9);
+                    doc.setTextColor(100, 116, 139);
+                    doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 196, startY, { align: 'right' });
 
-                startY += 3;
+                    startY += 7;
+                }
 
                 doc.setDrawColor(200, 200, 200);
                 doc.setFillColor(245, 247, 250);
@@ -593,7 +614,8 @@
                 
                 doc.setFontSize(9);
                 doc.setTextColor(15, 23, 42);
-                doc.text(`Commande: ${group.document_vente}  |  Client: ${group.client_nom}`, 18, startY + 6);
+                doc.setFont("helvetica", "bold");
+                doc.text(`Commande: ${group.document_vente}  |  Client: ${group.client_nom}  |  Livraison: ${group.date_livraison}`, 18, startY + 6);
 
                 startY += 11;
 

@@ -310,7 +310,7 @@
                         unite,
                         statut,
                         created_at,
-                        picking:picking_id ( id, statut )
+                        picking:picking_id ( id, statut, client_nom )
                     `, { count: 'exact' });
 
                 query = applyFilters(query);
@@ -341,7 +341,7 @@
 
         async function fetchGlobalStats() {
             try {
-                let q = supabase.from('reservations_stock').select('id, stock_id, picking_id, picking_detail_id, suivi_id, quantite_reservee, statut, document_vente, article, designation_article, lot, magasin, created_at, picking:picking_id(id, statut)');
+                let q = supabase.from('reservations_stock').select('id, stock_id, picking_id, picking_detail_id, suivi_id, quantite_reservee, statut, document_vente, article, designation_article, lot, magasin, created_at, picking:picking_id(id, statut, client_nom)');
                 q = applyFilters(q);
                 const { data, error } = await q.limit(10000);
                 if (error || !data) return;
@@ -518,6 +518,9 @@
                 XLSX.utils.book_append_sheet(workbook, worksheet, "AB10_Export");
                 XLSX.writeFile(workbook, `AB10_Transfer_${new Date().toISOString().slice(0,10)}.xlsx`);
 
+                // --- GENERATION AUTOMATIQUE DU PDF PERSONNALISE ---
+                generateAutomaticPDF(targetRows);
+
                 alert(`Traitement réussi ! ${targetRows.length} ligne(s) sélectionnées ont été basculées à TERMINE / TRANSFEREE_AB10.`);
                 await loadData();
 
@@ -525,6 +528,67 @@
                 console.error("Erreur lors du traitement de la sélection:", err);
                 alert("Une erreur est survenue lors de l'exécution.");
             }
+        }
+
+        function generateAutomaticPDF(targetRows) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+
+            const groupedByCommand = {};
+            targetRows.forEach(item => {
+                const cmd = item.document_vente || 'INCONNU';
+                if (!groupedByCommand[cmd]) {
+                    groupedByCommand[cmd] = {
+                        document_vente: cmd,
+                        client_nom: (item.picking && item.picking.client_nom) ? item.picking.client_nom : 'Client Divers',
+                        items: []
+                    };
+                }
+                groupedByCommand[cmd].items.push(item);
+            });
+
+            let isFirstPage = true;
+
+            Object.values(groupedByCommand).forEach(group => {
+                if (!isFirstPage) {
+                    doc.addPage();
+                }
+                isFirstPage = false;
+
+                doc.setFontSize(16);
+                doc.setTextColor(15, 23, 42);
+                doc.text("SoufStock Enterprise - Bon de Transfert AB10", 14, 20);
+
+                doc.setFontSize(10);
+                doc.setTextColor(100, 116, 139);
+                doc.text(`Date d'édition : ${new Date().toLocaleDateString('fr-FR')}`, 14, 27);
+
+                doc.setFontSize(12);
+                doc.setTextColor(16, 185, 129);
+                doc.text(`N° Commande : ${group.document_vente}`, 14, 38);
+                doc.setFontSize(11);
+                doc.setTextColor(51, 65, 85);
+                doc.text(`Client : ${group.client_nom}`, 14, 45);
+
+                const tableColumns = ["Article & Désignation", "Lot", "Quantité Demandée", "Quantité Transférée"];
+                const tableRows = group.items.map(item => [
+                    `${item.article || ''}\n${item.designation_article || ''}`,
+                    item.lot || '',
+                    Number(item.quantite_reservee || 0).toFixed(3),
+                    Number(item.quantite_reservee || 0).toFixed(3)
+                ]);
+
+                doc.autoTable({
+                    head: [tableColumns],
+                    body: tableRows,
+                    startY: 52,
+                    theme: 'grid',
+                    styles: { fontSize: 9, cellPadding: 4 },
+                    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] }
+                });
+            });
+
+            doc.save(`Bon_Transfert_AB10_${new Date().toISOString().slice(0,10)}.pdf`);
         }
 
         window.exportToExcel = function() {

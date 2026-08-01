@@ -323,10 +323,9 @@
                     return;
                 }
 
-                // Enrichir avec quantite_commandee et client depuis commandes_excel si possible
+                // Enrichir avec quantite_commandee et client depuis commandes_excel
                 if (data && data.length > 0) {
                     const docVentes = [...new Set(data.map(d => d.document_vente).filter(Boolean))];
-                    const articles = [...new Set(data.map(d => d.article).filter(Boolean))];
 
                     if (docVentes.length > 0) {
                         const { data: cmdData } = await supabase
@@ -594,12 +593,16 @@
                 
                 const tableRows = group.items.map(item => [
                     `${item.article || ''} ${item.designation_article ? '- ' + item.designation_article : ''}`,
+                    // KG: Quantité Commandée dyal l-client
                     item.quantite_commandee !== undefined && item.quantite_commandee !== null 
                         ? Number(item.quantite_commandee).toFixed(2) 
-                        : Number(item.quantite_reservee || 0).toFixed(2),
+                        : '0.00',
                     item.pieces || '0',
                     item.lot || '',
-                    ''
+                    // QTÉ Prép.: Quantité Réservée mn reservations_stock
+                    item.quantite_reservee !== undefined && item.quantite_reservee !== null
+                        ? Number(item.quantite_reservee).toFixed(2)
+                        : '0.00'
                 ]);
 
                 doc.autoTable({
@@ -614,7 +617,7 @@
                         1: { cellWidth: 40, halign: 'right' },
                         2: { cellWidth: 30, halign: 'center' },
                         3: { cellWidth: 40, halign: 'center' },
-                        4: { cellWidth: 39, halign: 'center' }
+                        4: { cellWidth: 39, halign: 'right', fontStyle: 'bold' }
                     }
                 });
             });

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lancement des Commandes par Période - SoufStock WMS</title>
+    <title>Lancement & Suivi des Commandes - SoufStock WMS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -42,41 +42,68 @@
     <!-- MAIN WRAPPER -->
     <main class="flex-1 p-6 overflow-hidden flex flex-col gap-5">
         
-        <!-- BARRE DE FILTRE PAR INTERVALLE DE DATES -->
-        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-lg">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                    <i class="fas fa-calendar-days"></i>
-                </div>
-                <div>
-                    <h2 class="text-xs font-bold text-slate-100 uppercase tracking-wider">Filtrer par Intervalle de Dates</h2>
-                    <p class="text-[11px] text-slate-400">Afficher les commandes <span class="text-emerald-400 font-bold">IMPORTEE</span> entre les deux dates</p>
-                </div>
-            </div>
+        <!-- BARRE DE FILTRE ET 4 STATISTIQUES -->
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
             
-            <div class="flex flex-wrap items-center gap-3">
-                <!-- Date Début -->
-                <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl">
-                    <span class="text-[10px] text-slate-400 uppercase">Du:</span>
-                    <input type="date" id="dateDebut" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono cursor-pointer">
+            <!-- FILTRE DATES (7 COLUMNS) -->
+            <div class="xl:col-span-7 bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-lg">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                        <i class="fas fa-calendar-days"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xs font-bold text-slate-100 uppercase tracking-wider">Filtrer par Période</h2>
+                        <p class="text-[11px] text-slate-400">Gestion et Lancement des Commandes</p>
+                    </div>
                 </div>
-                <!-- Date Fin -->
-                <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl">
-                    <span class="text-[10px] text-slate-400 uppercase">Au:</span>
-                    <input type="date" id="dateFin" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono cursor-pointer">
+                
+                <div class="flex flex-wrap items-center gap-2">
+                    <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl">
+                        <span class="text-[10px] text-slate-400 uppercase">Du:</span>
+                        <input type="date" id="dateDebut" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono cursor-pointer">
+                    </div>
+                    <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl">
+                        <span class="text-[10px] text-slate-400 uppercase">Au:</span>
+                        <input type="date" id="dateFin" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono cursor-pointer">
+                    </div>
+                    <button onclick="loadSuiviCommandes()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
+                        <i class="fas fa-search"></i> Afficher
+                    </button>
                 </div>
-
-                <button onclick="loadSuiviCommandes()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
-                    <i class="fas fa-search"></i> Afficher
-                </button>
-                <button onclick="resetFilter()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer" title="Voir Tout">
-                    Tout voir
-                </button>
             </div>
+
+            <!-- LES 4 STATISTIQUES / TOTAUX (5 COLUMNS) -->
+            <div class="xl:col-span-5 grid grid-cols-4 gap-2 bg-slate-900 border border-slate-800 p-3 rounded-xl shadow-lg items-center">
+                <!-- Total -->
+                <div class="text-center border-r border-slate-800 pr-1">
+                    <span class="text-[9px] text-slate-400 uppercase block tracking-wider">Total</span>
+                    <span id="statTotal" class="text-base font-bold font-mono text-slate-100">0</span>
+                </div>
+                <!-- Importée -->
+                <div class="text-center border-r border-slate-800 pr-1">
+                    <span class="text-[9px] text-slate-400 uppercase block tracking-wider">Importée</span>
+                    <span id="statImportee" class="text-base font-bold font-mono text-amber-400">0</span>
+                </div>
+                <!-- Lancée -->
+                <div class="text-center border-r border-slate-800 pr-1">
+                    <span class="text-[9px] text-slate-400 uppercase block tracking-wider" title="Lancées & En Picking">Lancée</span>
+                    <span id="statLancee" class="text-base font-bold font-mono text-emerald-400">0</span>
+                </div>
+                <!-- En Picking -->
+                <div class="text-center">
+                    <span class="text-[9px] text-slate-400 uppercase block tracking-wider">Picking</span>
+                    <span id="statPicking" class="text-base font-bold font-mono text-sky-400">0</span>
+                </div>
+            </div>
+
         </div>
 
-        <!-- TABLE CONTAINER -->
+        <!-- TABLE CONTAINER (Affiche gha IMPORTEE bach t-tkon9abl lil-taadil w l-lancement) -->
         <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl flex-1 flex flex-col">
+            <div class="p-3 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs">
+                <span class="font-bold text-slate-300"><i class="fas fa-list-check text-emerald-400 mr-2"></i> Commandes en attente de lancement (Statut : IMPORTEE)</span>
+                <span id="tableCountBadge" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-lg font-mono text-[11px]">0 commandes</span>
+            </div>
             <div class="overflow-x-auto flex-1">
                 <table class="w-full text-left text-xs border-collapse">
                     <thead class="sticky top-0 bg-slate-950 text-slate-400 uppercase text-[10px] z-10 border-b border-slate-800">
@@ -94,7 +121,7 @@
                     </thead>
                     <tbody id="suiviTableBody" class="divide-y divide-slate-800/50 font-mono">
                         <tr>
-                            <td colspan="9" class="p-8 text-center text-slate-500">Sélectionnez la période et cliquez sur Afficher...</td>
+                            <td colspan="9" class="p-8 text-center text-slate-500">Chargement des données...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -135,7 +162,7 @@
     <script type="module">
         import supabase from '../assets/js/core/supabase.js';
 
-        // Initialiser les inputs par défaut (ex: du 01/08/2026 l 02/08/2026 wla l'yon)
+        // Set Default Dates to Today (2026-08-01)
         const todayStr = new Date().toISOString().split('T')[0];
         document.getElementById('dateDebut').value = todayStr;
         document.getElementById('dateFin').value = todayStr;
@@ -145,31 +172,52 @@
             const dateFin = document.getElementById('dateFin').value;
             const tbody = document.getElementById("suiviTableBody");
             
-            tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Chargement des commandes...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Chargement...</td></tr>`;
 
+            // 1. Jib l-hisaiyat kamlin (Statistiques dyal la période)
+            let queryStats = supabase.from('suivi_commandes_lancer').select('statut');
+            if (dateDebut) queryStats = queryStats.gte('date_livraison', dateDebut);
+            if (dateFin) queryStats = queryStats.lte('date_livraison', dateFin);
+            
+            const { data: allStats } = await queryStats;
+            if (allStats) {
+                const total = allStats.length;
+                const importee = allStats.filter(item => item.statut === 'IMPORTEE').length;
+                const lancee = allStats.filter(item => item.statut === 'LANCEE').length;
+                const picking = allStats.filter(item => item.statut === 'EN_PICKING').length;
+
+                document.getElementById('statTotal').textContent = total;
+                document.getElementById('statImportee').textContent = importee;
+                document.getElementById('statLancee').textContent = lancee;
+                document.getElementById('statPicking').textContent = picking;
+            } else {
+                document.getElementById('statTotal').textContent = 0;
+                document.getElementById('statImportee').textContent = 0;
+                document.getElementById('statLancee').textContent = 0;
+                document.getElementById('statPicking').textContent = 0;
+            }
+
+            // 2. Jib gha les commandes li fiha statut IMPORTEE bach ytzhro f la table l-taadil
             let query = supabase
                 .from('suivi_commandes_lancer')
                 .select('*')
                 .eq('statut', 'IMPORTEE');
 
-            // Filtrage b l'intervalle d tarikh (gte = Greater Than or Equal, lte = Less Than or Equal)
-            if (dateDebut) {
-                query = query.gte('date_livraison', dateDebut);
-            }
-            if (dateFin) {
-                query = query.lte('date_livraison', dateFin);
-            }
+            if (dateDebut) query = query.gte('date_livraison', dateDebut);
+            if (dateFin) query = query.lte('date_livraison', dateFin);
 
             const { data: suiviList, error } = await query.order('date_livraison', { ascending: true });
 
             if (error) {
                 console.error(error);
-                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-rose-400">Erreur de chargement: ${error.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-rose-400">Erreur: ${error.message}</td></tr>`;
                 return;
             }
 
+            document.getElementById('tableCountBadge').textContent = `${suiviList ? suiviList.length : 0} commandes`;
+
             if (!suiviList || suiviList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-500">Aucune commande importée trouvée entre ${dateDebut || '...'} et ${dateFin || '...'}.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-500">Aucune commande IMPORTEE trouvée pour cette période.</td></tr>`;
                 return;
             }
 
@@ -195,11 +243,9 @@
                         <td class="p-3.5 text-slate-300"><span class="bg-slate-950 px-2 py-1 rounded border border-slate-800 text-[11px]">${item.itineraire || 'Non assigné'}</span></td>
                         <td class="p-3.5"><span class="border px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border-emerald-500/20">${item.statut}</span></td>
                         <td class="p-3.5 text-center flex items-center justify-center gap-2">
-                            <!-- Zrr 1: Articles -->
-                            <button onclick="openDetails('${item.document_vente}')" class="bg-slate-800 hover:bg-slate-700 text-sky-400 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow" title="Voir les articles">
+                            <button onclick="openDetails('${item.document_vente}')" class="bg-slate-800 hover:bg-slate-700 text-sky-400 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow">
                                 <i class="fas fa-eye"></i> Articles
                             </button>
-                            <!-- Zrr 2: Lancer -->
                             <button onclick="lancerCommande('${item.id}', '${item.document_vente}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow">
                                 <i class="fas fa-play"></i> Lancer
                             </button>
@@ -208,12 +254,6 @@
                 `;
             }
             tbody.innerHTML = html;
-        };
-
-        window.resetFilter = function() {
-            document.getElementById('dateDebut').value = '';
-            document.getElementById('dateFin').value = '';
-            loadSuiviCommandes();
         };
 
         window.openDetails = async function(docVente) {
@@ -231,7 +271,7 @@
                 .order('"Poste"', { ascending: true });
 
             if (error || !data) {
-                modalBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-rose-400">Erreur de chargement des articles.</td></tr>`;
+                modalBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-rose-400">Erreur de chargement.</td></tr>`;
                 return;
             }
 
@@ -272,7 +312,7 @@
                 .eq('id', suiviId);
 
             if (errSuivi) {
-                alert("Erreur lors du lancement de la commande: " + errSuivi.message);
+                alert("Erreur: " + errSuivi.message);
                 return;
             }
 

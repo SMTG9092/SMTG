@@ -11,7 +11,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Supabase JS Client (UMD fallback lakin kansta3mlo ES Module l-fuq) -->
+    <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
@@ -105,7 +105,7 @@
                         </div>
                         <div>
                             <h3 class="text-xs font-bold text-slate-100">Fichier Pièces</h3>
-                            <p class="text-[10px] text-slate-400">Pour extraction Nb Pièces</p>
+                            <p class="text-[10px] text-slate-400">Extraction précise Nb Pièces</p>
                         </div>
                     </div>
                     <span id="badgePieces" class="text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full font-mono">En attente</span>
@@ -138,7 +138,7 @@
                     <i class="fas fa-database animate-pulse"></i>
                 </div>
                 <h3 class="text-base font-bold text-slate-200">Prêt pour l'analyse synchronisée Supabase</h3>
-                <p class="text-xs text-slate-400 max-w-md mt-1">Importez vos fichiers pour déclencher le moteur de matching et analyser les écarts par rapport aux tables <strong>commandes_supprimees</strong> et <strong>modifications_commandes</strong>.</p>
+                <p class="text-xs text-slate-400 max-w-md mt-1">Importez vos fichiers KG et Pièces pour fusionner automatiquement le nombre exact de pièces par ligne.</p>
             </div>
 
             <!-- PREVIEW SECTION -->
@@ -147,7 +147,7 @@
                 <div class="flex items-center justify-between bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-md">
                     <div>
                         <h3 class="text-xs font-bold text-slate-100 flex items-center gap-2">
-                            <i class="fas fa-table text-emerald-400"></i> Résultat Delta & Analyse
+                            <i class="fas fa-table text-emerald-400"></i> Résultat Delta & Analyse Pièces
                         </h3>
                         <p class="text-[11px] text-slate-400 mt-0.5">Lignes valides : <span id="rowCount" class="font-bold text-slate-200">0</span> | Suppressions : <span id="deletedCount" class="font-bold text-rose-400">0</span> | Modifications : <span id="modifiedCount" class="font-bold text-amber-400">0</span></p>
                     </div>
@@ -189,7 +189,7 @@
                                     <th class="p-3">Article</th>
                                     <th class="p-3">Désignation</th>
                                     <th class="p-3 text-right">Qte (KG)</th>
-                                    <th class="p-3 text-right text-emerald-400">Nb Pièces</th>
+                                    <th class="p-3 text-right text-emerald-400 font-bold">Nb Pièces (Extrait)</th>
                                     <th class="p-3">Statut DB</th>
                                 </tr>
                             </thead>
@@ -213,7 +213,7 @@
         let detectedModifications = [];
         let activeImportId = 1;
 
-        // Horloge en temps réel avec secondes
+        // Horloge en temps réel
         setInterval(() => {
             const now = new Date();
             document.getElementById("currentDate").innerText = now.toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
@@ -254,12 +254,12 @@
                     const rawJson = XLSX.utils.sheet_to_json(worksheet);
 
                     const parsed = rawJson.map(row => ({
-                        document_vente: String(getColumnValue(row, ['Document de vente', 'NUCOMD', 'Doc Vente', 'Commande'])).trim(),
-                        poste: parseInt(getColumnValue(row, ['Poste', 'POS', 'Ligne de commande']) || 0),
-                        article: String(getColumnValue(row, ['Article', 'Code Article', 'ART'])).trim(),
-                        designation_article: String(getColumnValue(row, ["Description d'article", 'DESIGNATION', 'Designation Article'])).trim(),
-                        quantite_commandee: parseFloat(getColumnValue(row, ['Quantité commandée (poste)', 'QT COMD', 'Quantite', 'QTE']) || 0),
-                        nombre_pieces: parseInt(getColumnValue(row, ['Nombre de pièces', 'NB PIECES', 'Pieces']) || 0),
+                        document_vente: String(getColumnValue(row, ['Document de vente', 'NUCOMD', 'Doc Vente', 'Commande', 'Vbeln'])).trim(),
+                        poste: parseInt(getColumnValue(row, ['Poste', 'POS', 'Ligne de commande', 'Posnr']) || 0),
+                        article: String(getColumnValue(row, ['Article', 'Code Article', 'ART', 'Matnr'])).trim(),
+                        designation_article: String(getColumnValue(row, ["Description d'article", 'DESIGNATION', 'Designation Article', 'Arktx'])).trim(),
+                        quantite_commandee: parseFloat(getColumnValue(row, ['Quantité commandée (poste)', 'QT COMD', 'Quantite', 'QTE', 'Kwmeng']) || 0),
+                        nombre_pieces: parseInt(getColumnValue(row, ['Nombre de pièces', 'NB PIECES', 'Pieces', 'Nombre pieces', 'Nbre pieces']) || 0),
                         client: String(getColumnValue(row, ['Client', 'Nom Réceptionnaire', 'RECEPTIONNAIRE'])).trim(),
                         unite: String(getColumnValue(row, ['Unité', 'UNITE']) || 'KG').trim(),
                         itineraire: String(getColumnValue(row, ['Itinéraire', 'ITINERAIRE']) || '').trim(),
@@ -298,16 +298,36 @@
         async function performMatchingAndDelta() {
             if (kgDataRaw.length === 0 || piecesDataRaw.length === 0) return;
 
-            const piecesMap = new Map();
+            // Création d'une Map robuste pour chercher par Document + Poste + Article ou par Article seul si besoin
+            const piecesMapExact = new Map();
+            const piecesMapArticle = new Map();
+
             piecesDataRaw.forEach(p => {
-                const key = `${p.document_vente}_${p.poste}_${p.article}`.toLowerCase();
-                piecesMap.set(key, p.nombre_pieces);
+                const exactKey = `${p.document_vente}_${p.poste}_${p.article}`.toLowerCase();
+                piecesMapExact.set(exactKey, p.nombre_pieces);
+                if (p.article && p.nombre_pieces > 0) {
+                    piecesMapArticle.set(p.article.toLowerCase(), p.nombre_pieces);
+                }
             });
 
             let matchedCount = 0;
             finalMatchedData = kgDataRaw.map(kg => {
-                const key = `${kg.document_vente}_${kg.poste}_${kg.article}`.toLowerCase();
-                let matchedPieces = piecesMap.has(key) ? piecesMap.get(key) : 0;
+                const exactKey = `${kg.document_vente}_${kg.poste}_${kg.article}`.toLowerCase();
+                let matchedPieces = 0;
+
+                // 1. Tenter le matching exact (Doc + Poste + Article)
+                if (piecesMapExact.has(exactKey)) {
+                    matchedPieces = piecesMapExact.get(exactKey);
+                } 
+                // 2. Si non trouvé exactement, chercher via le fichier pièces si le champ 'nombre_pieces' est présent dans la ligne KG elle-même
+                else if (kg.nombre_pieces > 0) {
+                    matchedPieces = kg.nombre_pieces;
+                }
+                // 3. Fallback sur l'article si le document/poste diffère légèrement
+                else if (piecesMapArticle.has(kg.article.toLowerCase())) {
+                    matchedPieces = piecesMapArticle.get(kg.article.toLowerCase());
+                }
+
                 if (matchedPieces > 0) matchedCount++;
 
                 return {
@@ -324,7 +344,7 @@
             try {
                 const { data: existingRows, error } = await supabase
                     .from('commandes_excel')
-                    .select('document_vente, poste, article, quantite_commandee, designation_article, client, unite, magasin_source, itineraire');
+                    .select('document_vente, poste, article, quantite_commandee, nombre_pieces, designation_article, client, unite, magasin_source, itineraire');
 
                 if (!error && existingRows && existingRows.length > 0) {
                     const newSet = new Set(finalMatchedData.map(d => `${d.document_vente}_${d.poste}_${d.article}`.toLowerCase()));
@@ -388,7 +408,7 @@
             document.getElementById("anaTotal").textContent = finalMatchedData.length;
             document.getElementById("anaDeleted").textContent = detectedDeletions.length;
             document.getElementById("anaModified").textContent = detectedModifications.length;
-            document.getElementById("anaSumPieces").textContent = finalMatchedData.reduce((acc, curr) => acc + curr.nombre_pieces, 0);
+            document.getElementById("anaSumPieces").textContent = finalMatchedData.reduce((acc, curr) => acc + (curr.nombre_pieces || 0), 0);
 
             renderPreview(finalMatchedData.slice(0, 100));
         }
@@ -396,6 +416,7 @@
         function renderPreview(data) {
             let html = "";
             data.forEach(item => {
+                const piecesClass = item.nombre_pieces > 0 ? 'text-emerald-400 font-bold' : 'text-rose-400';
                 html += `
                     <tr class="hover:bg-slate-800/40">
                         <td class="p-3 text-emerald-400 font-bold">${item.document_vente}</td>
@@ -403,7 +424,7 @@
                         <td class="p-3 text-sky-400">${item.article}</td>
                         <td class="p-3 text-slate-200">${item.designation_article || '-'}</td>
                         <td class="p-3 text-right font-bold text-slate-100">${item.quantite_commandee.toFixed(2)} KG</td>
-                        <td class="p-3 text-right font-bold text-emerald-300">${item.nombre_pieces} Pcs</td>
+                        <td class="p-3 text-right ${piecesClass}">${item.nombre_pieces} Pcs</td>
                         <td class="p-3"><span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-bold">Validé & Prêt</span></td>
                     </tr>
                 `;

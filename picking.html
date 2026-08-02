@@ -182,9 +182,9 @@
 
             isOrderLocked = existingPicking ? Boolean(existingPicking.est_valide) : false;
             
-            // Hna zedna n-t2akkado wach statut f picking wla f commandes_excel hiya TERMINE wla VALIDE
+            // Kan-choufo wach statut f table picking howa VALIDE (wla TERMINE ila kant qdima)
             const pStatut = existingPicking ? existingPicking.statut : '';
-            isOrderTerminated = (pStatut === 'TERMINE' || pStatut === 'VALIDE' || existingPicking?.est_valide === true) || statutActuel === 'PREPAREE';
+            isOrderTerminated = (pStatut === 'VALIDE' || pStatut === 'TERMINE' || existingPicking?.est_valide === true) || statutActuel === 'PREPAREE';
 
             let existingDetailsMap = {};
             if (existingPicking) {
@@ -227,7 +227,7 @@
             const premiereLigne = dataCmd[0];
             document.getElementById('infoClient').textContent = premiereLigne.nom_receptionnaire || 'Client Divers';
             document.getElementById('infoItineraire').textContent = premiereLigne.itineraire || 'Non assigné';
-            document.getElementById('infoStatut').textContent = isOrderTerminated ? (pStatut || 'TERMINE') : (isOrderLocked ? 'VALIDE' : (premiereLigne.statut || '-'));
+            document.getElementById('infoStatut').textContent = isOrderTerminated ? (pStatut || 'VALIDE') : (isOrderLocked ? 'VALIDE' : (premiereLigne.statut || '-'));
             document.getElementById('tableCountBadge').textContent = `${dataCmd.length} postes`;
 
             window.selectedLotsData = {};
@@ -312,7 +312,7 @@
             }
             tbody.innerHTML = html;
 
-            // Ila kanet TERMINE wla VALIDE, kan-bloqiw kolchi
+            // Ila kanet VALIDE wla TERMINE, kan-bloqiw kolchi
             if (isOrderLocked || isOrderTerminated) {
                 verrouillerInterfaceInterface();
             }
@@ -488,7 +488,7 @@
 
         async function executerSauvegardeDonnees(numCmd) {
             if (isOrderTerminated) {
-                alert("Action interdite : Cette commande est TERMINEE / VALIDEE et ne peut plus être modifiée.");
+                alert("Action interdite : Cette commande est VALIDEE / TERMINEE et ne peut plus être modifiée.");
                 return false;
             }
 
@@ -640,7 +640,7 @@
 
         window.actionEnregistrer = async function() {
             if (isOrderTerminated) {
-                alert("Impossible d'enregistrer : Cette commande est TERMINEE/VALIDEE et verrouillée.");
+                alert("Impossible d'enregistrer : Cette commande est VALIDEE et verrouillée.");
                 return;
             }
             if (isOrderLocked) {
@@ -659,13 +659,13 @@
 
         window.actionValiderGlobal = async function() {
             if (isOrderTerminated) {
-                alert("Cette commande est déjà TERMINEE / VALIDEE.");
+                alert("Cette commande est déjà VALIDEE.");
                 return;
             }
             const numCmd = inputNumCommande.value.trim();
             if (!numCmd) { alert("Veuillez d'abord charger une commande."); return; }
 
-            if (!confirm("Voulez-vous vraiment valider définitivement cette commande ? Cela va basculer le statut à TERMINE et enregistrer les données.")) {
+            if (!confirm("Voulez-vous vraiment valider définitivement cette commande ? Cela va basculer le statut à VALIDE et enregistrer les données.")) {
                 return;
             }
 
@@ -677,11 +677,11 @@
             const { data: authData } = await supabase.auth.getUser();
             const userId = authData?.user?.id || null;
 
-            // 1. Mise à jour f table picking (Statut: TERMINE wla VALIDE - hna k-nsta3mlo TERMINE)
+            // 1. Mise à jour f table picking b STATUT: 'VALIDE' (Kif m-talbti a sahbi)
             await supabase.from('picking')
                 .update({ 
                     est_valide: true, 
-                    statut: 'TERMINE', 
+                    statut: 'VALIDE', 
                     date_fin: nowIso,
                     date_validation: nowIso,
                     updated_at: nowIso 
@@ -712,9 +712,9 @@
         };
 
         window.actionModifier = async function() {
-            // Hna fin m-no3 3la l-modifi ila kant TERMINE wla VALIDE
+            // Hna fin m-no3 3la l-modifi ila kant VALIDE wla TERMINE
             if (isOrderTerminated) {
-                alert("Modification impossible : Cette commande a le statut TERMINE / VALIDE et est définitivement verrouillée.");
+                alert("Modification impossible : Cette commande a le statut VALIDE et est définitivement verrouillée.");
                 return;
             }
 
@@ -779,7 +779,7 @@
             }
 
             const infoSt = document.getElementById('infoStatut');
-            infoSt.textContent = 'TERMINE';
+            infoSt.textContent = 'VALIDE';
             infoSt.className = 'font-bold text-emerald-400 text-sm';
         }
 

@@ -126,6 +126,7 @@
         import supabase from '../assets/js/core/supabase.js';
 
         const inputCmd = document.getElementById('inputNumCommande');
+        let isOrderLocked = false; // Variable globale bach n-3rfo wach la commande verouillée wla la
 
         inputCmd.addEventListener('keydown', function(event) {
             if (event.key === 'Enter') {
@@ -174,9 +175,12 @@
 
             const { data: existingPicking } = await supabase
                 .from('picking')
-                .select('id')
+                .select('*')
                 .eq('document_vente', numCmd)
                 .maybeSingle();
+
+            // Vérifier wash la commande validée globalement (est_valide == true)
+            isOrderLocked = existingPicking ? Boolean(existingPicking.est_valide) : false;
 
             let existingDetailsMap = {};
             if (existingPicking) {
@@ -195,7 +199,7 @@
                 }
             }
 
-            if (statutActuel === 'LANCEE') {
+            if (statutActuel === 'LANCEE' && !isOrderLocked) {
                 const { data: authData } = await supabase.auth.getUser();
                 const userId = authData?.user?.id || null;
                 const nowIso = new Date().toISOString();
@@ -219,7 +223,7 @@
             const premiereLigne = dataCmd[0];
             document.getElementById('infoClient').textContent = premiereLigne.nom_receptionnaire || 'Client Divers';
             document.getElementById('infoItineraire').textContent = premiereLigne.itineraire || 'Non assigné';
-            document.getElementById('infoStatut').textContent = premiereLigne.statut || '-';
+            document.getElementById('infoStatut').textContent = isOrderLocked ? 'VALIDEE (Bloquée)' : (premiereLigne.statut || '-');
             document.getElementById('tableCountBadge').textContent = `${dataCmd.length} postes`;
 
             window.selectedLotsData = {};
@@ -252,7 +256,7 @@
                                 <div id="info_disp_${uniqueId}" class="text-[10px] text-slate-400 mt-1 font-mono"></div>
                             </td>
                             <td class="p-3.5 text-center">
-                                <button id="btn_add_${posteNum}" onclick="ajouterLigneSup(${posteNum}, '${row.article}', '${numCmd}')" class="w-7 h-7 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded-lg transition flex items-center justify-center mx-auto cursor-pointer" title="Ajouter un lot">+</button>
+                                <button id="btn_add_${posteNum}" onclick="ajouterLigneSup(${posteNum}, '${row.article}', '${numCmd}')" class="w-7 h-7 bg-emerald-600/25 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded-lg transition flex items-center justify-center mx-auto cursor-pointer" title="Ajouter un lot">+</button>
                             </td>
                         </tr>
                     `;
@@ -293,7 +297,7 @@
                                 </td>
                                 <td class="p-3.5 text-center">
                                     ${isFirst ? 
-                                        `<button id="btn_add_${posteNum}" onclick="ajouterLigneSup(${posteNum}, '${row.article}', '${numCmd}')" class="w-7 h-7 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded-lg transition flex items-center justify-center mx-auto cursor-pointer" title="Ajouter un lot">+</button>` :
+                                        `<button id="btn_add_${posteNum}" onclick="ajouterLigneSup(${posteNum}, '${row.article}', '${numCmd}')" class="w-7 h-7 bg-emerald-600/25 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded-lg transition flex items-center justify-center mx-auto cursor-pointer" title="Ajouter un lot">+</button>` :
                                         `<button onclick="supprimerLigneSup(this, '${numCmd}', ${posteNum})" class="w-7 h-7 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg transition flex items-center justify-center mx-auto cursor-pointer" title="Supprimer">-</button>`
                                     }
                                 </td>
@@ -303,11 +307,17 @@
                 }
             }
             tbody.innerHTML = html;
+
+            // Appliquer le verrouillage si la commande est déjà validée
+            if (isOrderLocked) {
+                verrouillerInterfaceInterface();
+            }
         };
 
         window.selectedLotsData = {};
 
         window.filtrerLots = async function(articleCode, terme, uniqueId) {
+            if (isOrderLocked) return; // Ma ykhllikch tcherchi ila kan locked
             const dropdown = document.getElementById(`dropdown_lot_${uniqueId}`);
             
             if (!terme || terme.trim() === "") {
@@ -345,14 +355,12 @@
         };
 
         window.selectionnerLot = function(uniqueId, lotValue, stockDisp, stockId, magasin, emplacement) {
+            if (isOrderLocked) return;
             const input = document.getElementById(`input_lot_${uniqueId}`);
-            if (input) {
-                input.value = lotValue;
-            }
+            if (input) input.value = lotValue;
+            
             const dropdown = document.getElementById(`dropdown_lot_${uniqueId}`);
-            if (dropdown) {
-                dropdown.classList.add('hidden');
-            }
+            if (dropdown) dropdown.classList.add('hidden');
 
             window.selectedLotsData[uniqueId] = {
                 stock_id: stockId,
@@ -362,18 +370,12 @@
                 emplacement: emplacement
             };
 
-            const infoDiv = document.getElementById(`info_disp_${uniqueId}`);
-            if (infoDiv) {
-                infoDiv.innerHTML = "";
-            }
-
             const qteInp = document.getElementById(`input_qte_${uniqueId}`);
-            if (qteInp) {
-                qteInp.dispatchEvent(new Event('input'));
-            }
+            if (qteInp) qteInp.dispatchEvent(new Event('input'));
         };
 
         window.verifierEtRecalculer = async function(documentVente, poste, uniqueId) {
+            if (isOrderLocked) return;
             const qteInp = document.getElementById(`input_qte_${uniqueId}`);
             const infoDiv = document.getElementById(`info_disp_${uniqueId}`);
             const saisieVal = Number(qteInp.value || 0);
@@ -392,6 +394,7 @@
         };
 
         window.ajouterLigneSup = async function(poste, article, numCmd) {
+            if (isOrderLocked) return;
             const trOriginal = document.querySelector(`tr.row-poste[data-poste="${poste}"]`);
             if (!trOriginal) return;
 
@@ -440,12 +443,14 @@
         };
 
         window.supprimerLigneSup = function(btn, numCmd, poste) {
+            if (isOrderLocked) return;
             const tr = btn.closest('tr');
             tr.remove();
             recalculerTotalPoste(numCmd, poste);
         };
 
         window.recalculerTotalPoste = async function(documentVente, poste) {
+            if (isOrderLocked) return;
             const trOriginal = document.querySelector(`tr.row-poste[data-poste="${poste}"]`);
             const qteCmd = trOriginal ? Number(trOriginal.getAttribute('data-qte-cmd') || 0) : 0;
 
@@ -454,58 +459,41 @@
 
             inputs.forEach(inp => {
                 const val = Number(inp.value);
-                if (!isNaN(val) && inp.value !== "") {
-                    total += val;
-                }
+                if (!isNaN(val) && inp.value !== "") total += val;
             });
 
             const spanAffichage = document.getElementById(`qte_aff_${poste}`);
-            if(spanAffichage) {
-                spanAffichage.textContent = total.toFixed(3);
-            }
+            if(spanAffichage) spanAffichage.textContent = total.toFixed(3);
 
             const btnAdd = document.getElementById(`btn_add_${poste}`);
             if (btnAdd) {
                 if (total >= qteCmd) {
                     btnAdd.disabled = true;
                     btnAdd.classList.add('opacity-40', 'cursor-not-allowed');
-                    btnAdd.classList.remove('hover:bg-emerald-600', 'cursor-pointer');
                 } else {
                     btnAdd.disabled = false;
                     btnAdd.classList.remove('opacity-40', 'cursor-not-allowed');
-                    btnAdd.classList.add('hover:bg-emerald-600', 'cursor-pointer');
                 }
             }
 
             await supabase.from('commandes_excel')
-                .update({ 
-                    quantite_preparee: total,
-                    updated_at: new Date().toISOString()
-                })
+                .update({ quantite_preparee: total, updated_at: new Date().toISOString() })
                 .eq('document_vente', documentVente)
                 .eq('Poste', poste);
         };
 
-        window.actionEnregistrer = async function() {
-            const numCmd = inputNumCommande.value.trim();
-            if (!numCmd) {
-                alert("Veuillez d'abord charger une commande.");
-                return;
-            }
-
+        // Core logic fonction d'enregistrement (partagée entre Enregistrer & Valider)
+        async function executerSauvegardeDonnees(numCmd) {
             const { data: authData } = await supabase.auth.getUser();
             const userId = authData?.user?.id || null;
 
-            const { data: suiviData, error: suiviErr } = await supabase
+            const { data: suiviData } = await supabase
                 .from('suivi_commandes_lancer')
                 .select('id')
                 .eq('document_vente', numCmd)
                 .single();
 
-            if (suiviErr || !suiviData) {
-                alert("Erreur : Impossible de trouver les informations de suivi pour cette commande.");
-                return;
-            }
+            if (!suiviData) return null;
             const suiviId = suiviData.id;
             const clientNom = document.getElementById('infoClient').textContent;
 
@@ -536,7 +524,6 @@
             let totalQteCmdSum = 0;
             let totalPrepareSum = 0;
             let articlesSet = new Set();
-            
             let newStockMap = {};
 
             for (const row of allRows) {
@@ -550,38 +537,25 @@
 
                 const lotVal = inputLot.value.trim();
                 const qteBrute = inputQte.value.trim();
+                const qteVal = qteBrute === "" ? 0 : Number(qteBrute);
 
-                if (qteBrute === "") {
-                    alert(`Erreur (Poste ${poste}) : Le champ de la quantité préparée ne doit pas être vide.`);
-                    inputQte.focus();
-                    return;
-                }
-
-                const qteVal = Number(qteBrute);
+                const qteCmdSpan = document.getElementById(`qte_cmd_${poste}`);
+                const qteCmdVal = qteCmdSpan ? Number(qteCmdSpan.textContent) : 0;
+                totalQteCmdSum += qteCmdVal;
 
                 if (qteVal > 0) {
-                    if (!lotVal) {
-                        alert(`Erreur (Poste ${poste}) : Le champ 'Lot' est obligatoire.`);
-                        inputLot.focus();
-                        return;
-                    }
-
                     const uniqueId = inputLot.id.replace('input_lot_', '');
                     const lotObj = window.selectedLotsData[uniqueId];
 
                     if (!lotObj || !lotObj.stock_id) {
-                        alert(`Erreur (Poste ${poste}) : Veuillez sélectionner un lot valide depuis la liste.`);
+                        alert(`Erreur (Poste ${poste}) : Veuillez sélectionner un lot valide.`);
                         inputLot.focus();
-                        return;
+                        return false;
                     }
 
                     articlesSet.add(article);
                     totalLotsCount++;
                     totalPrepareSum += qteVal;
-
-                    const qteCmdSpan = document.getElementById(`qte_cmd_${poste}`);
-                    const qteCmdVal = qteCmdSpan ? Number(qteCmdSpan.textContent) : 0;
-                    totalQteCmdSum += qteCmdVal;
 
                     detailsToInsert.push({
                         suivi_id: suiviId,
@@ -604,12 +578,6 @@
 
                     if (!newStockMap[lotObj.stock_id]) newStockMap[lotObj.stock_id] = 0;
                     newStockMap[lotObj.stock_id] += qteVal;
-
-                } 
-                else if (qteVal === 0) {
-                    const qteCmdSpan = document.getElementById(`qte_cmd_${poste}`);
-                    const qteCmdVal = qteCmdSpan ? Number(qteCmdSpan.textContent) : 0;
-                    totalQteCmdSum += qteCmdVal;
                 }
             }
 
@@ -635,72 +603,128 @@
                 .select('id')
                 .single();
 
-            if (pickErr || !pickingHeader) {
-                alert("Erreur lors de l'enregistrement de l'en-tête : " + (pickErr?.message || 'Erreur inconnue'));
-                return;
-            }
+            if (pickErr || !pickingHeader) return false;
 
             const pickingId = pickingHeader.id;
-
             await supabase.from('picking_details').delete().eq('picking_id', pickingId);
 
             if (detailsToInsert.length > 0) {
                 detailsToInsert.forEach(item => item.picking_id = pickingId);
-                const { error: detailsErr } = await supabase.from('picking_details').insert(detailsToInsert);
-                if (detailsErr) {
-                    alert("Erreur lors de l'enregistrement des détails : " + detailsErr.message);
-                    return;
-                }
+                await supabase.from('picking_details').insert(detailsToInsert);
             }
 
             let allStockIds = new Set([...Object.keys(oldDetailsMap), ...Object.keys(newStockMap)]);
-
             for (const stockId of allStockIds) {
                 const oldQte = oldDetailsMap[stockId] || 0;
                 const newQte = newStockMap[stockId] || 0;
                 const delta = newQte - oldQte;
 
                 if (delta !== 0) {
-                    const { data: currentStock, error: fetchErr } = await supabase
-                        .from('stock')
-                        .select('stock_reserve')
-                        .eq('id', stockId)
-                        .single();
-
-                    if (!fetchErr && currentStock) {
+                    const { data: currentStock } = await supabase.from('stock').select('stock_reserve').eq('id', stockId).single();
+                    if (currentStock) {
                         const updatedReserve = Number(currentStock.stock_reserve || 0) + delta;
-                        
-                        await supabase
-                            .from('stock')
-                            .update({ 
-                                stock_reserve: Math.max(0, updatedReserve),
-                                updated_at: new Date().toISOString()
-                            })
-                            .eq('id', stockId);
+                        await supabase.from('stock').update({ stock_reserve: Math.max(0, updatedReserve), updated_at: new Date().toISOString() }).eq('id', stockId);
                     }
                 }
             }
+            return true;
+        }
 
-            await supabase.from('commandes_excel')
-                .update({ 
-                    statut: 'EN_PICKING',
-                    updated_at: new Date().toISOString()
-                })
+        window.actionEnregistrer = async function() {
+            if (isOrderLocked) {
+                alert("Impossible d'enregistrer : Cette commande est validée et verrouillée. Cliquez sur 'Modifier' pour déverrouiller.");
+                return;
+            }
+            const numCmd = inputNumCommande.value.trim();
+            if (!numCmd) { alert("Veuillez d'abord charger une commande."); return; }
+
+            const res = await executerSauvegardeDonnees(numCmd);
+            if (res) {
+                alert("Enregistrement réussi !");
+                location.reload();
+            }
+        };
+
+        window.actionValiderGlobal = async function() {
+            const numCmd = inputNumCommande.value.trim();
+            if (!numCmd) { alert("Veuillez d'abord charger une commande."); return; }
+
+            if (isOrderLocked) {
+                alert("Cette commande est déjà validée globalement.");
+                return;
+            }
+
+            if (!confirm("Voulez-vous vraiment valider définitivement cette commande ? Aucune modification ne sera possible sans l'activer via le bouton 'Modifier'.")) {
+                return;
+            }
+
+            // 1. Sauvegarder d'abord les données actuelles
+            const saved = await executerSauvegardeDonnees(numCmd);
+            if (!saved) return;
+
+            const nowIso = new Date().toISOString();
+
+            // 2. Mettre à jour 'picking' -> est_valide = true
+            await supabase.from('picking')
+                .update({ est_valide: true, statut: 'VALIDE', updated_at: nowIso })
                 .eq('document_vente', numCmd);
 
-            alert("Enregistrement réussi ! Stock réservé mis à jour.");
-            
-            // Rafraîchir la page automatiquement pour vider l'interface et pouvoir enchaîner une nouvelle commande
-            location.reload();
+            // 3. Mettre à jour 'commandes_excel' & 'suivi_commandes_lancer' -> Statut TERMINÉE / VALIDÉE
+            await supabase.from('commandes_excel')
+                .update({ statut: 'VALVALIDEE', updated_at: nowIso }) // Wla TERMINEE selon votre nomenclature
+                .eq('document_vente', numCmd);
+
+            await supabase.from('suivi_commandes_lancer')
+                .update({ statut: 'TERMINEE', date_fin_picking: nowIso, updated_at: nowIso })
+                .eq('document_vente', numCmd);
+
+            alert("Commande validée globalement avec succès ! L'interface est maintenant verrouillée.");
+            isOrderLocked = true;
+            verrouillerInterfaceInterface();
         };
 
-        window.actionModifier = function() {
-            alert("Mode modification activé.");
+        window.actionModifier = async function() {
+            const numCmd = inputNumCommande.value.trim();
+            if (!numCmd) { alert("Veuillez charger une commande d'abord."); return; }
+
+            const pwd = prompt("Mode sécurisé : Entrez le mot de passe ou confirmez la modification de la commande validée :");
+            if (pwd === null) return; // Annulé
+
+            // Déverrouiller la table picking
+            await supabase.from('picking')
+                .update({ est_valide: false, statut: 'PICKING', updated_at: new Date().toISOString() })
+                .eq('document_vente', numCmd);
+
+            isOrderLocked = false;
+            deverrouillerInterfaceInterface();
+            alert("Mode modification activé. Vous pouvez modifier les quantités et enregistrer de nouveau.");
         };
 
-        window.actionValiderGlobal = function() {
-            alert("Validation globale en cours...");
-        };
+        function verrouillerInterfaceInterface() {
+            document.querySelectorAll('#pickingTableBody input').forEach(inp => {
+                inp.disabled = true;
+                inp.classList.add('opacity-50', 'cursor-not-allowed');
+            });
+            document.querySelectorAll('#pickingTableBody button').forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('opacity-40', 'cursor-not-allowed');
+            });
+            document.getElementById('infoStatut').textContent = 'VALIDEE (Bloquée)';
+            document.getElementById('infoStatut').className = 'font-bold text-emerald-400 text-sm';
+        }
+
+        function deverrouillerInterfaceInterface() {
+            document.querySelectorAll('#pickingTableBody input').forEach(inp => {
+                inp.disabled = false;
+                inp.classList.remove('opacity-50', 'cursor-not-allowed');
+            });
+            document.querySelectorAll('#pickingTableBody button').forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('opacity-40', 'cursor-not-allowed');
+            });
+            document.getElementById('infoStatut').textContent = 'EN_PICKING (Modifiable)';
+            document.getElementById('infoStatut').className = 'font-bold text-amber-400 text-sm';
+        }
 
         function resetInfos() {
             document.getElementById('infoClient').textContent = '-';

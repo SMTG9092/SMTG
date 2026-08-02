@@ -234,12 +234,17 @@
             }
             modalBody.innerHTML = html;
 
-            // 2. Jib ma3loumat l-annulation w l-user men user_profiles
-            const { data: suiviData } = await supabase
+            // 2. Jib ma3loumat l-annulation w l-user men user_profiles b fk_suivi_annulation
+            const { data: suiviData, error: suiviErr } = await supabase
                 .from('suivi_commandes_lancer')
-                .select('motif_annulation, date_annulation, user_profiles(nom_complet, nom, prenom, email)')
+                .select(`
+                    motif_annulation, 
+                    date_annulation, 
+                    annule_par,
+                    user_profiles:fk_suivi_annulation(nom_complet, nom, prenom, email)
+                `)
                 .eq('document_vente', docVente)
-                .single();
+                .maybeSingle();
 
             if (suiviData) {
                 document.getElementById("annuleMotif").textContent = suiviData.motif_annulation || 'Aucun motif spécifié';
@@ -255,7 +260,7 @@
                     const fullName = userProf.nom_complet || `${userProf.prenom || ''} ${userProf.nom || ''}`.trim() || userProf.email;
                     document.getElementById("annuleParUser").textContent = fullName || 'Utilisateur inconnu';
                 } else {
-                    document.getElementById("annuleParUser").textContent = 'Système / Non assigné';
+                    document.getElementById("annuleParUser").textContent = suiviData.annule_par ? `ID: ${suiviData.annule_par}` : 'Système / Non assigné';
                 }
             } else {
                 document.getElementById("annuleParUser").textContent = 'Non disponible';

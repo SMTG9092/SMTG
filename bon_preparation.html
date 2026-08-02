@@ -21,19 +21,54 @@
     </script>
     <style>
         @media print { 
-            @page { size: A4 landscape; margin: 4mm; } 
-            body { background: white !important; color: black !important; -webkit-print-color-adjust: exact; } 
+            @page { 
+                size: A4 landscape; 
+                margin: 5mm; 
+            } 
+            body { 
+                background: white !important; 
+                color: black !important; 
+                -webkit-print-color-adjust: exact; 
+                margin: 0 !important;
+                padding: 0 !important;
+            } 
             .no-print { display: none !important; }
-            #bon-content { border: 1px solid #000 !important; box-shadow: none !important; background: white !important; color: black !important; }
-            .print-text-dark { color: black !important; }
+            #bon-content { 
+                width: 275mm !important; 
+                height: 190mm !important; 
+                max-width: none !important;
+                max-height: none !important;
+                border: 1px solid #000 !important; 
+                box-shadow: none !important; 
+                background: white !important; 
+                color: black !important; 
+                margin: 0 auto !important;
+                padding: 5mm 8mm !important;
+                box-sizing: border-box;
+            }
         }
-        body { background-color: #020617; margin: 0; padding: 10px; font-family: Arial, sans-serif; }
-        #bon-content { width: 280mm; height: 190mm; margin: 0 auto; background: white; color: black; padding: 4mm 6mm; display: flex; flex-direction: column; border: 1px solid #000; box-sizing: border-box; justify-content: space-between; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.5); }
         
-        .header-box { border: 2px solid black; padding: 6px 12px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+        body { background-color: #020617; margin: 0; padding: 10px; font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+        
+        #bon-content { 
+            width: 280mm; 
+            height: 190mm; 
+            margin: 0 auto; 
+            background: white; 
+            color: black; 
+            padding: 4mm 6mm; 
+            display: flex; 
+            flex-direction: column; 
+            border: 1px solid #000; 
+            box-sizing: border-box; 
+            justify-content: space-between; 
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.5); 
+        }
+        
+        .header-box { border: 2px solid black; padding: 6px 12px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
         
         /* Table Layout Optimisé */
-        .table-container { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; margin: 4px 0; border: 1px solid black; }
+        .table-container { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; margin: 2px 0; border: 1px solid black; }
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         th { background-color: #e5e7eb !important; color: black !important; font-weight: bold; font-size: 10px; padding: 4px; border: 1px solid black; text-align: center; }
         td { border: 1px solid black; padding: 4px 2px; text-align: center; font-size: 11px; color: black; }
@@ -47,10 +82,10 @@
         .col-ctrl { width: 6%; }
         
         .product-name { font-weight: bold; font-size: 11px; text-align: left; padding-left: 6px; line-height: 1.2; }
-        .footer-section { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 4px; }
+        .footer-section { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 2px; }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen">
+<body>
 
     <div id="bon-content">
         <!-- HEADER / CADRE PRINCIPAL -->
@@ -141,14 +176,12 @@
         async function loadData() {
             if (!cmd) return;
             try {
-                // 1. Charger les données du suivi de lancement
                 const { data: suiviData } = await supabase
                     .from('suivi_commandes_lancer')
                     .select('num_lancement, client, itineraire, date_lancement, date_livraison, user_profiles:lance_par(nom_complet)')
                     .eq('document_vente', cmd)
                     .maybeSingle();
 
-                // 2. Charger la date de création depuis commandes_excel
                 const { data: cmdData } = await supabase
                     .from('commandes_excel')
                     .select('date_creation')
@@ -176,7 +209,6 @@
                     QRCode.toCanvas(document.getElementById('qrcode'), `Cmd: ${cmd} | Lancement: ${suiviData.num_lancement}`, { width: 56, margin: 0 });
                 }
                 
-                // 3. Charger les lignes de la commande triées par Poste (croissant: 10, 20, 30...)
                 const [resExcel, resPieces] = await Promise.all([
                     supabase.from('commandes_excel').select('*').eq('document_vente', cmd).order('"Poste"', { ascending: true }),
                     supabase.from('commandes_clients_pieces').select('article, nombre_pieces').eq('document_vente', cmd)

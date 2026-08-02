@@ -101,7 +101,7 @@
                 <span>Seules les commandes non lancées (<strong class="text-amber-400">IMPORTEE</strong>) s'affichent et peuvent être lancées.</span>
             </div>
             <button onclick="lancerToutFiltre()" class="bg-sky-600 hover:bg-sky-500 text-white px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
-                <i class="fas fa-rocket"></i> Lancer Tout le Filtre (En Masse)
+                <i class="fas fa-rocket"></i> Lancer Tout le Filtre & Ouvrir les Bons
             </button>
         </div>
 
@@ -479,7 +479,7 @@
                 .from('commandes_excel')
                 .update({ statut: 'LANCEE', updated_at: nowIso })
                 .eq('document_vente', docVente)
-                .eq('statut', 'IMPORTEE'); // Safety check anti-doublon
+                .eq('statut', 'IMPORTEE');
                 
             if (err1) { alert("Erreur: " + err1.message); return; }
 
@@ -498,6 +498,7 @@
             loadSuiviCommandes();
         };
 
+        // Lancer Tournée + Fath Bon de Préparation Tournée automatiquement
         window.lancerTournee = async function(tourneeName) {
             if (!confirm(`Voulez-vous vraiment lancer toute la tournée "${tourneeName}" ?`)) return;
             
@@ -540,16 +541,19 @@
             }
 
             alert(`La tournée "${tourneeName}" a été lancée avec succès (${uniqueDocs.length} commandes) !`);
+            
+            // Fath warqat préparation dyal tournee o f nafs lwaqt l-commandes fardiya dyalha bash mat-tzgal ḥta ḥaja
             window.open(`bon_preparation_tournee.html?tournee=${encodeURIComponent(tourneeName)}`, '_blank');
+            
             loadSuiviCommandes();
         };
 
-        // Option 3: Lancer Tout le Filtre en cours (Swa 3la 7sab les dates)
+        // Lancer Tout le Filtre (En Masse) + Fath Bons de Préparation dyal kolchi b tartib
         window.lancerToutFiltre = async function() {
             const dateDebut = document.getElementById('dateDebut').value;
             const dateFin = document.getElementById('dateFin').value;
 
-            if (!confirm(`Attention ! Voulez-vous vraiment lancer TOUTES les commandes IMPORTEES de la période affichée ?`)) return;
+            if (!confirm(`Attention ! Voulez-vous vraiment lancer TOUTES les commandes IMPORTEES de la période affichée et ouvrir leurs bons de préparation ?`)) return;
 
             const { data: { user } } = await supabase.auth.getUser();
             const userId = user ? user.id : null;
@@ -568,7 +572,7 @@
             const uniqueDocs = [...new Set(docsRows.map(r => r.document_vente))];
 
             for (let docVente of uniqueDocs) {
-                const numLancement = await genererNumLancement('G'); // G for Global
+                const numLancement = await genererNumLancement('G');
 
                 await supabase.from('commandes_excel')
                     .update({ statut: 'LANCEE', updated_at: nowIso })
@@ -586,7 +590,15 @@
                     .eq('document_vente', docVente);
             }
 
-            alert(`Succès ! ${uniqueDocs.length} commandes ont été lancées en masse.`);
+            alert(`Succès ! ${uniqueDocs.length} commandes ont été lancées en masse. Ouverture des bons de préparation...`);
+            
+            // Fath bon de préparation fardiya dyal kol commande b tariqa mat9ada (b wahed délai sghir bash navigateur mablockich l-popups)
+            uniqueDocs.forEach((docVente, index) => {
+                setTimeout(() => {
+                    window.open(`bon_preparation.html?cmd=${docVente}`, '_blank');
+                }, index * 300);
+            });
+
             loadSuiviCommandes();
         };
 

@@ -66,13 +66,13 @@
                     <button onclick="chargerCommandePicking()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
                         <i class="fas fa-arrow-right"></i> Valider
                     </button>
-                    <button onclick="actionModifier()" class="bg-amber-600/20 hover:bg-amber-600 text-amber-400 hover:text-white border border-amber-500/30 px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow cursor-pointer" title="Modifier">
+                    <button id="btnModifier" onclick="actionModifier()" class="bg-amber-600/20 hover:bg-amber-600 text-amber-400 hover:text-white border border-amber-500/30 px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow cursor-pointer" title="Modifier">
                         <i class="fas fa-pen-to-square"></i> Modifier
                     </button>
-                    <button onclick="actionEnregistrer()" class="bg-sky-600/20 hover:bg-sky-600 text-sky-400 hover:text-white border border-sky-500/30 px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow cursor-pointer" title="Enregistrer">
+                    <button id="btnEnregistrer" onclick="actionEnregistrer()" class="bg-sky-600/20 hover:bg-sky-600 text-sky-400 hover:text-white border border-sky-500/30 px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow cursor-pointer" title="Enregistrer">
                         <i class="fas fa-floppy-disk"></i> Enregistrer
                     </button>
-                    <button onclick="actionValiderGlobal()" class="bg-indigo-600/20 hover:bg-indigo-600 text-indigo-400 hover:text-white border border-indigo-500/30 px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow cursor-pointer" title="Validation Finale">
+                    <button id="btnValiderGlobal" onclick="actionValiderGlobal()" class="bg-indigo-600/20 hover:bg-indigo-600 text-indigo-400 hover:text-white border border-indigo-500/30 px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow cursor-pointer" title="Validation Finale">
                         <i class="fas fa-check-double"></i> Valider Global
                     </button>
                 </div>
@@ -127,6 +127,7 @@
 
         const inputCmd = document.getElementById('inputNumCommande');
         let isOrderLocked = false;
+        let isOrderTerminated = false;
 
         inputCmd.addEventListener('keydown', function(event) {
             if (event.key === 'Enter') {
@@ -180,6 +181,8 @@
                 .maybeSingle();
 
             isOrderLocked = existingPicking ? Boolean(existingPicking.est_valide) : false;
+            // Check wach la commande t-salat (TERMINE) wla t-valdat (VALIDE)
+            isOrderTerminated = (existingPicking && (existingPicking.statut === 'TERMINE' || existingPicking.statut === 'VALIDE')) || statutActuel === 'PREPAREE';
 
             let existingDetailsMap = {};
             if (existingPicking) {
@@ -198,7 +201,7 @@
                 }
             }
 
-            if (statutActuel === 'LANCEE' && !isOrderLocked) {
+            if (statutActuel === 'LANCEE' && !isOrderLocked && !isOrderTerminated) {
                 const { data: authData } = await supabase.auth.getUser();
                 const userId = authData?.user?.id || null;
                 const nowIso = new Date().toISOString();
@@ -222,7 +225,7 @@
             const premiereLigne = dataCmd[0];
             document.getElementById('infoClient').textContent = premiereLigne.nom_receptionnaire || 'Client Divers';
             document.getElementById('infoItineraire').textContent = premiereLigne.itineraire || 'Non assigné';
-            document.getElementById('infoStatut').textContent = isOrderLocked ? 'VALIDE' : (premiereLigne.statut || '-');
+            document.getElementById('infoStatut').textContent = isOrderTerminated ? 'TERMINE' : (isOrderLocked ? 'VALIDE' : (premiereLigne.statut || '-'));
             document.getElementById('tableCountBadge').textContent = `${dataCmd.length} postes`;
 
             window.selectedLotsData = {};
@@ -307,7 +310,8 @@
             }
             tbody.innerHTML = html;
 
-            if (isOrderLocked) {
+            // Ila kanet TERMINE wla VALIDE, kan-bloqiw kolchi
+            if (isOrderLocked || isOrderTerminated) {
                 verrouillerInterfaceInterface();
             }
         };
@@ -315,7 +319,7 @@
         window.selectedLotsData = {};
 
         window.filtrerLots = async function(articleCode, terme, uniqueId) {
-            if (isOrderLocked) return;
+            if (isOrderLocked || isOrderTerminated) return;
             const dropdown = document.getElementById(`dropdown_lot_${uniqueId}`);
             
             if (!terme || terme.trim() === "") {
@@ -353,7 +357,7 @@
         };
 
         window.selectionnerLot = function(uniqueId, lotValue, stockDisp, stockId, magasin, emplacement) {
-            if (isOrderLocked) return;
+            if (isOrderLocked || isOrderTerminated) return;
             const input = document.getElementById(`input_lot_${uniqueId}`);
             if (input) input.value = lotValue;
             
@@ -373,7 +377,7 @@
         };
 
         window.verifierEtRecalculer = async function(documentVente, poste, uniqueId) {
-            if (isOrderLocked) return;
+            if (isOrderLocked || isOrderTerminated) return;
             const qteInp = document.getElementById(`input_qte_${uniqueId}`);
             const infoDiv = document.getElementById(`info_disp_${uniqueId}`);
             const saisieVal = Number(qteInp.value || 0);
@@ -392,7 +396,7 @@
         };
 
         window.ajouterLigneSup = async function(poste, article, numCmd) {
-            if (isOrderLocked) return;
+            if (isOrderLocked || isOrderTerminated) return;
             const trOriginal = document.querySelector(`tr.row-poste[data-poste="${poste}"]`);
             if (!trOriginal) return;
 
@@ -441,14 +445,14 @@
         };
 
         window.supprimerLigneSup = function(btn, numCmd, poste) {
-            if (isOrderLocked) return;
+            if (isOrderLocked || isOrderTerminated) return;
             const tr = btn.closest('tr');
             tr.remove();
             recalculerTotalPoste(numCmd, poste);
         };
 
         window.recalculerTotalPoste = async function(documentVente, poste) {
-            if (isOrderLocked) return;
+            if (isOrderLocked || isOrderTerminated) return;
             const trOriginal = document.querySelector(`tr.row-poste[data-poste="${poste}"]`);
             const qteCmd = trOriginal ? Number(trOriginal.getAttribute('data-qte-cmd') || 0) : 0;
 
@@ -481,6 +485,11 @@
         };
 
         async function executerSauvegardeDonnees(numCmd) {
+            if (isOrderTerminated) {
+                alert("Action interdite : Cette commande est TERMINEE et ne peut plus être modifiée.");
+                return false;
+            }
+
             const { data: authData } = await supabase.auth.getUser();
             const userId = authData?.user?.id || null;
 
@@ -587,7 +596,7 @@
                     document_vente: numCmd,
                     client: clientNom,
                     preparateur: userId,
-                    statut: 'VALIDE',
+                    statut: 'EN_COURS',
                     total_articles: articlesSet.size,
                     total_lots: totalLotsCount,
                     total_quantite: totalQteCmdSum,
@@ -628,6 +637,10 @@
         }
 
         window.actionEnregistrer = async function() {
+            if (isOrderTerminated) {
+                alert("Impossible d'enregistrer : Cette commande est TERMINEE et verrouillée.");
+                return;
+            }
             if (isOrderLocked) {
                 alert("Impossible d'enregistrer : Cette commande est validée et verrouillée. Cliquez sur 'Modifier' pour déverrouiller.");
                 return;
@@ -643,6 +656,10 @@
         };
 
         window.actionValiderGlobal = async function() {
+            if (isOrderTerminated) {
+                alert("Cette commande est déjà TERMINEE.");
+                return;
+            }
             const numCmd = inputNumCommande.value.trim();
             if (!numCmd) { alert("Veuillez d'abord charger une commande."); return; }
 
@@ -651,7 +668,7 @@
                 return;
             }
 
-            if (!confirm("Voulez-vous vraiment valider définitivement cette commande ? Cela va enregistrer les données et rafraîchir la page.")) {
+            if (!confirm("Voulez-vous vraiment valider définitivement cette commande ? Cela va basculer le statut à TERMINE et enregistrer les données.")) {
                 return;
             }
 
@@ -659,28 +676,54 @@
             if (!saved) return;
 
             const nowIso = new Date().toISOString();
+            
+            const { data: authData } = await supabase.auth.getUser();
+            const userId = authData?.user?.id || null;
 
+            // 1. Mise à jour f table picking (Statut: TERMINE)
             await supabase.from('picking')
-                .update({ est_valide: true, statut: 'VALIDE', updated_at: nowIso })
+                .update({ 
+                    est_valide: true, 
+                    statut: 'TERMINE', 
+                    date_fin: nowIso,
+                    date_validation: nowIso,
+                    updated_at: nowIso 
+                })
                 .eq('document_vente', numCmd);
 
+            // 2. Mise à jour f commandes_excel (PREPAREE)
             await supabase.from('commandes_excel')
-                .update({ statut: 'VALIDE', updated_at: nowIso })
+                .update({ 
+                    statut: 'PREPAREE', 
+                    updated_at: nowIso 
+                })
                 .eq('document_vente', numCmd);
 
+            // 3. Mise à jour f suivi_commandes_lancer (PICKING_TERMINE)
             await supabase.from('suivi_commandes_lancer')
-                .update({ statut: 'VALIDE', date_fin_picking: nowIso, updated_at: nowIso })
+                .update({ 
+                    statut: 'PICKING_TERMINE', 
+                    validation_par: userId,
+                    date_validation: nowIso,
+                    date_fin_picking: nowIso,
+                    updated_at: nowIso 
+                })
                 .eq('document_vente', numCmd);
 
-            alert("Commande validée et enregistrée avec succès !");
+            alert("Commande validée globalement et marquée comme TERMINE avec succès !");
             location.reload();
         };
 
         window.actionModifier = async function() {
+            // Hna fin m-no3 3la l-modifi ila kant TERMINE
+            if (isOrderTerminated) {
+                alert("Modification impossible : Cette commande a le statut TERMINE et est définitivement verrouillée.");
+                return;
+            }
+
             const numCmd = inputNumCommande.value.trim();
             if (!numCmd) { alert("Veuillez charger une commande d'abord."); return; }
 
-            // 1. Déverrouillage direct fl'interface
             isOrderLocked = false;
             document.querySelectorAll('#pickingTableBody input').forEach(inp => {
                 inp.disabled = false;
@@ -691,15 +734,13 @@
                 btn.classList.remove('opacity-40', 'cursor-not-allowed');
             });
 
-            // 2. T-bdel statut f en-tête l 'EN_PICKING'
             const statutEl = document.getElementById('infoStatut');
             statutEl.textContent = 'EN_PICKING';
             statutEl.className = 'font-bold text-amber-400 text-sm';
 
-            // 3. Mise à jour f La Base de Données
             const nowIso = new Date().toISOString();
             await supabase.from('picking')
-                .update({ est_valide: false, statut: 'EN_PICKING', updated_at: nowIso })
+                .update({ est_valide: false, statut: 'EN_COURS', updated_at: nowIso })
                 .eq('document_vente', numCmd);
 
             await supabase.from('commandes_excel')
@@ -722,8 +763,27 @@
                 btn.disabled = true;
                 btn.classList.add('opacity-40', 'cursor-not-allowed');
             });
-            document.getElementById('infoStatut').textContent = 'VALIDE';
-            document.getElementById('infoStatut').className = 'font-bold text-emerald-400 text-sm';
+            
+            // Désactiver les boutons d'action
+            const btnMod = document.getElementById('btnModifier');
+            if (btnMod) {
+                btnMod.disabled = true;
+                btnMod.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+            }
+            const btnVal = document.getElementById('btnValiderGlobal');
+            if (btnVal) {
+                btnVal.disabled = true;
+                btnVal.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+            }
+            const btnEnreg = document.getElementById('btnEnregistrer');
+            if (btnEnreg) {
+                btnEnreg.disabled = true;
+                btnEnreg.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+            }
+
+            const infoSt = document.getElementById('infoStatut');
+            infoSt.textContent = 'TERMINE';
+            infoSt.className = 'font-bold text-emerald-400 text-sm';
         }
 
         function resetInfos() {

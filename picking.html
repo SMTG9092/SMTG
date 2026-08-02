@@ -655,13 +655,11 @@
                 return;
             }
 
-            // 1. Sauvegarder les données o 7tathom f les tables
             const saved = await executerSauvegardeDonnees(numCmd);
             if (!saved) return;
 
             const nowIso = new Date().toISOString();
 
-            // 2. Rdd statut 'VALIDE' f tables kamlin
             await supabase.from('picking')
                 .update({ est_valide: true, statut: 'VALIDE', updated_at: nowIso })
                 .eq('document_vente', numCmd);
@@ -674,7 +672,6 @@
                 .update({ statut: 'VALIDE', date_fin_picking: nowIso, updated_at: nowIso })
                 .eq('document_vente', numCmd);
 
-            // 3. Afichage dyal alert o Rafraîchissement dial saf7a dik sa3a (Reload)
             alert("Commande validée et enregistrée avec succès !");
             location.reload();
         };
@@ -686,20 +683,37 @@
             const pwd = prompt("Mode sécurisé : Entrez le mot de passe ou confirmez la modification :");
             if (pwd === null) return;
 
+            // 1. Déverrouillage fl'interface (kat-7yd disabled o kat-rdd les champs t-mknw t-ktbo fihom)
+            isOrderLocked = false;
+            document.querySelectorAll('#pickingTableBody input').forEach(inp => {
+                inp.disabled = false;
+                inp.classList.remove('opacity-50', 'cursor-not-allowed');
+            });
+            document.querySelectorAll('#pickingTableBody button').forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('opacity-40', 'cursor-not-allowed');
+            });
+
+            // 2. T-bdel statut f en-tête l 'EN_PICKING' bash y-ban bli rahou mftouh lil ta3dil
+            const statutEl = document.getElementById('infoStatut');
+            statutEl.textContent = 'EN_PICKING';
+            statutEl.className = 'font-bold text-amber-400 text-sm';
+
+            // 3. Mise à jour f La Base de Données
+            const nowIso = new Date().toISOString();
             await supabase.from('picking')
-                .update({ est_valide: false, statut: 'EN_PICKING', updated_at: new Date().toISOString() })
+                .update({ est_valide: false, statut: 'EN_PICKING', updated_at: nowIso })
                 .eq('document_vente', numCmd);
 
             await supabase.from('commandes_excel')
-                .update({ statut: 'EN_PICKING', updated_at: new Date().toISOString() })
+                .update({ statut: 'EN_PICKING', updated_at: nowIso })
                 .eq('document_vente', numCmd);
 
             await supabase.from('suivi_commandes_lancer')
-                .update({ statut: 'EN_PICKING', updated_at: new Date().toISOString() })
+                .update({ statut: 'EN_PICKING', updated_at: nowIso })
                 .eq('document_vente', numCmd);
 
-            alert("Mode modification activé. La page va se rafraîchir.");
-            location.reload();
+            alert("Mode modification activé : Les champs de lots et de quantités sont maintenant ouverts pour modification.");
         };
 
         function verrouillerInterfaceInterface() {

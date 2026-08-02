@@ -156,15 +156,17 @@
             const dateFin = document.getElementById('dateFin').value;
             const searchVal = document.getElementById('searchInput').value.trim();
 
-            // Query mn tablesuivi_commandes_lancer li fiha statut = 'ANNULEE'
             let query = supabase
                 .from('suivi_commandes_lancer')
                 .select('id, commande_id, document_vente, client, date_livraison, date_annulation, motif_annulation, num_lancement')
                 .eq('statut', 'ANNULEE')
                 .order('date_annulation', { ascending: false });
 
-            if (dateDebut) query = query.gte('date_livraison', dateDebut);
-            if (dateFin) query = query.lte('date_livraison', dateFin);
+            // Ila kan l-utilisateur k-yekteb f recherche, kan-hniw (bypass) l-filter d les dates bsh yqelleb f kolchi
+            if (!searchVal) {
+                if (dateDebut) query = query.gte('date_livraison', dateDebut);
+                if (dateFin) query = query.lte('date_livraison', dateFin);
+            }
 
             const { data: list, error } = await query;
             if (error) {
@@ -172,7 +174,6 @@
                 return;
             }
 
-            // Filtrage dyal recherche (b document_vente ola client)
             let filteredList = list || [];
             if (searchVal) {
                 filteredList = filteredList.filter(r => 
@@ -219,7 +220,6 @@
             document.getElementById("detailModal").classList.remove("hidden");
             setTimeout(() => document.getElementById("detailModal").classList.remove("opacity-0"), 10);
 
-            // Njibo les articles mn table commandes_excel b document_vente
             const { data } = await supabase.from('commandes_excel').select('"Poste", article, designation_article, quantite_commandee, nombre_pieces').eq('document_vente', docVente).order('"Poste"', { ascending: true });
             let html = "";
             if (data && data.length > 0) {

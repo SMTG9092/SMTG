@@ -96,11 +96,13 @@
                             <th class="p-3.5">Désignation</th>
                             <th class="p-3.5 text-right">Quantité Commandée</th>
                             <th class="p-3.5 text-right text-emerald-400">Quantité Préparée</th>
+                            <th class="p-3.5 text-center">Lot</th>
+                            <th class="p-3.5 text-center">Qte Prép (Saisie)</th>
                             <th class="p-3.5 text-center">Unité</th>
                         </tr>
                     </thead>
                     <tbody id="pickingTableBody" class="divide-y divide-slate-800/50 font-mono">
-                        <tr><td colspan="6" class="p-12 text-center text-slate-500">Veuillez scanner ou saisir un numéro de commande.</td></tr>
+                        <tr><td colspan="8" class="p-12 text-center text-slate-500">Veuillez scanner ou saisir un numéro de commande.</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -127,9 +129,8 @@
             }
 
             const tbody = document.getElementById("pickingTableBody");
-            tbody.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Vérification et chargement...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Vérification et chargement...</td></tr>`;
 
-            // 1. Nchoufo lwél wach la commande kayna f 'commandes_excel'
             const { data: dataCmd, error: errCmd } = await supabase
                 .from('commandes_excel')
                 .select('*')
@@ -138,45 +139,37 @@
 
             if (errCmd || !dataCmd || dataCmd.length === 0) {
                 alert("Aucune commande trouvée avec le numéro : " + numCmd);
-                tbody.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-rose-400">Commande introuvable.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-rose-400">Commande introuvable.</td></tr>`;
                 resetInfos();
                 return;
             }
 
             const statutActuel = dataCmd[0].statut;
 
-            // Wach mlança wla la?
             if (statutActuel === 'IMPORTEE') {
                 alert(`Erreur : La commande [${numCmd}] n'a pas encore été lancée ! (Statut actuel : IMPORTEE)`);
-                tbody.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-amber-400">Cette commande doit être lancée d'abord depuis le module de lancement.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-amber-400">Cette commande doit être lancée d'abord depuis le module de lancement.</td></tr>`;
                 resetInfos();
                 return;
             }
 
             if (statutActuel === 'EXPEDIEE' || statutActuel === 'ANNULEE') {
                 alert(`Attention : Cette commande est déjà ${statutActuel}.`);
-                tbody.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-rose-400">Cette commande est fermée (${statutActuel}).</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-rose-400">Cette commande est fermée (${statutActuel}).</td></tr>`;
                 resetInfos();
                 return;
             }
 
-            // 2. Ila kanet 'LANCEE', nreddouha 'EN_PICKING' f la base de données w ntsajlo l'utilisateur + date debut picking f suivi_commandes_lancer
             if (statutActuel === 'LANCEE') {
                 const { data: authData } = await supabase.auth.getUser();
                 const userId = authData?.user?.id || null;
                 const nowIso = new Date().toISOString();
 
-                // Update f commandes_excel
-                const { error: updateErr1 } = await supabase.from('commandes_excel')
+                await supabase.from('commandes_excel')
                     .update({ statut: 'EN_PICKING', updated_at: nowIso })
                     .eq('document_vente', numCmd);
 
-                if (updateErr1) {
-                    console.error("Erreur update commandes_excel:", updateErr1.message);
-                }
-
-                // Update f suivi_commandes_lancer (B document_vente b1itou)
-                const { error: updateErr2 } = await supabase.from('suivi_commandes_lancer')
+                await supabase.from('suivi_commandes_lancer')
                     .update({
                         statut: 'EN_PICKING',
                         picking_par: userId,
@@ -185,14 +178,9 @@
                     })
                     .eq('document_vente', numCmd);
 
-                if (updateErr2) {
-                    console.error("Erreur update suivi_commandes_lancer:", updateErr2.message);
-                }
-
                 dataCmd.forEach(row => row.statut = 'EN_PICKING');
             }
 
-            // 3. Affichage dyal l-informations w l-articles b tartib dyal l-poste
             const premiereLigne = dataCmd[0];
             document.getElementById('infoClient').textContent = premiereLigne.nom_receptionnaire || 'Client Divers';
             document.getElementById('infoItineraire').textContent = premiereLigne.itineraire || 'Non assigné';
@@ -211,6 +199,12 @@
                         <td class="p-3.5 text-slate-200">${row.designation_article}</td>
                         <td class="p-3.5 text-right font-bold text-slate-100">${qteCmd.toFixed(3)}</td>
                         <td class="p-3.5 text-right font-bold text-emerald-400">${qtePrep.toFixed(3)}</td>
+                        <td class="p-3.5 text-center">
+                            <input type="text" placeholder="Lot..." class="bg-slate-950 border border-slate-700 text-slate-200 text-center px-2 py-1 rounded-lg text-xs w-24 focus:outline-none focus:border-emerald-500">
+                        </td>
+                        <td class="p-3.5 text-center">
+                            <input type="number" step="0.001" value="${qtePrep}" class="bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500">
+                        </td>
                         <td class="p-3.5 text-center text-slate-400">${row.unite || 'KG'}</td>
                     </tr>
                 `;

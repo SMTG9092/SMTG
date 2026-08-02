@@ -126,7 +126,7 @@
         import supabase from '../assets/js/core/supabase.js';
 
         const inputCmd = document.getElementById('inputNumCommande');
-        let isOrderLocked = false; // Variable globale bach n-3rfo wach la commande verouillée wla la
+        let isOrderLocked = false;
 
         inputCmd.addEventListener('keydown', function(event) {
             if (event.key === 'Enter') {
@@ -160,8 +160,8 @@
             const statutActuel = dataCmd[0].statut;
 
             if (statutActuel === 'IMPORTEE') {
-                alert(`Erreur : La commande [${numCmd}] n'a pas encore été lancée ! (Statut actuel : IMPORTEE)`);
-                tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-amber-400">Cette commande doit être lancée d'abord depuis le module de lancement.</td></tr>`;
+                alert(`Erreur : La commande [${numCmd}] n'a pas encore été lancée !`);
+                tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-amber-400">Cette commande doit être lancée d'abord.</td></tr>`;
                 resetInfos();
                 return;
             }
@@ -179,7 +179,6 @@
                 .eq('document_vente', numCmd)
                 .maybeSingle();
 
-            // Vérifier wash la commande validée globalement (est_valide == true)
             isOrderLocked = existingPicking ? Boolean(existingPicking.est_valide) : false;
 
             let existingDetailsMap = {};
@@ -223,7 +222,7 @@
             const premiereLigne = dataCmd[0];
             document.getElementById('infoClient').textContent = premiereLigne.nom_receptionnaire || 'Client Divers';
             document.getElementById('infoItineraire').textContent = premiereLigne.itineraire || 'Non assigné';
-            document.getElementById('infoStatut').textContent = isOrderLocked ? 'VALIDEE (Bloquée)' : (premiereLigne.statut || '-');
+            document.getElementById('infoStatut').textContent = isOrderLocked ? 'VALIDE' : (premiereLigne.statut || '-');
             document.getElementById('tableCountBadge').textContent = `${dataCmd.length} postes`;
 
             window.selectedLotsData = {};
@@ -297,7 +296,7 @@
                                 </td>
                                 <td class="p-3.5 text-center">
                                     ${isFirst ? 
-                                        `<button id="btn_add_${posteNum}" onclick="ajouterLigneSup(${posteNum}, '${row.article}', '${numCmd}')" class="w-7 h-7 bg-emerald-600/25 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded-lg transition flex items-center justify-center mx-auto cursor-pointer" title="Ajouter un lot">+</button>` :
+                                        `<button id="btn_add_${posteNum}" onclick="ajouterLigneSup(${posteNum}, '${row.article}', '${numCmd}')" class="w-7 h-7 bg-emerald-600/25 hover:bg-emerald-600 text-emerald-400 text-white rounded-lg transition flex items-center justify-center mx-auto cursor-pointer" title="Ajouter un lot">+</button>` :
                                         `<button onclick="supprimerLigneSup(this, '${numCmd}', ${posteNum})" class="w-7 h-7 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg transition flex items-center justify-center mx-auto cursor-pointer" title="Supprimer">-</button>`
                                     }
                                 </td>
@@ -308,7 +307,6 @@
             }
             tbody.innerHTML = html;
 
-            // Appliquer le verrouillage si la commande est déjà validée
             if (isOrderLocked) {
                 verrouillerInterfaceInterface();
             }
@@ -317,7 +315,7 @@
         window.selectedLotsData = {};
 
         window.filtrerLots = async function(articleCode, terme, uniqueId) {
-            if (isOrderLocked) return; // Ma ykhllikch tcherchi ila kan locked
+            if (isOrderLocked) return;
             const dropdown = document.getElementById(`dropdown_lot_${uniqueId}`);
             
             if (!terme || terme.trim() === "") {
@@ -482,7 +480,6 @@
                 .eq('Poste', poste);
         };
 
-        // Core logic fonction d'enregistrement (partagée entre Enregistrer & Valider)
         async function executerSauvegardeDonnees(numCmd) {
             const { data: authData } = await supabase.auth.getUser();
             const userId = authData?.user?.id || null;
@@ -590,7 +587,7 @@
                     document_vente: numCmd,
                     client: clientNom,
                     preparateur: userId,
-                    statut: 'PICKING',
+                    statut: 'VALIDE',
                     total_articles: articlesSet.size,
                     total_lots: totalLotsCount,
                     total_quantite: totalQteCmdSum,
@@ -654,50 +651,55 @@
                 return;
             }
 
-            if (!confirm("Voulez-vous vraiment valider définitivement cette commande ? Aucune modification ne sera possible sans l'activer via le bouton 'Modifier'.")) {
+            if (!confirm("Voulez-vous vraiment valider définitivement cette commande ? Cela va enregistrer les données et rafraîchir la page.")) {
                 return;
             }
 
-            // 1. Sauvegarder d'abord les données actuelles
+            // 1. Sauvegarder les données o 7tathom f les tables
             const saved = await executerSauvegardeDonnees(numCmd);
             if (!saved) return;
 
             const nowIso = new Date().toISOString();
 
-            // 2. Mettre à jour 'picking' -> est_valide = true
+            // 2. Rdd statut 'VALIDE' f tables kamlin
             await supabase.from('picking')
                 .update({ est_valide: true, statut: 'VALIDE', updated_at: nowIso })
                 .eq('document_vente', numCmd);
 
-            // 3. Mettre à jour 'commandes_excel' & 'suivi_commandes_lancer' -> Statut TERMINÉE / VALIDÉE
             await supabase.from('commandes_excel')
-                .update({ statut: 'VALVALIDEE', updated_at: nowIso }) // Wla TERMINEE selon votre nomenclature
+                .update({ statut: 'VALIDE', updated_at: nowIso })
                 .eq('document_vente', numCmd);
 
             await supabase.from('suivi_commandes_lancer')
-                .update({ statut: 'TERMINEE', date_fin_picking: nowIso, updated_at: nowIso })
+                .update({ statut: 'VALIDE', date_fin_picking: nowIso, updated_at: nowIso })
                 .eq('document_vente', numCmd);
 
-            alert("Commande validée globalement avec succès ! L'interface est maintenant verrouillée.");
-            isOrderLocked = true;
-            verrouillerInterfaceInterface();
+            // 3. Afichage dyal alert o Rafraîchissement dial saf7a dik sa3a (Reload)
+            alert("Commande validée et enregistrée avec succès !");
+            location.reload();
         };
 
         window.actionModifier = async function() {
             const numCmd = inputNumCommande.value.trim();
             if (!numCmd) { alert("Veuillez charger une commande d'abord."); return; }
 
-            const pwd = prompt("Mode sécurisé : Entrez le mot de passe ou confirmez la modification de la commande validée :");
-            if (pwd === null) return; // Annulé
+            const pwd = prompt("Mode sécurisé : Entrez le mot de passe ou confirmez la modification :");
+            if (pwd === null) return;
 
-            // Déverrouiller la table picking
             await supabase.from('picking')
-                .update({ est_valide: false, statut: 'PICKING', updated_at: new Date().toISOString() })
+                .update({ est_valide: false, statut: 'EN_PICKING', updated_at: new Date().toISOString() })
                 .eq('document_vente', numCmd);
 
-            isOrderLocked = false;
-            deverrouillerInterfaceInterface();
-            alert("Mode modification activé. Vous pouvez modifier les quantités et enregistrer de nouveau.");
+            await supabase.from('commandes_excel')
+                .update({ statut: 'EN_PICKING', updated_at: new Date().toISOString() })
+                .eq('document_vente', numCmd);
+
+            await supabase.from('suivi_commandes_lancer')
+                .update({ statut: 'EN_PICKING', updated_at: new Date().toISOString() })
+                .eq('document_vente', numCmd);
+
+            alert("Mode modification activé. La page va se rafraîchir.");
+            location.reload();
         };
 
         function verrouillerInterfaceInterface() {
@@ -709,21 +711,8 @@
                 btn.disabled = true;
                 btn.classList.add('opacity-40', 'cursor-not-allowed');
             });
-            document.getElementById('infoStatut').textContent = 'VALIDEE (Bloquée)';
+            document.getElementById('infoStatut').textContent = 'VALIDE';
             document.getElementById('infoStatut').className = 'font-bold text-emerald-400 text-sm';
-        }
-
-        function deverrouillerInterfaceInterface() {
-            document.querySelectorAll('#pickingTableBody input').forEach(inp => {
-                inp.disabled = false;
-                inp.classList.remove('opacity-50', 'cursor-not-allowed');
-            });
-            document.querySelectorAll('#pickingTableBody button').forEach(btn => {
-                btn.disabled = false;
-                btn.classList.remove('opacity-40', 'cursor-not-allowed');
-            });
-            document.getElementById('infoStatut').textContent = 'EN_PICKING (Modifiable)';
-            document.getElementById('infoStatut').className = 'font-bold text-amber-400 text-sm';
         }
 
         function resetInfos() {

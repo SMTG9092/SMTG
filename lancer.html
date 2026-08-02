@@ -526,6 +526,10 @@
             }
 
             alert(`La tournée "${tourneeName}" a été lancée avec succès (${uniqueDocs.length} commandes) !`);
+            
+            // Ouverture automatique du bon de préparation groupé pour la tournée
+            window.open(`bon_preparation_tournee.html?tournee=${encodeURIComponent(tourneeName)}`, '_blank');
+            
             loadSuiviCommandes();
         };
 

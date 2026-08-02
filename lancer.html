@@ -424,7 +424,6 @@
             setTimeout(() => modal.classList.add("hidden"), 300);
         };
 
-        // FONCTION AUXILIAIRE POUR GÉNÉRER LE NUMERO DE LANCEMENT (C-JJMMYY-XXX ou T-JJMMYY-XXX)
         async function genererNumLancement(prefix) {
             const now = new Date();
             const jj = String(now.getDate()).padStart(2, '0');
@@ -449,7 +448,6 @@
             return `${datePrefix}${String(nextSeq).padStart(3, '0')}`;
         }
 
-        // LANCEMENT PAR COMMANDE
         window.lancerCommande = async function(docVente) {
             if (!confirm(`Voulez-vous lancer la commande ${docVente} ?`)) return;
             
@@ -458,7 +456,6 @@
             const numLancement = await genererNumLancement('C');
             const nowIso = new Date().toISOString();
 
-            // 1. Mettre à jour commandes_excel
             const { error: err1 } = await supabase
                 .from('commandes_excel')
                 .update({ statut: 'LANCEE', updated_at: nowIso })
@@ -466,7 +463,6 @@
                 
             if (err1) { alert("Erreur commandes_excel: " + err1.message); return; }
 
-            // 2. Mettre à jour suivi_commandes_lancer
             const { error: err2 } = await supabase
                 .from('suivi_commandes_lancer')
                 .update({
@@ -484,7 +480,6 @@
             loadSuiviCommandes();
         };
 
-        // LANCEMENT PAR TOURNEE
         window.lancerTournee = async function(tourneeName) {
             if (!confirm(`Voulez-vous vraiment lancer toute la tournée "${tourneeName}" ?`)) return;
             
@@ -527,7 +522,7 @@
 
             alert(`La tournée "${tourneeName}" a été lancée avec succès (${uniqueDocs.length} commandes) !`);
             
-            // Ouverture automatique du bon de préparation groupé pour la tournée
+            // Fath صفحة bon_preparation_tournee.html مع تمرير اسم Tournée مقاد في URL
             window.open(`bon_preparation_tournee.html?tournee=${encodeURIComponent(tourneeName)}`, '_blank');
             
             loadSuiviCommandes();

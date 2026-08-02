@@ -354,12 +354,11 @@
             loadCommandesAnnulees();
         };
 
-        // OPEN DETAILS BLOC FIX MANUEL & ROBUSTE
+        // OPEN DETAILS M3A JIBAN ISAM KAMIL (nom_complet / nom + prenom)
         window.openDetails = async function(docVente) {
             document.getElementById("modalDocTitle").textContent = docVente;
             const modalBody = document.getElementById("modalDetailsBody");
             
-            // Set default values while loading
             document.getElementById('infoUserAnnule').textContent = "Non spécifié";
             document.getElementById('infoDateAnnule').textContent = "-";
             document.getElementById('infoMotifAnnule').textContent = "Aucun motif enregistré";
@@ -368,7 +367,7 @@
             document.getElementById("detailModal").classList.remove("hidden");
             setTimeout(() => document.getElementById("detailModal").classList.remove("opacity-0"), 10);
 
-            // 1. Jib l-m3lomat mn suivi_commandes_lancer bl-isnad 3adi
+            // 1. Jib l-m3lomat mn suivi_commandes_lancer
             const { data: suiviData, error: suiviErr } = await supabase
                 .from('suivi_commandes_lancer')
                 .select('annule_par, date_annulation, motif_annulation')
@@ -383,23 +382,27 @@
                     document.getElementById('infoDateAnnule').textContent = new Date(suiviData.date_annulation).toLocaleString('fr-FR');
                 }
 
-                // Ila kayn annule_par (UUID dyal l-user), n-jiboh mn user_profiles b query msta9lla
+                // 2. Jib l-ism l-kamil mn user_profiles (nom_complet, wla nom + prenom)
                 if (suiviData.annule_par) {
                     const { data: userData, error: userErr } = await supabase
                         .from('user_profiles')
-                        .select('full_name, email')
+                        .select('nom_complet, nom, prenom, email')
                         .eq('id', suiviData.annule_par)
                         .single();
 
                     if (userData) {
-                        document.getElementById('infoUserAnnule').textContent = userData.full_name || userData.email || 'Utilisateur';
+                        let finalName = userData.nom_complet;
+                        if (!finalName && (userData.nom || userData.prenom)) {
+                            finalName = `${userData.prenom || ''} ${userData.nom || ''}`.trim();
+                        }
+                        document.getElementById('infoUserAnnule').textContent = finalName || userData.email || 'Utilisateur';
                     } else {
-                        document.getElementById('infoUserAnnule').textContent = suiviData.annule_par; // Affichiw ID ila mat-l9a walo
+                        document.getElementById('infoUserAnnule').textContent = suiviData.annule_par;
                     }
                 }
             }
 
-            // 2. Jib les articles dyal la commande
+            // 3. Jib les articles dyal la commande
             const { data } = await supabase.from('commandes_excel').select('"Poste", article, designation_article, quantite_commandee, nombre_pieces').eq('document_vente', docVente).order('"Poste"', { ascending: true });
             let html = "";
             if (data) {

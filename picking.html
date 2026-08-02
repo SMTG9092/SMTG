@@ -680,10 +680,7 @@
             const numCmd = inputNumCommande.value.trim();
             if (!numCmd) { alert("Veuillez charger une commande d'abord."); return; }
 
-            const pwd = prompt("Mode sécurisé : Entrez le mot de passe ou confirmez la modification :");
-            if (pwd === null) return;
-
-            // 1. Déverrouillage fl'interface (kat-7yd disabled o kat-rdd les champs t-mknw t-ktbo fihom)
+            // 1. Déverrouillage direct fl'interface
             isOrderLocked = false;
             document.querySelectorAll('#pickingTableBody input').forEach(inp => {
                 inp.disabled = false;
@@ -694,7 +691,7 @@
                 btn.classList.remove('opacity-40', 'cursor-not-allowed');
             });
 
-            // 2. T-bdel statut f en-tête l 'EN_PICKING' bash y-ban bli rahou mftouh lil ta3dil
+            // 2. T-bdel statut f en-tête l 'EN_PICKING'
             const statutEl = document.getElementById('infoStatut');
             statutEl.textContent = 'EN_PICKING';
             statutEl.className = 'font-bold text-amber-400 text-sm';
@@ -713,7 +710,7 @@
                 .update({ statut: 'EN_PICKING', updated_at: nowIso })
                 .eq('document_vente', numCmd);
 
-            alert("Mode modification activé : Les champs de lots et de quantités sont maintenant ouverts pour modification.");
+            alert("Mode modification activé : Vous pouvez modifier les lots et quantités.");
         };
 
         function verrouillerInterfaceInterface() {

@@ -1,188 +1,92 @@
 <!DOCTYPE html>
-<html lang="fr" class="dark">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Préparation Picking - SoufStock Enterprise ERP/WMS</title>
-    
-    <!-- Font Awesome Icons -->
+    <title>Préparation Picking - SoufStock</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Tailwind CSS Play CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        slate: {
-                            950: '#020617',
-                            900: '#0f172a',
-                            800: '#1e293b',
-                            700: '#334155',
-                            400: '#94a3b8',
-                            300: '#cbd5e1',
-                            100: '#f1f5f9'
-                        },
-                        emerald: {
-                            500: '#10b981',
-                            600: '#059669',
-                            400: '#34d399',
-                            300: '#6ee7b7'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-
-    <style>
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #090d16; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #334155; }
-        body { background-color: #020617; color: #f1f5f9; font-family: ui-sans-serif, system-ui, sans-serif; }
-    </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex overflow-hidden">
-
-    <!-- SIDEBAR -->
-    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-screen p-4 select-none shrink-0">
-        <div class="flex items-center gap-3 px-2 mb-6">
-            <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
-                <i class="fas fa-snowflake text-lg"></i>
+<body>
+    <div class="app-container">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>SoufStock</h2>
             </div>
-            <div>
-                <span class="font-bold text-base tracking-wide block text-slate-100">SoufStock</span>
-                <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Gestion</span>
+            <nav id="sidebarNav" class="sidebar-nav">
+                <!-- Dynamic Navigation -->
+            </nav>
+            <div class="sidebar-footer">
+                <button id="logoutBtn" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Déconnexion</button>
             </div>
-        </div>
-        
-        <nav id="sidebarNav" class="flex-1 overflow-y-auto pr-1">
-            <!-- Dynamic Sidebar -->
-        </nav>
+        </aside>
 
-        <div class="pt-4 mt-auto border-t border-slate-800/80">
-            <div class="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3 mb-2">
-                <span id="sidebarUserName" class="block text-xs font-bold text-slate-200 truncate uppercase">YAHYA SOUFIANE</span>
-                <span class="block text-[10px] text-emerald-400 font-medium mt-0.5">Administrateur</span>
-            </div>
-            <button id="logoutBtn" class="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl py-2 px-3 text-xs font-semibold transition flex items-center justify-center gap-2 cursor-pointer">
-                <i class="fas fa-sign-out-alt"></i> Déconnexion
-            </button>
-        </div>
-    </aside>
-
-    <!-- MAIN CONTAINER -->
-    <div class="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">
-        
-        <!-- HEADER -->
-        <header class="h-20 bg-slate-900/40 border-b border-slate-800/80 px-8 flex items-center justify-between shrink-0">
-            <div class="flex items-center gap-4">
-                <div>
-                    <h1 id="pageTitle" class="text-xl font-bold tracking-tight text-slate-100">Préparation Picking</h1>
-                    <div id="breadcrumb" class="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
-                        <span>Accueil</span>
-                        <span>/</span>
-                        <strong class="text-slate-300">Préparation Picking</strong>
-                    </div>
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <header class="top-header">
+                <h1>Préparation Picking</h1>
+                <div class="user-info">
+                    <span id="currentDate">--</span>
                 </div>
-            </div>
-            
-            <div class="flex items-center gap-4 bg-slate-900/80 border border-slate-800 px-4 py-2 rounded-xl">
-                <div class="text-right">
-                    <span id="currentDate" class="text-xs font-medium text-slate-300 block">--</span>
-                    <span id="currentTime" class="text-[10px] text-emerald-400 font-mono block">--:--:--</span>
-                </div>
-            </div>
-        </header>
+            </header>
 
-        <!-- PAGE BODY -->
-        <main class="flex-1 p-8 overflow-y-auto">
-            <div class="max-w-7xl mx-auto flex flex-col gap-6">
-                
-                <!-- TOP ACTION BAR & SEARCH -->
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-                    <div>
-                        <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
-                            <i class="fas fa-clipboard-list text-emerald-400"></i> Picking Commande / BL
-                        </h2>
-                        <p class="text-xs text-slate-400 mt-1">
-                            Saisissez ou scannez le document de vente (Appuyez sur Entrée ou cliquez Charger) pour démarrer la préparation[cite: 2].
-                        </p>
+            <div class="content-body">
+                <!-- SEARCH & ACTIONS BAR -->
+                <div class="card search-card">
+                    <div class="search-group">
+                        <label for="documentInput">N° Document de Vente :</label>
+                        <input type="text" id="documentInput" placeholder="Ex: 4000795424" class="form-control">
+                        <button id="searchDocBtn" class="btn btn-primary"><i class="fas fa-search"></i> Charger</button>
+                        <button id="enableModifyBtn" onclick="enableModification()" disabled class="btn btn-secondary opacity-50 cursor-not-allowed"><i class="fas fa-edit"></i> Modifier</button>
                     </div>
-                    
-                    <div class="flex items-center gap-3 flex-wrap">
-                        <div class="relative flex items-center">
-                            <i class="fas fa-file-invoice absolute left-3.5 text-slate-500 text-sm"></i>
-                            <input type="text" id="documentInput" placeholder="N° Document (Ex: 4000795424)" value=""
-                                class="bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-64 transition shadow-inner font-mono">
-                        </div>
-                        <button id="searchDocBtn" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs transition flex items-center gap-2 shadow-sm cursor-pointer">
-                            <i class="fas fa-search"></i> Charger
-                        </button>
-                        <button id="enableModifyBtn" onclick="enableModification()" disabled class="bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/20 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 opacity-50 cursor-not-allowed">
-                            <i class="fas fa-edit"></i> Modifier
-                        </button>
-                        <button onclick="savePicking('EN_COURS')" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 cursor-pointer">
-                            <i class="fas fa-save"></i> Enregistrer
-                        </button>
-                        <button onclick="validatePicking('PICKING')" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 cursor-pointer">
-                            <i class="fas fa-check-circle"></i> Valider
-                        </button>
+                    <div class="action-group">
+                        <button onclick="savePicking('EN_COURS')" class="btn btn-success"><i class="fas fa-save"></i> Enregistrer</button>
+                        <button onclick="validatePicking('PICKING')" class="btn btn-warning"><i class="fas fa-check-circle"></i> Valider</button>
                     </div>
                 </div>
 
-                <!-- ORDER INFO CARDS -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg">
-                        <span class="text-[10px] text-slate-400 uppercase font-semibold tracking-wider block">Client</span>
-                        <span id="infoClient" class="text-sm font-bold text-slate-200 mt-1 block truncate">-</span>
+                <!-- INFO CARDS -->
+                <div class="info-grid">
+                    <div class="info-card">
+                        <span>Client</span>
+                        <h3 id="infoClient">-</h3>
                     </div>
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg">
-                        <span class="text-[10px] text-slate-400 uppercase font-semibold tracking-wider block">Date Création</span>
-                        <span id="infoCreation" class="text-sm font-bold text-slate-200 font-mono mt-1 block">-</span>
+                    <div class="info-card">
+                        <span>Date Création</span>
+                        <h3 id="infoCreation">-</h3>
                     </div>
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg">
-                        <span class="text-[10px] text-slate-400 uppercase font-semibold tracking-wider block">Date Livraison</span>
-                        <span id="infoLivraison" class="text-sm font-bold text-slate-200 font-mono mt-1 block">-</span>
+                    <div class="info-card">
+                        <span>Date Livraison</span>
+                        <h3 id="infoLivraison">-</h3>
                     </div>
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg flex items-center justify-between">
-                        <div>
-                            <span class="text-[10px] text-slate-400 uppercase font-semibold tracking-wider block">Tournée / Itinéraire</span>
-                            <span id="infoTournee" class="text-sm font-bold text-sky-400 mt-1 block">-</span>
-                        </div>
-                        <span id="infoStatut" class="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">EN ATTENTE</span>
+                    <div class="info-card">
+                        <span>Tournée / Itinéraire</span>
+                        <h3 id="infoTournee">-</h3>
+                        <span id="infoStatut" class="badge">EN ATTENTE</span>
                     </div>
                 </div>
 
-                <!-- TABLE CONTAINER -->
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
-                    <div class="overflow-x-auto flex-1">
-                        <table class="w-full text-left border-collapse text-sm">
-                            <thead>
-                                <tr class="bg-slate-950/60 text-slate-400 uppercase text-[11px] tracking-wider border-b border-slate-800 font-semibold">
-                                    <th class="p-4 w-2/6">Article & Désignation</th>
-                                    <th class="p-4 w-1/6 text-center">Qté Commandée</th>
-                                    <th class="p-4 w-1/6 text-center">Qté Préparée</th>
-                                    <th class="p-4 w-1/6 text-center">Lot (Saisie)</th>
-                                    <th class="p-4 w-1/6 text-center">Qté Lot</th>
-                                    <th class="p-4 w-12 text-center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="pickingTableBody" class="divide-y divide-slate-800/50">
-                                <tr>
-                                    <td colspan="6" class="p-12 text-center text-slate-400 text-xs">
-                                        <i class="fas fa-barcode mr-2 text-emerald-500 text-base"></i> Veuillez charger un document de vente pour afficher les articles à préparer.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <!-- TABLE -->
+                <div class="card table-card">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Article & Désignation</th>
+                                <th>Qté Commandée</th>
+                                <th>Qté Préparée</th>
+                                <th>Lot (Saisie)</th>
+                                <th>Qté Lot</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pickingTableBody">
+                            <tr>
+                                <td colspan="6" class="text-center">Veuillez charger un document de vente pour afficher les articles à préparer.[cite: 2]</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-
             </div>
         </main>
     </div>
@@ -199,15 +103,15 @@
         let isEditableMode = false;
 
         document.addEventListener("DOMContentLoaded", async () => {
-            await Navigation.init();
+            if (typeof Navigation !== 'undefined' && Navigation.init) {
+                await Navigation.init();
+            }
 
-            // Clock & Date display
             const updateClock = () => {
                 const now = new Date();
-                document.getElementById("currentDate").textContent = now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                document.getElementById("currentTime").textContent = now.toLocaleTimeString('fr-FR');
+                const dateEl = document.getElementById("currentDate");
+                if (dateEl) dateEl.textContent = now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             };
-            setInterval(updateClock, 1000);
             updateClock();
 
             try {
@@ -217,7 +121,7 @@
                     if (profile) currentUserProfileId = profile.id;
                 }
             } catch (e) {
-                console.error("Erreur user session:", e);
+                console.error("Erreur session:", e);
             }
 
             const searchBtn = document.getElementById("searchDocBtn");
@@ -243,20 +147,24 @@
         });
 
         async function loadOrderForPicking() {
-            const docNum = document.getElementById("documentInput").value.trim();
+            const docInput = document.getElementById("documentInput");
+            if (!docInput) return;
+            const docNum = docInput.value.trim();
             const tbody = document.getElementById("pickingTableBody");
             const modifyBtn = document.getElementById("enableModifyBtn");
 
             isEditableMode = false;
-            modifyBtn.disabled = true;
-            modifyBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            if (modifyBtn) {
+                modifyBtn.disabled = true;
+                modifyBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
 
             if (!docNum) {
                 alert("Veuillez saisir un numéro de document de vente.");
                 return;
             }
 
-            tbody.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-slate-400 text-xs"><i class="fas fa-spinner fa-spin mr-2 text-emerald-500"></i> Recherche de la commande...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center">Recherche de la commande...</td></tr>`;
 
             try {
                 const { data: suiviData, error: suiviErr } = await supabase
@@ -267,7 +175,7 @@
                     .single();
 
                 if (suiviErr || !suiviData) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-red-400 text-xs"><i class="fas fa-exclamation-triangle mr-2"></i> Aucun suivi trouvé pour le document "${docNum}".</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-error">Aucun suivi trouvé pour le document "${docNum}".</td></tr>`;
                     clearHeaderInfo();
                     return;
                 }
@@ -276,7 +184,7 @@
                 const currentStatut = (suiviData.statut || "").toUpperCase();
 
                 if (currentStatut === "IMPORTEE") {
-                    tbody.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-amber-400 text-xs"><i class="fas fa-lock mr-2 text-amber-500"></i> Commande ${docNum} non lancée</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-warning">Commande ${docNum} non lancée</td></tr>`;
                     clearHeaderInfo();
                     return;
                 }
@@ -288,7 +196,7 @@
                     .order('ligne_commande', { ascending: true });
 
                 if (error || !data || data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-red-400 text-xs"><i class="fas fa-exclamation-triangle mr-2"></i> Aucune ligne d'article trouvée pour le document "${docNum}".</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-error">Aucune ligne d'article trouvée pour le document "${docNum}".</td></tr>`;
                     clearHeaderInfo();
                     return;
                 }
@@ -305,8 +213,9 @@
 
                 let existingDetails = [];
                 if (existingPicking) {
-                    document.getElementById("infoStatut").textContent = existingPicking.statut;
-                    if (existingPicking.statut !== 'EN_COURS') {
+                    const statutEl = document.getElementById("infoStatut");
+                    if (statutEl) statutEl.textContent = existingPicking.statut;
+                    if (existingPicking.statut !== 'EN_COURS' && modifyBtn) {
                         modifyBtn.disabled = false;
                         modifyBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                     }
@@ -318,7 +227,8 @@
                     
                     if (detailsData) existingDetails = detailsData;
                 } else {
-                    document.getElementById("infoStatut").textContent = suiviData.statut || "LANCEE";
+                    const statutEl = document.getElementById("infoStatut");
+                    if (statutEl) statutEl.textContent = suiviData.statut || "LANCEE";
                 }
 
                 const canEdit = (currentStatut === "LANCEE" && !existingPicking) || (existingPicking && existingPicking.statut === 'EN_COURS') || (currentStatut === "EN_PICKING");
@@ -326,7 +236,7 @@
 
             } catch (err) {
                 console.error("Erreur technique:", err);
-                tbody.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-red-400 text-xs">Erreur de connexion lors du chargement.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-error">Erreur de connexion lors du chargement.</td></tr>`;
             }
         }
 
@@ -343,8 +253,6 @@
                 btn.classList.remove('opacity-60', 'cursor-not-allowed');
             });
 
-            const modifyBtn = document.getElementById("enableModifyBtn");
-            modifyBtn.classList.add('bg-sky-500/20', 'border-sky-500/40');
             alert(`Mode modification activé pour la commande ${currentDocNumber}.`);
         }
 
@@ -367,9 +275,10 @@
             document.getElementById("infoStatut").textContent = "EN ATTENTE";
             
             const modifyBtn = document.getElementById("enableModifyBtn");
-            modifyBtn.disabled = true;
-            modifyBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            modifyBtn.classList.remove('bg-sky-500/20', 'border-sky-500/40');
+            if (modifyBtn) {
+                modifyBtn.disabled = true;
+                modifyBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
         }
 
         function renderPickingTable(lines, savedDetails, isInitialEditable) {
@@ -386,72 +295,51 @@
                 if (itemDetails.length > 0) {
                     itemDetails.forEach((detail, subIdx) => {
                         const isFirst = subIdx === 0;
-                        const rowClass = isFirst ? `main-row` : `sub-row-${index} border-t border-slate-800/30`;
-                        const indentClass = isFirst ? '' : 'pl-8 text-slate-400 text-xs italic';
-                        const iconHtml = isFirst ? '' : '<i class="fas fa-level-up-alt fa-rotate-90 mr-1 text-emerald-500"></i> Lot additionnel';
+                        const rowClass = isFirst ? `main-row` : `sub-row-${index}`;
                         
                         html += `
-                            <tr class="hover:bg-slate-800/35 transition ${rowClass}" data-index="${index}" data-stock-id="${detail.stock_id || ''}" data-magasin="${detail.magasin || ''}" data-detail-id="${detail.id || ''}">
-                                <td class="p-4 ${indentClass}">
-                                    ${iconHtml}
-                                    <span class="font-semibold text-emerald-400 text-xs block">${item.article || '-'}</span>
-                                    <span class="text-slate-400 text-[11px] block mt-0.5">${item.designation_article || '-'}</span>
+                            <tr class="${rowClass}" data-index="${index}" data-stock-id="${detail.stock_id || ''}" data-magasin="${detail.magasin || ''}" data-detail-id="${detail.id || ''}">
+                                <td>
+                                    <strong>${item.article || '-'}</strong><br>
+                                    <small>${item.designation_article || '-'}</small>
                                 </td>
-                                <td class="p-4 text-center font-bold text-slate-200 text-xs">${isFirst ? qteCmd.toLocaleString() : '-'}</td>
-                                <td class="p-4 text-center font-mono font-semibold text-sky-400 text-xs total-prep" id="total_prep_${index}">0.00</td>
-                                <td class="p-4 text-center align-top">
-                                    <div class="relative">
-                                        <input type="text" placeholder="Saisir Lot..." value="${detail.lot || ''}" oninput="searchLots(this, '${item.article}', ${index})" ${isDisabledAttr}
-                                            class="lot-input bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-full text-center shadow-inner font-mono ${disabledClass}">
-                                        <div class="lot-suggestions absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 hidden max-h-45 overflow-y-auto text-left font-mono"></div>
-                                    </div>
+                                <td class="text-center">${isFirst ? qteCmd.toLocaleString() : '-'}</td>
+                                <td class="text-center total-prep" id="total_prep_${index}">0.00</td>
+                                <td class="text-center relative">
+                                    <input type="text" placeholder="Lot..." value="${detail.lot || ''}" oninput="searchLots(this, '${item.article}', ${index})" ${isDisabledAttr} class="form-control lot-input ${disabledClass}">
+                                    <div class="lot-suggestions hidden"></div>
                                 </td>
-                                <td class="p-4 text-center align-top">
-                                    <div class="relative">
-                                        <input type="number" step="0.001" placeholder="0.00" value="${detail.quantite_preparee || ''}" oninput="calculatePrepared(${index})" data-max-stock="999999" ${isDisabledAttr}
-                                            class="qty-input bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-full text-center shadow-inner font-mono ${disabledClass}">
-                                        <span class="error-msg text-[10px] text-red-400 font-medium hidden block mt-1 leading-tight text-center"></span>
-                                    </div>
+                                <td class="text-center relative">
+                                    <input type="number" step="0.001" placeholder="0.00" value="${detail.quantite_preparee || ''}" oninput="calculatePrepared(${index})" data-max-stock="999999" ${isDisabledAttr} class="form-control qty-input ${disabledClass}">
+                                    <span class="error-msg hidden"></span>
                                 </td>
-                                <td class="p-4 text-center align-top">
+                                <td class="text-center">
                                     ${isFirst ? `
-                                    <button type="button" onclick="addLotRow(${index})" ${isDisabledAttr} class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 w-8 h-8 rounded-xl text-xs transition flex items-center justify-center mx-auto shadow-sm cursor-pointer ${disabledClass}">
-                                        <i class="fas fa-plus"></i>
-                                    </button>` : `
-                                    <button type="button" onclick="removeLotRow(this, ${index})" ${isDisabledAttr} class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 w-8 h-8 rounded-xl text-xs transition flex items-center justify-center mx-auto cursor-pointer ${disabledClass}">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>`}
+                                    <button type="button" onclick="addLotRow(${index})" ${isDisabledAttr} class="btn btn-sm btn-success ${disabledClass}"><i class="fas fa-plus"></i></button>` : `
+                                    <button type="button" onclick="removeLotRow(this, ${index})" ${isDisabledAttr} class="btn btn-sm btn-danger ${disabledClass}"><i class="fas fa-trash"></i></button>`}
                                 </td>
                             </tr>
                         `;
                     });
                 } else {
                     html += `
-                        <tr class="hover:bg-slate-800/35 transition main-row" data-index="${index}">
-                            <td class="p-4">
-                                <span class="font-semibold text-emerald-400 text-xs block">${item.article || '-'}</span>
-                                <span class="text-slate-400 text-[11px] block mt-0.5">${item.designation_article || '-'}</span>
+                        <tr class="main-row" data-index="${index}">
+                            <td>
+                                <strong>${item.article || '-'}</strong><br>
+                                <small>${item.designation_article || '-'}</small>
                             </td>
-                            <td class="p-4 text-center font-bold text-slate-200 text-xs">${qteCmd.toLocaleString()}</td>
-                            <td class="p-4 text-center font-mono font-semibold text-sky-400 text-xs total-prep" id="total_prep_${index}">0.00</td>
-                            <td class="p-4 text-center align-top">
-                                <div class="relative">
-                                    <input type="text" placeholder="Saisir Lot..." oninput="searchLots(this, '${item.article}', ${index})" ${isDisabledAttr}
-                                        class="lot-input bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-full text-center shadow-inner font-mono ${disabledClass}">
-                                    <div class="lot-suggestions absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 hidden max-h-45 overflow-y-auto text-left font-mono"></div>
-                                </div>
+                            <td class="text-center">${qteCmd.toLocaleString()}</td>
+                            <td class="text-center total-prep" id="total_prep_${index}">0.00</td>
+                            <td class="text-center relative">
+                                <input type="text" placeholder="Lot..." oninput="searchLots(this, '${item.article}', ${index})" ${isDisabledAttr} class="form-control lot-input ${disabledClass}">
+                                <div class="lot-suggestions hidden"></div>
                             </td>
-                            <td class="p-4 text-center align-top">
-                                <div class="relative">
-                                    <input type="number" step="0.001" placeholder="0.00" oninput="calculatePrepared(${index})" data-max-stock="0" ${isDisabledAttr}
-                                        class="qty-input bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-full text-center shadow-inner font-mono ${disabledClass}">
-                                    <span class="error-msg text-[10px] text-red-400 font-medium hidden block mt-1 leading-tight text-center"></span>
-                                </div>
+                            <td class="text-center relative">
+                                <input type="number" step="0.001" placeholder="0.00" oninput="calculatePrepared(${index})" data-max-stock="0" ${isDisabledAttr} class="form-control qty-input ${disabledClass}">
+                                <span class="error-msg hidden"></span>
                             </td>
-                            <td class="p-4 text-center align-top">
-                                <button type="button" onclick="addLotRow(${index})" ${isDisabledAttr} class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 w-8 h-8 rounded-xl text-xs transition flex items-center justify-center mx-auto shadow-sm cursor-pointer ${disabledClass}">
-                                    <i class="fas fa-plus"></i>
-                                </button>
+                            <td class="text-center">
+                                <button type="button" onclick="addLotRow(${index})" ${isDisabledAttr} class="btn btn-sm btn-success ${disabledClass}"><i class="fas fa-plus"></i></button>
                             </td>
                         </tr>
                     `;
@@ -469,31 +357,11 @@
             let sum = 0;
             const collectAndCheck = (r) => {
                 const qtyInput = r.querySelector(".qty-input");
-                const errorMsg = r.querySelector(".error-msg");
                 if (!qtyInput) return 0;
-
-                const val = parseFloat(qtyInput.value) || 0;
-                const maxStock = parseFloat(qtyInput.dataset.maxStock) || 0;
-
-                if (maxStock > 0 && val > maxStock) {
-                    if (errorMsg) {
-                        errorMsg.textContent = `Max dispo: ${maxStock}`;
-                        errorMsg.classList.remove('hidden');
-                    }
-                    qtyInput.classList.add('border-red-500');
-                } else {
-                    if (errorMsg) {
-                        errorMsg.textContent = '';
-                        errorMsg.classList.add('hidden');
-                    }
-                    qtyInput.classList.remove('border-red-500');
-                }
-
-                return val;
+                return parseFloat(qtyInput.value) || 0;
             };
 
             sum += collectAndCheck(mainRow);
-
             let nextElement = mainRow.nextElementSibling;
             while (nextElement && nextElement.classList.contains(`sub-row-${index}`)) {
                 sum += collectAndCheck(nextElement);
@@ -510,31 +378,21 @@
             
             const articleCode = currentOrderLines[index]?.article || '';
             const newTr = document.createElement('tr');
-            newTr.className = `hover:bg-slate-800/35 transition border-t border-slate-800/30 sub-row-${index}`;
+            newTr.className = `sub-row-${index}`;
             newTr.innerHTML = `
-                <td class="p-4 pl-8 text-slate-400 text-xs italic">
-                    <i class="fas fa-level-up-alt fa-rotate-90 mr-1 text-emerald-500"></i> Lot additionnel
+                <td><small><i class="fas fa-level-up-alt fa-rotate-90"></i> Lot supp.</small></td>
+                <td class="text-center">-</td>
+                <td class="text-center">-</td>
+                <td class="text-center relative">
+                    <input type="text" placeholder="Lot..." oninput="searchLots(this, '${articleCode}', ${index})" class="form-control lot-input">
+                    <div class="lot-suggestions hidden"></div>
                 </td>
-                <td class="p-4 text-center text-slate-500 text-xs">-</td>
-                <td class="p-4 text-center text-slate-500 text-xs">-</td>
-                <td class="p-4 text-center align-top">
-                    <div class="relative">
-                        <input type="text" placeholder="Saisir Lot..." oninput="searchLots(this, '${articleCode}', ${index})"
-                            class="lot-input bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-full text-center shadow-inner font-mono">
-                        <div class="lot-suggestions absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 hidden max-h-45 overflow-y-auto text-left font-mono"></div>
-                    </div>
+                <td class="text-center relative">
+                    <input type="number" step="0.001" placeholder="0.00" oninput="calculatePrepared(${index})" data-max-stock="0" class="form-control qty-input">
+                    <span class="error-msg hidden"></span>
                 </td>
-                <td class="p-4 text-center align-top">
-                    <div class="relative">
-                        <input type="number" step="0.001" placeholder="0.00" oninput="calculatePrepared(${index})" data-max-stock="0"
-                            class="qty-input bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-full text-center shadow-inner font-mono">
-                        <span class="error-msg text-[10px] text-red-400 font-medium hidden block mt-1 leading-tight text-center"></span>
-                    </div>
-                </td>
-                <td class="p-4 text-center align-top">
-                    <button type="button" onclick="removeLotRow(this, ${index})" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 w-8 h-8 rounded-xl text-xs transition flex items-center justify-center mx-auto cursor-pointer">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
+                <td class="text-center">
+                    <button type="button" onclick="removeLotRow(this, ${index})" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
                 </td>
             `;
 
@@ -544,7 +402,6 @@
                 lastGroupRow = next;
                 next = next.nextElementSibling;
             }
-
             lastGroupRow.after(newTr);
         }
 
@@ -559,6 +416,7 @@
         window.searchLots = async function(inputElem, articleCode, index) {
             const queryVal = inputElem.value.trim();
             const suggestionsBox = inputElem.nextElementSibling;
+            if (!suggestionsBox) return;
 
             if (queryVal.length < 1) {
                 suggestionsBox.classList.add('hidden');
@@ -568,12 +426,12 @@
             try {
                 const { data, error } = await supabase
                     .from('stock')
-                    .select('id, lot, magasin, emplacement, stock_disponible, stock_reserve, unite')
+                    .select('id, lot, magasin, emplacement, stock_disponible, unite')
                     .eq('article', articleCode)
                     .ilike('lot', `%${queryVal}%`);
 
                 if (error || !data || data.length === 0) {
-                    suggestionsBox.innerHTML = `<div class="p-2 text-[10px] text-slate-400 text-center">Aucun lot trouvé</div>`;
+                    suggestionsBox.innerHTML = `<div class="suggestion-item">Aucun lot trouvé</div>`;
                     suggestionsBox.classList.remove('hidden');
                     return;
                 }
@@ -581,20 +439,16 @@
                 let html = "";
                 data.forEach(item => {
                     const dispo = item.stock_disponible !== undefined ? item.stock_disponible : 0;
-                    html += `<div onclick='selectLot(this, ${JSON.stringify(item)}, ${index})' class="p-2.5 text-xs text-slate-200 hover:bg-slate-800 cursor-pointer flex items-center justify-between border-b border-slate-800/50 last:border-none">
-                        <div>
-                            <span class="font-mono font-semibold text-emerald-400">${item.lot}</span>
-                            <span class="text-[10px] text-slate-400 block">Mag: ${item.magasin} | Emp: ${item.emplacement || '-'}</span>
-                        </div>
-                        <span class="text-sky-400 font-bold bg-sky-500/10 px-2 py-0.5 rounded-lg border border-sky-500/20">Dispo: ${parseFloat(dispo).toFixed(2)}</span>
+                    html += `<div onclick='selectLot(this, ${JSON.stringify(item)}, ${index})' class="suggestion-item">
+                        <span><strong>${item.lot}</strong> (Mag: ${item.magasin})</span>
+                        <span>Dispo: ${parseFloat(dispo).toFixed(2)}</span>
                     </div>`;
                 });
 
                 suggestionsBox.innerHTML = html;
                 suggestionsBox.classList.remove('hidden');
-
             } catch (err) {
-                console.error("Erreur recherche lots:", err);
+                console.error("Erreur lots:", err);
             }
         }
 
@@ -606,14 +460,10 @@
             const row = input.closest('tr');
             row.dataset.stockId = stockItem.id;
             row.dataset.magasin = stockItem.magasin || 'PRINCIPAL';
-            row.dataset.emplacement = stockItem.emplacement || '';
-            row.dataset.unite = stockItem.unite || 'KG';
 
             const dispo = stockItem.stock_disponible !== undefined ? stockItem.stock_disponible : 0;
             const qtyInput = row.querySelector('.qty-input');
-            if (qtyInput) {
-                qtyInput.dataset.maxStock = dispo;
-            }
+            if (qtyInput) qtyInput.dataset.maxStock = dispo;
 
             suggestionDiv.classList.add('hidden');
             calculatePrepared(index);
@@ -622,24 +472,6 @@
         async function saveOrValidatePicking(targetStatut) {
             if (!currentDocNumber || currentOrderLines.length === 0) {
                 alert("Aucun document chargé.");
-                return;
-            }
-
-            let hasStockError = false;
-            const allRows = document.querySelectorAll('tr.main-row, [class*="sub-row-"]');
-            allRows.forEach(r => {
-                const qtyInput = r.querySelector('.qty-input');
-                if (qtyInput) {
-                    const val = parseFloat(qtyInput.value) || 0;
-                    const maxStock = parseFloat(qtyInput.dataset.maxStock) || 999999;
-                    if (val > maxStock) {
-                        hasStockError = true;
-                    }
-                }
-            });
-
-            if (hasStockError) {
-                alert("Erreur: Certaines quantités préparées dépassent le stock disponible dans le lot choisi !");
                 return;
             }
 
@@ -652,13 +484,11 @@
                         .ilike('document_vente', currentDocNumber)
                         .limit(1)
                         .single();
-                    if (checkRow && checkRow.id) {
-                        activeSuiviId = checkRow.id;
-                    }
+                    if (checkRow) activeSuiviId = checkRow.id;
                 }
 
                 if (!activeSuiviId) {
-                    alert("Erreur: Impossible de récupérer l'identifiant de suivi dans 'suivi_commandes_lancer' pour ce document.");
+                    alert("Erreur: Identifiant de suivi introuvable.");
                     return;
                 }
 
@@ -671,22 +501,17 @@
                     totalQuantiteCmd += Number(item.quantite_commandee || 0);
                 });
 
-                const progressionVal = totalQuantiteCmd > 0 ? Math.min(100, (totalPrepareVal / totalQuantiteCmd) * 100) : 0;
-
                 const pickingHeader = {
                     suivi_id: activeSuiviId,
                     document_vente: currentDocNumber,
-                    client: currentOrderLines[0].client || currentOrderLines[0].nom_receptionnaire || 'CLIENT',
+                    client: currentOrderLines[0].client || 'CLIENT',
                     preparateur: currentUserProfileId,
                     statut: targetStatut === 'PICKING' ? 'VALIDE' : 'EN_COURS',
                     total_articles: totalArticlesCount,
                     total_lots: totalLotsCount,
                     total_quantite: totalQuantiteCmd,
                     total_prepare: totalPrepareVal,
-                    progression: progressionVal.toFixed(2),
                     est_valide: targetStatut === 'PICKING',
-                    date_fin: targetStatut === 'PICKING' ? new Date().toISOString() : null,
-                    date_validation: targetStatut === 'PICKING' ? new Date().toISOString() : null,
                     updated_at: new Date().toISOString()
                 };
 
@@ -697,30 +522,11 @@
                     .single();
 
                 let pickingId;
-                let oldReservationsMap = new Map();
-
                 if (existingPicking) {
                     pickingId = existingPicking.id;
-                    
-                    const { data: oldResData } = await supabase
-                        .from('reservations_stock')
-                        .select('stock_id, quantite_reservee')
-                        .eq('picking_id', pickingId);
-                    
-                    if (oldResData) {
-                        oldResData.forEach(res => {
-                            if (res.stock_id) {
-                                const currentSum = oldReservationsMap.get(res.stock_id) || 0;
-                                oldReservationsMap.set(res.stock_id, currentSum + Number(res.quantite_reservee || 0));
-                            }
-                        });
-                    }
-
                     await supabase.from('reservations_stock').delete().eq('picking_id', pickingId);
                     await supabase.from('picking_details').delete().eq('picking_id', pickingId);
-
-                    const { error: updErr } = await supabase.from('picking').update(pickingHeader).eq('id', pickingId);
-                    if (updErr) throw updErr;
+                    await supabase.from('picking').update(pickingHeader).eq('id', pickingId);
                 } else {
                     const { data: newPick, error: pickErr } = await supabase
                         .from('picking')
@@ -731,10 +537,7 @@
                     pickingId = newPick.id;
                 }
 
-                const newStockDeductions = new Map();
-                const reservationsPayload = [];
                 const detailsPayload = [];
-
                 currentOrderLines.forEach((item, index) => {
                     const mainRow = document.querySelector(`tr.main-row[data-index="${index}"]`);
                     if (!mainRow) return;
@@ -749,12 +552,6 @@
                         if (lotVal || qtePrep > 0) {
                             totalLotsCount++;
                             totalPrepareVal += qtePrep;
-
-                            if (stockId && qtePrep > 0) {
-                                const currentSum = newStockDeductions.get(stockId) || 0;
-                                newStockDeductions.set(stockId, currentSum + qtePrep);
-                            }
-                            
                             detailsPayload.push({
                                 picking_id: pickingId,
                                 suivi_id: activeSuiviId,
@@ -764,11 +561,10 @@
                                 article: item.article,
                                 designation_article: item.designation_article || '',
                                 lot: lotVal || 'STANDARD',
-                                magasin: r.dataset.magasin || item.magasin || 'PRINCIPAL',
+                                magasin: r.dataset.magasin || 'PRINCIPAL',
                                 quantite_commandee: Number(item.quantite_commandee || 0),
                                 quantite_preparee: qtePrep,
-                                quantite_restante: Math.max(0, Number(item.quantite_commandee || 0) - qtePrep),
-                                unite: item.unite || 'KG',
+                                unite: 'KG',
                                 preparateur: currentUserProfileId,
                                 statut: targetStatut === 'PICKING' ? 'VALIDE' : 'EN_COURS'
                             });
@@ -776,7 +572,6 @@
                     };
 
                     collectRowData(mainRow);
-
                     let next = mainRow.nextElementSibling;
                     while (next && next.classList.contains(`sub-row-${index}`)) {
                         collectRowData(next);
@@ -784,106 +579,29 @@
                     }
                 });
 
-                let insertedDetails = [];
                 if (detailsPayload.length > 0) {
-                    const { data: insDetails, error: detErr } = await supabase
-                        .from('picking_details')
-                        .insert(detailsPayload)
-                        .select('id, article, lot, stock_id, quantite_preparee, magasin');
-                    
-                    if (detErr) throw detErr;
-                    insertedDetails = insDetails || [];
+                    await supabase.from('picking_details').insert(detailsPayload);
                 }
 
-                insertedDetails.forEach(detail => {
-                    if (detail.stock_id && detail.quantite_preparee > 0) {
-                        reservationsPayload.push({
-                            stock_id: detail.stock_id,
-                            picking_id: pickingId,
-                            picking_detail_id: detail.id,
-                            suivi_id: activeSuiviId,
-                            document_vente: currentDocNumber,
-                            article: detail.article,
-                            designation_article: currentOrderLines.log ? '' : (currentOrderLines.find(l => l.article === detail.article)?.designation_article || ''),
-                            lot: detail.lot,
-                            magasin: detail.magasin || 'PRINCIPAL',
-                            quantite_reservee: detail.quantite_preparee,
-                            unite: 'KG',
-                            statut: targetStatut === 'PICKING' ? 'VALIDEE' : 'RESERVEE',
-                            est_active: true,
-                            reserve_par: currentUserProfileId
-                        });
-                    }
-                });
-
-                if (reservationsPayload.length > 0) {
-                    const { error: resErr } = await supabase.from('reservations_stock').insert(reservationsPayload);
-                    if (resErr) throw resErr;
-                }
-
-                const allStockIds = new Set([...oldReservationsMap.keys(), ...newStockDeductions.keys()]);
-
-                for (let stockId of allStockIds) {
-                    const oldQty = oldReservationsMap.get(stockId) || 0;
-                    const newQty = newStockDeductions.get(stockId) || 0;
-                    const diff = newQty - oldQty;
-
-                    if (diff !== 0) {
-                        const { data: stockRow, error: fetchStockErr } = await supabase
-                            .from('stock')
-                            .select('stock_reserve')
-                            .eq('id', stockId)
-                            .single();
-
-                        if (!fetchStockErr && stockRow) {
-                            const currentReserve = Number(stockRow.stock_reserve || 0);
-                            const updatedReserve = Math.max(0, currentReserve + diff);
-
-                            await supabase
-                                .from('stock')
-                                .update({ 
-                                    stock_reserve: updatedReserve, 
-                                    updated_at: new Date().toISOString() 
-                                })
-                                .eq('id', stockId);
-                        }
-                    }
-                }
-
-                const finalProgression = totalQuantiteCmd > 0 ? Math.min(100, (totalPrepareVal / totalQuantiteCmd) * 100) : 0;
-                await supabase.from('picking').update({
-                    total_lots: totalLotsCount,
-                    total_prepare: totalPrepareVal,
-                    progression: finalProgression.toFixed(2)
-                }).eq('id', pickingId);
-
-                const newSuiviStatut = targetStatut === 'PICKING' ? 'PICKING_TERMINE' : 'EN_PICKING';
                 await supabase
                     .from('suivi_commandes_lancer')
                     .update({ 
-                        statut: newSuiviStatut,
-                        picking_par: currentUserProfileId,
-                        date_debut_picking: new Date().toISOString(),
-                        date_fin_picking: targetStatut === 'PICKING' ? new Date().toISOString() : null
+                        statut: targetStatut === 'PICKING' ? 'PICKING_TERMINE' : 'EN_PICKING',
+                        picking_par: currentUserProfileId
                     })
                     .eq('id', activeSuiviId);
 
-                alert(targetStatut === 'PICKING' ? "Préparation validée et stock réservé mis à jour avec succès !" : "Préparation enregistrée et stock réservé mis à jour avec succès !");
+                alert(targetStatut === 'PICKING' ? "Préparation validée avec succès !" : "Préparation enregistrée avec succès !");
                 window.location.reload();
 
             } catch (err) {
-                console.error("Erreur technique détaillée:", err);
-                alert("Erreur lors de l'enregistrement: " + (err.message || JSON.stringify(err)));
+                console.error("Erreur enregistrement:", err);
+                alert("Erreur lors de l'enregistrement: " + err.message);
             }
         }
 
-        window.savePicking = function() {
-            saveOrValidatePicking('EN_COURS');
-        }
-
-        window.validatePicking = function() {
-            saveOrValidatePicking('PICKING');
-        }
+        window.savePicking = () => saveOrValidatePicking('EN_COURS');
+        window.validatePicking = () => saveOrValidatePicking('PICKING');
     </script>
 </body>
 </html>

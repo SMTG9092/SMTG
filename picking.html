@@ -172,6 +172,30 @@
                 return;
             }
 
+            // Récupérer l'ancien picking s'il existe pour charger les lots et quantités saisis précédemment
+            const { data: existingPicking } = await supabase
+                .from('picking')
+                .select('id')
+                .eq('document_vente', numCmd)
+                .maybeSingle();
+
+            let existingDetailsMap = {};
+            if (existingPicking) {
+                const { data: detailsData } = await supabase
+                    .from('picking_details')
+                    .select('*')
+                    .eq('picking_id', existingPicking.id);
+
+                if (detailsData) {
+                    detailsData.forEach(d => {
+                        if (!existingDetailsMap[d.ligne_commande]) {
+                            existingDetailsMap[d.ligne_commande] = [];
+                        }
+                        existingDetailsMap[d.ligne_commande].push(d);
+                    });
+                }
+            }
+
             if (statutActuel === 'LANCEE') {
                 const { data: authData } = await supabase.auth.getUser();
                 const userId = authData?.user?.id || null;
@@ -199,35 +223,85 @@
             document.getElementById('infoStatut').textContent = premiereLigne.statut || '-';
             document.getElementById('tableCountBadge').textContent = `${dataCmd.length} postes`;
 
+            window.selectedLotsData = {};
             let html = "";
+
             for (const row of dataCmd) {
                 const qteCmd = Number(row.quantite_commandee || 0);
-                const qtePrepActuelle = row.quantite_preparee !== null ? Number(row.quantite_preparee) : 0;
+                const posteNum = row.Poste;
+                const detailsPoste = existingDetailsMap[posteNum] || [];
                 
-                const uniqueId = `${row.Poste}_${Math.random().toString(36).substr(2, 5)}`;
+                if (detailsPoste.length === 0) {
+                    const qtePrepActuelle = row.quantite_preparee !== null ? Number(row.quantite_preparee) : 0;
+                    const uniqueId = `${posteNum}_${Math.random().toString(36).substr(2, 5)}`;
 
-                html += `
-                    <tr class="hover:bg-slate-800/30 transition row-poste" data-poste="${row.Poste}" data-qte-cmd="${qteCmd}" data-article="${row.article}">
-                        <td class="p-3.5 text-amber-400 font-bold">${row.Poste}</td>
-                        <td class="p-3.5 text-sky-400">${row.article}</td>
-                        <td class="p-3.5 text-slate-200">${row.designation_article}</td>
-                        <td class="p-3.5 text-right font-bold text-slate-100" id="qte_cmd_${row.Poste}">${qteCmd.toFixed(3)}</td>
-                        <td class="p-3.5 text-right font-bold text-emerald-400" id="qte_aff_${row.Poste}">${qtePrepActuelle.toFixed(3)}</td>
-                        <td class="p-3.5 text-center relative">
-                            <div class="relative w-44 mx-auto">
-                                <input type="text" id="input_lot_${uniqueId}" placeholder="Taper lot..." oninput="filtrerLots('${row.article}', this.value, '${uniqueId}')" class="bg-slate-950 border border-slate-700 text-slate-200 text-center px-2 py-1 rounded-lg text-xs w-full focus:outline-none focus:border-emerald-500 uppercase">
-                                <div id="dropdown_lot_${uniqueId}" class="absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl max-h-48 overflow-y-auto hidden z-50 divide-y divide-slate-800 text-left"></div>
-                            </div>
-                        </td>
-                        <td class="p-3.5 text-center">
-                            <input type="number" step="0.001" id="input_qte_${uniqueId}" placeholder="" oninput="verifierEtRecalculer('${numCmd}', ${row.Poste}, '${uniqueId}')" class="qte-saisie-input bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500" value="${qtePrepActuelle > 0 ? qtePrepActuelle : ''}">
-                            <div id="info_disp_${uniqueId}" class="text-[10px] text-slate-400 mt-1 font-mono"></div>
-                        </td>
-                        <td class="p-3.5 text-center">
-                            <button id="btn_add_${row.Poste}" onclick="ajouterLigneSup(${row.Poste}, '${row.article}', '${numCmd}')" class="w-7 h-7 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded-lg transition flex items-center justify-center mx-auto cursor-pointer" title="Ajouter un lot">+</button>
-                        </td>
-                    </tr>
-                `;
+                    html += `
+                        <tr class="hover:bg-slate-800/30 transition row-poste" data-poste="${posteNum}" data-qte-cmd="${qteCmd}" data-article="${row.article}">
+                            <td class="p-3.5 text-amber-400 font-bold">${posteNum}</td>
+                            <td class="p-3.5 text-sky-400">${row.article}</td>
+                            <td class="p-3.5 text-slate-200">${row.designation_article}</td>
+                            <td class="p-3.5 text-right font-bold text-slate-100" id="qte_cmd_${posteNum}">${qteCmd.toFixed(3)}</td>
+                            <td class="p-3.5 text-right font-bold text-emerald-400" id="qte_aff_${posteNum}">${qtePrepActuelle.toFixed(3)}</td>
+                            <td class="p-3.5 text-center relative">
+                                <div class="relative w-44 mx-auto">
+                                    <input type="text" id="input_lot_${uniqueId}" placeholder="Taper lot..." oninput="filtrerLots('${row.article}', this.value, '${uniqueId}')" class="bg-slate-950 border border-slate-700 text-slate-200 text-center px-2 py-1 rounded-lg text-xs w-full focus:outline-none focus:border-emerald-500 uppercase">
+                                    <div id="dropdown_lot_${uniqueId}" class="absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl max-h-48 overflow-y-auto hidden z-50 divide-y divide-slate-800 text-left"></div>
+                                </div>
+                            </td>
+                            <td class="p-3.5 text-center">
+                                <input type="number" step="0.001" id="input_qte_${uniqueId}" placeholder="" oninput="verifierEtRecalculer('${numCmd}', ${posteNum}, '${uniqueId}')" class="qte-saisie-input bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500" value="${qtePrepActuelle > 0 ? qtePrepActuelle : ''}">
+                                <div id="info_disp_${uniqueId}" class="text-[10px] text-slate-400 mt-1 font-mono"></div>
+                            </td>
+                            <td class="p-3.5 text-center">
+                                <button id="btn_add_${posteNum}" onclick="ajouterLigneSup(${posteNum}, '${row.article}', '${numCmd}')" class="w-7 h-7 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded-lg transition flex items-center justify-center mx-auto cursor-pointer" title="Ajouter un lot">+</button>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    let totalPrepPoste = 0;
+                    detailsPoste.forEach(det => totalPrepPoste += Number(det.quantite_preparee));
+
+                    detailsPoste.forEach((det, idx) => {
+                        const uniqueId = `${posteNum}_${idx}_${Math.random().toString(36).substr(2, 5)}`;
+                        
+                        window.selectedLotsData[uniqueId] = {
+                            stock_id: det.stock_id,
+                            lot: det.lot,
+                            stock_disponible: 999999,
+                            magasin: det.magasin,
+                            emplacement: det.emplacement
+                        };
+
+                        const isFirst = (idx === 0);
+                        const rowClass = isFirst ? "row-poste" : "row-sup bg-slate-900/45 border-t border-slate-800/30";
+                        
+                        html += `
+                            <tr class="hover:bg-slate-800/30 transition ${rowClass}" data-poste="${posteNum}" data-qte-cmd="${qteCmd}" data-article="${row.article}">
+                                <td class="p-3.5 text-amber-400 font-bold">${posteNum} ${!isFirst ? '<span class="text-[9px] text-emerald-400">(Lot+)</span>' : ''}</td>
+                                <td class="p-3.5 text-sky-400">${row.article}</td>
+                                <td class="p-3.5 text-slate-200">${isFirst ? row.designation_article : '<span class="italic text-slate-400">Lot additionnel</span>'}</td>
+                                <td class="p-3.5 text-right font-bold text-slate-100" ${isFirst ? `id="qte_cmd_`+posteNum+`"` : ''}>${isFirst ? qteCmd.toFixed(3) : '-'}</td>
+                                <td class="p-3.5 text-right font-bold text-emerald-400" ${isFirst ? `id="qte_aff_`+posteNum+`"` : ''}>${isFirst ? totalPrepPoste.toFixed(3) : '-'}</td>
+                                <td class="p-3.5 text-center relative">
+                                    <div class="relative w-44 mx-auto">
+                                        <input type="text" id="input_lot_${uniqueId}" value="${det.lot}" placeholder="Taper lot..." oninput="filtrerLots('${row.article}', this.value, '${uniqueId}')" class="bg-slate-950 border border-slate-700 text-slate-200 text-center px-2 py-1 rounded-lg text-xs w-full focus:outline-none focus:border-emerald-500 uppercase">
+                                        <div id="dropdown_lot_${uniqueId}" class="absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl max-h-48 overflow-y-auto hidden z-50 divide-y divide-slate-800 text-left"></div>
+                                    </div>
+                                </td>
+                                <td class="p-3.5 text-center">
+                                    <input type="number" step="0.001" id="input_qte_${uniqueId}" placeholder="" oninput="verifierEtRecalculer('${numCmd}', ${posteNum}, '${uniqueId}')" class="qte-saisie-input bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500" value="${det.quantite_preparee}">
+                                    <div id="info_disp_${uniqueId}" class="text-[10px] text-slate-400 mt-1 font-mono"></div>
+                                </td>
+                                <td class="p-3.5 text-center">
+                                    ${isFirst ? 
+                                        `<button id="btn_add_${posteNum}" onclick="ajouterLigneSup(${posteNum}, '${row.article}', '${numCmd}')" class="w-7 h-7 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded-lg transition flex items-center justify-center mx-auto cursor-pointer" title="Ajouter un lot">+</button>` :
+                                        `<button onclick="supprimerLigneSup(this, '${numCmd}', ${posteNum})" class="w-7 h-7 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg transition flex items-center justify-center mx-auto cursor-pointer" title="Supprimer">-</button>`
+                                    }
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
             }
             tbody.innerHTML = html;
         };
@@ -307,7 +381,7 @@
             const lotObj = window.selectedLotsData[uniqueId];
             const stockDisp = lotObj ? lotObj.stock_disponible : undefined;
 
-            if (stockDisp !== undefined && saisieVal > stockDisp) {
+            if (stockDisp !== undefined && stockDisp !== 999999 && saisieVal > stockDisp) {
                 infoDiv.innerHTML = `<span class="text-rose-400 font-bold animate-pulse">Max dispo : ${stockDisp.toFixed(3)}</span>`;
                 qteInp.classList.add('border-rose-500', 'text-rose-400');
             } else {
@@ -436,6 +510,28 @@
             const suiviId = suiviData.id;
             const clientNom = document.getElementById('infoClient').textContent;
 
+            // Récupérer l'ancien picking_id et les détails pour calculer le delta du stock
+            const { data: oldPicking } = await supabase
+                .from('picking')
+                .select('id')
+                .eq('document_vente', numCmd)
+                .maybeSingle();
+
+            let oldDetailsMap = {};
+            if (oldPicking) {
+                const { data: oldDetails } = await supabase
+                    .from('picking_details')
+                    .select('stock_id, quantite_preparee')
+                    .eq('picking_id', oldPicking.id);
+                
+                if (oldDetails) {
+                    oldDetails.forEach(d => {
+                        if (!oldDetailsMap[d.stock_id]) oldDetailsMap[d.stock_id] = 0;
+                        oldDetailsMap[d.stock_id] += Number(d.quantite_preparee);
+                    });
+                }
+            }
+
             const allRows = document.querySelectorAll('tr.row-poste, tr.row-sup');
             let detailsToInsert = [];
             let totalLotsCount = 0;
@@ -443,7 +539,7 @@
             let totalPrepareSum = 0;
             let articlesSet = new Set();
             
-            let stockUpdatesMap = {};
+            let newStockMap = {};
 
             for (const row of allRows) {
                 const poste = row.getAttribute('data-poste');
@@ -458,7 +554,7 @@
                 const qteBrute = inputQte.value.trim();
 
                 if (qteBrute === "") {
-                    alert(`Erreur (Poste ${poste}) : Le champ de la quantité préparée ne doit pas être vide. Veuillez saisir '0' ou une valeur.`);
+                    alert(`Erreur (Poste ${poste}) : Le champ de la quantité préparée ne doit pas être vide.`);
                     inputQte.focus();
                     return;
                 }
@@ -467,7 +563,7 @@
 
                 if (qteVal > 0) {
                     if (!lotVal) {
-                        alert(`Erreur (Poste ${poste}) : Le champ 'Lot' est obligatoire puisque la quantité préparée est supérieure à 0.`);
+                        alert(`Erreur (Poste ${poste}) : Le champ 'Lot' est obligatoire.`);
                         inputLot.focus();
                         return;
                     }
@@ -476,7 +572,7 @@
                     const lotObj = window.selectedLotsData[uniqueId];
 
                     if (!lotObj || !lotObj.stock_id) {
-                        alert(`Erreur (Poste ${poste}) : Veuillez sélectionner un lot valide depuis la liste déroulante.`);
+                        alert(`Erreur (Poste ${poste}) : Veuillez sélectionner un lot valide depuis la liste.`);
                         inputLot.focus();
                         return;
                     }
@@ -508,10 +604,8 @@
                         est_valide: false
                     });
 
-                    if (!stockUpdatesMap[lotObj.stock_id]) {
-                        stockUpdatesMap[lotObj.stock_id] = 0;
-                    }
-                    stockUpdatesMap[lotObj.stock_id] += qteVal;
+                    if (!newStockMap[lotObj.stock_id]) newStockMap[lotObj.stock_id] = 0;
+                    newStockMap[lotObj.stock_id] += qteVal;
 
                 } 
                 else if (qteVal === 0) {
@@ -544,7 +638,7 @@
                 .single();
 
             if (pickErr || !pickingHeader) {
-                alert("Erreur lors de l'enregistrement de l'en-tête du picking : " + (pickErr?.message || 'Erreur inconnue'));
+                alert("Erreur lors de l'enregistrement de l'en-tête : " + (pickErr?.message || 'Erreur inconnue'));
                 return;
             }
 
@@ -553,38 +647,40 @@
             await supabase.from('picking_details').delete().eq('picking_id', pickingId);
 
             if (detailsToInsert.length > 0) {
-                detailsToInsert.forEach(item => {
-                    item.picking_id = pickingId;
-                });
-
-                const { error: detailsErr } = await supabase
-                    .from('picking_details')
-                    .insert(detailsToInsert);
-
+                detailsToInsert.forEach(item => item.picking_id = pickingId);
+                const { error: detailsErr } = await supabase.from('picking_details').insert(detailsToInsert);
                 if (detailsErr) {
-                    alert("Erreur lors de l'enregistrement des détails du picking : " + detailsErr.message);
+                    alert("Erreur lors de l'enregistrement des détails : " + detailsErr.message);
                     return;
                 }
             }
 
-            // Mise à jour de stock_reserve dans la table stock
-            for (const [stockId, qteReserver] of Object.entries(stockUpdatesMap)) {
-                const { data: currentStock, error: fetchStockErr } = await supabase
-                    .from('stock')
-                    .select('stock_reserve')
-                    .eq('id', stockId)
-                    .single();
+            // Mise à jour de stock_reserve en fonction du delta calculé (différence)
+            let allStockIds = new Set([...Object.keys(oldDetailsMap), ...Object.keys(newStockMap)]);
 
-                if (!fetchStockErr && currentStock) {
-                    const nouveauStockReserve = Number(currentStock.stock_reserve || 0) + Number(qteReserver);
-                    
-                    await supabase
+            for (const stockId of allStockIds) {
+                const oldQte = oldDetailsMap[stockId] || 0;
+                const newQte = newStockMap[stockId] || 0;
+                const delta = newQte - oldQte;
+
+                if (delta !== 0) {
+                    const { data: currentStock, error: fetchErr } = await supabase
                         .from('stock')
-                        .update({ 
-                            stock_reserve: nouveauStockReserve,
-                            updated_at: new Date().toISOString()
-                        })
-                        .eq('id', stockId);
+                        .select('stock_reserve')
+                        .eq('id', stockId)
+                        .single();
+
+                    if (!fetchErr && currentStock) {
+                        const updatedReserve = Number(currentStock.stock_reserve || 0) + delta;
+                        
+                        await supabase
+                            .from('stock')
+                            .update({ 
+                                stock_reserve: Math.max(0, updatedReserve),
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq('id', stockId);
+                    }
                 }
             }
 
@@ -595,7 +691,7 @@
                 })
                 .eq('document_vente', numCmd);
 
-            alert("Commande enregistrée avec succès, stock réservé et statut mis à jour !");
+            alert("Enregistrement réussi ! Stock réservé mis à jour selon la différence.");
         };
 
         window.actionModifier = function() {

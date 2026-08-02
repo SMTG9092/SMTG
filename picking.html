@@ -98,7 +98,7 @@
                             <th class="p-3.5 text-right text-emerald-400">Quantité Préparée</th>
                             <th class="p-3.5 text-center">Lot</th>
                             <th class="p-3.5 text-center">Qte Prép (Saisie)</th>
-                            <th class="p-3.5 text-center">Unité</th>
+                            <th class="p-3.5 text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody id="pickingTableBody" class="divide-y divide-slate-800/50 font-mono">
@@ -193,7 +193,7 @@
                 const qtePrepActuelle = row.quantite_preparee !== null ? Number(row.quantite_preparee) : 0;
                 
                 html += `
-                    <tr class="hover:bg-slate-800/30 transition">
+                    <tr class="hover:bg-slate-800/30 transition" id="row_${row.Poste}">
                         <td class="p-3.5 text-amber-400 font-bold">${row.Poste}</td>
                         <td class="p-3.5 text-sky-400">${row.article}</td>
                         <td class="p-3.5 text-slate-200">${row.designation_article}</td>
@@ -205,11 +205,39 @@
                         <td class="p-3.5 text-center">
                             <input type="number" step="0.001" placeholder="" oninput="mettreAJourQtePrep('${numCmd}', ${row.Poste}, this.value)" class="bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500">
                         </td>
-                        <td class="p-3.5 text-center text-slate-400">${row.unite || 'KG'}</td>
+                        <td class="p-3.5 text-center">
+                            <button onclick="ajouterLigneSup(${row.Poste}, '${row.article}', '${numCmd}')" class="w-7 h-7 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded-lg transition flex items-center justify-center mx-auto cursor-pointer" title="Ajouter un lot">+</button>
+                        </td>
                     </tr>
                 `;
             });
             tbody.innerHTML = html;
+        };
+
+        window.ajouterLigneSup = function(poste, article, numCmd) {
+            const tbody = document.getElementById("pickingTableBody");
+            const trOriginal = document.getElementById(`row_${poste}`);
+            if (!trOriginal) return;
+
+            const trSup = document.createElement('tr');
+            trSup.className = "hover:bg-slate-800/30 transition border-t border-slate-800/30 bg-slate-900/40";
+            trSup.innerHTML = `
+                <td class="p-3.5 text-amber-400/50 font-bold">${poste} <span class="text-[9px] text-emerald-400">(Lot+)</span></td>
+                <td class="p-3.5 text-sky-400/50">${article}</td>
+                <td class="p-3.5 text-slate-400 italic">Lot additionnel</td>
+                <td class="p-3.5 text-right text-slate-500">-</td>
+                <td class="p-3.5 text-right text-slate-500">-</td>
+                <td class="p-3.5 text-center">
+                    <input type="text" maxlength="20" placeholder="" class="bg-slate-950 border border-slate-700 text-slate-200 text-center px-2 py-1 rounded-lg text-xs w-36 focus:outline-none focus:border-emerald-500 uppercase">
+                </td>
+                <td class="p-3.5 text-center">
+                    <input type="number" step="0.001" placeholder="" class="bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500">
+                </td>
+                <td class="p-3.5 text-center">
+                    <button onclick="this.closest('tr').remove()" class="w-7 h-7 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg transition flex items-center justify-center mx-auto cursor-pointer" title="Supprimer">-</button>
+                </td>
+            `;
+            trOriginal.after(trSup);
         };
 
         window.mettreAJourQtePrep = async function(documentVente, poste, valeur) {

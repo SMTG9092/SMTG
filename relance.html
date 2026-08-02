@@ -111,6 +111,7 @@
     <script type="module">
         import supabase from '../assets/js/core/supabase.js';
 
+        // 1. Recherche par N° Commande avec Filtrage Sarim dyal les Statuts
         window.rechercherParCommande = async function() {
             const val = document.getElementById('inputCmd').value.trim();
             if (!val) {
@@ -129,9 +130,31 @@
                 return;
             }
 
-            window.open(`bon_preparation.html?cmd=${val}`, '_blank');
+            const cmd = data[0];
+            const statut = cmd.statut ? cmd.statut.toUpperCase().trim() : '';
+
+            // 1. Ila baqa IMPORTEE (matlonsatx)
+            if (statut === 'IMPORTEE') {
+                alert(`⚠️ La commande ${val} est encore à l'état [IMPORTEE]. Elle n'a pas encore été lancée !`);
+                return;
+            }
+
+            // 2. Ila djawt l marahil lokhrin (EN_PICKING, PICKING_TERMINE, EN_AB10, EXPEDIEE, ANNULEE)
+            const statutsInterdits = ['EN_PICKING', 'PICKING_TERMINE', 'EN_AB10', 'EXPEDIEE', 'ANNULEE'];
+            if (statutsInterdits.includes(statut)) {
+                alert(`❌ Impossible d'ouvrir cette commande. Elle a déjà dépassé l'étape de lancement (Statut actuel : ${statut}).`);
+                return;
+            }
+
+            // 3. Ila kant b الصح LANCEE
+            if (statut === 'LANCEE') {
+                window.open(`bon_preparation.html?cmd=${val}`, '_blank');
+            } else {
+                alert(`⚠️ Statut de la commande non reconnu ou non autorisé : "${statut}"`);
+            }
         };
 
+        // 2. Recherche par N° de Lancement
         window.rechercherParLancement = async function() {
             const val = document.getElementById('inputLancement').value.trim();
             if (!val) {
@@ -157,6 +180,7 @@
             }
         };
 
+        // 3. Charger l'historique récent des commandes lancées
         async function loadHistorique() {
             const tbody = document.getElementById('historiqueTableBody');
             

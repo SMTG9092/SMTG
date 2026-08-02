@@ -194,6 +194,17 @@
             return `${year}-${month}-${day}`;
         }
 
+        // Fonction pour formater la date en format français (JJ/MM/AAAA)
+        function formatDateFr(dateStr) {
+            if (!dateStr) return '-';
+            // Si la date vient sous format YYYY-MM-DD
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            return dateStr;
+        }
+
         const today = new Date();
         document.getElementById('dateDebut').value = getLocalDateString(today);
         const demain = new Date(today);
@@ -225,7 +236,6 @@
             const dateDebut = document.getElementById('dateDebut').value;
             const dateFin = document.getElementById('dateFin').value;
             
-            // 1. Charger Stats Globales
             let queryStats = supabase.from('commandes_excel').select('document_vente, statut, date_livraison');
             if (dateDebut) queryStats = queryStats.gte('date_livraison', dateDebut);
             if (dateFin) queryStats = queryStats.lte('date_livraison', dateFin);
@@ -278,7 +288,7 @@
                     <tr class="hover:bg-slate-800/30 transition">
                         <td class="p-3.5 font-bold text-emerald-400">${item.document_vente}</td>
                         <td class="p-3.5 text-slate-200">${item.nom_receptionnaire || 'Client Divers'}</td>
-                        <td class="p-3.5 text-sky-300 font-mono">${item.date_livraison || '-'}</td>
+                        <td class="p-3.5 text-sky-300 font-mono">${formatDateFr(item.date_livraison)}</td>
                         <td class="p-3.5 text-center font-bold text-sky-400">${nbPostes} Postes</td>
                         <td class="p-3.5 text-right font-bold text-slate-100">${totalKg.toFixed(2)} KG</td>
                         <td class="p-3.5 text-right font-bold text-emerald-400">${totalPieces} Pcs</td>
@@ -521,10 +531,7 @@
             }
 
             alert(`La tournée "${tourneeName}" a été lancée avec succès (${uniqueDocs.length} commandes) !`);
-            
-            // Fath صفحة bon_preparation_tournee.html مع تمرير اسم Tournée مقاد في URL
             window.open(`bon_preparation_tournee.html?tournee=${encodeURIComponent(tourneeName)}`, '_blank');
-            
             loadSuiviCommandes();
         };
 

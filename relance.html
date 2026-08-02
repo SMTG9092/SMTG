@@ -45,8 +45,8 @@
         </div>
     </header>
 
-    <!-- MAIN WRAPPER -->
-    <main class="flex-1 p-6 overflow-hidden flex flex-col gap-5 max-w-5xl mx-auto w-full">
+    <!-- MAIN WRAPPER (Wsi3naha 3la ṭoul l-écran) -->
+    <main class="flex-1 p-6 overflow-hidden flex flex-col gap-5 w-full">
         
         <!-- CARD DE RECHERCHE -->
         <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl shrink-0">
@@ -139,7 +139,7 @@
                 return;
             }
 
-            // 2. Ila djawt l marahil lokhrin (EN_PICKING, PICKING_TERMINE, EN_AB10, EXPEDIEE, ANNULEE)
+            // 2. Ila dzwat l marahil lokhrin (EN_PICKING, PICKING_TERMINE, EN_AB10, EXPEDIEE, ANNULEE)
             const statutsInterdits = ['EN_PICKING', 'PICKING_TERMINE', 'EN_AB10', 'EXPEDIEE', 'ANNULEE'];
             if (statutsInterdits.includes(statut)) {
                 alert(`❌ Impossible d'ouvrir cette commande. Elle a déjà dépassé l'étape de lancement (Statut actuel : ${statut}).`);

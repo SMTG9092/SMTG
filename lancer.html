@@ -424,28 +424,108 @@
             setTimeout(() => modal.classList.add("hidden"), 300);
         };
 
+        // FONCTION AUXILIAIRE POUR GÉNÉRER LE NUMERO DE LANCEMENT (C-JJMMYY-XXX ou T-JJMMYY-XXX)
+        async function genererNumLancement(prefix) {
+            const now = new Date();
+            const jj = String(now.getDate()).padStart(2, '0');
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const yy = String(now.getFullYear()).slice(-2);
+            const datePrefix = `${prefix}-${jj}${mm}${yy}-`;
+
+            const { data } = await supabase
+                .from('suivi_commandes_lancer')
+                .select('num_lancement')
+                .like('num_lancement', `${datePrefix}%`);
+
+            let nextSeq = 1;
+            if (data && data.length > 0) {
+                const seqs = data.map(item => {
+                    if (!item.num_lancement) return 0;
+                    const parts = item.num_lancement.split('-');
+                    return parseInt(parts[parts.length - 1], 10) || 0;
+                });
+                nextSeq = Math.max(...seqs, 0) + 1;
+            }
+            return `${datePrefix}${String(nextSeq).padStart(3, '0')}`;
+        }
+
+        // LANCEMENT PAR COMMANDE
         window.lancerCommande = async function(docVente) {
             if (!confirm(`Voulez-vous lancer la commande ${docVente} ?`)) return;
             
-            const { error } = await supabase.from('commandes_excel').update({ statut: 'LANCEE', updated_at: new Date().toISOString() }).eq('document_vente', docVente);
-            if (error) { alert("Erreur: " + error.message); return; }
+            const { data: { user } } = await supabase.auth.getUser();
+            const userId = user ? user.id : null;
+            const numLancement = await genererNumLancement('C');
+            const nowIso = new Date().toISOString();
+
+            // 1. Mettre à jour commandes_excel
+            const { error: err1 } = await supabase
+                .from('commandes_excel')
+                .update({ statut: 'LANCEE', updated_at: nowIso })
+                .eq('document_vente', docVente);
+                
+            if (err1) { alert("Erreur commandes_excel: " + err1.message); return; }
+
+            // 2. Mettre à jour suivi_commandes_lancer
+            const { error: err2 } = await supabase
+                .from('suivi_commandes_lancer')
+                .update({
+                    statut: 'LANCEE',
+                    num_lancement: numLancement,
+                    lance_par: userId,
+                    date_lancement: nowIso,
+                    updated_at: nowIso
+                })
+                .eq('document_vente', docVente);
+
+            if (err2) { alert("Erreur suivi_commandes_lancer: " + err2.message); return; }
             
             window.open(`bon_preparation.html?cmd=${docVente}`, '_blank');
             loadSuiviCommandes();
         };
 
+        // LANCEMENT PAR TOURNEE
         window.lancerTournee = async function(tourneeName) {
             if (!confirm(`Voulez-vous vraiment lancer toute la tournée "${tourneeName}" ?`)) return;
+            
             const dateDebut = document.getElementById('dateDebut').value;
             const dateFin = document.getElementById('dateFin').value;
 
-            let query = supabase.from('commandes_excel').update({ statut: 'LANCEE', updated_at: new Date().toISOString() }).eq('statut', 'IMPORTEE').eq('itineraire', tourneeName);
-            if (dateDebut) query = query.gte('date_livraison', dateDebut);
-            if (dateFin) query = query.lte('date_livraison', dateFin);
+            const { data: { user } } = await supabase.auth.getUser();
+            const userId = user ? user.id : null;
+            const nowIso = new Date().toISOString();
 
-            const { error } = await query;
-            if (error) { alert("Erreur: " + error.message); return; }
-            alert(`La tournée "${tourneeName}" a été lancée avec succès !`);
+            let queryDocs = supabase.from('commandes_excel').select('document_vente').eq('statut', 'IMPORTEE').eq('itineraire', tourneeName);
+            if (dateDebut) queryDocs = queryDocs.gte('date_livraison', dateDebut);
+            if (dateFin) queryDocs = queryDocs.lte('date_livraison', dateFin);
+            const { data: docsRows } = await queryDocs;
+
+            if (!docsRows || docsRows.length === 0) {
+                alert("Aucune commande trouvée pour cette tournée.");
+                return;
+            }
+
+            const uniqueDocs = [...new Set(docsRows.map(r => r.document_vente))];
+
+            for (let docVente of uniqueDocs) {
+                const numLancement = await genererNumLancement('T');
+
+                await supabase.from('commandes_excel')
+                    .update({ statut: 'LANCEE', updated_at: nowIso })
+                    .eq('document_vente', docVente);
+
+                await supabase.from('suivi_commandes_lancer')
+                    .update({
+                        statut: 'LANCEE',
+                        num_lancement: numLancement,
+                        lance_par: userId,
+                        date_lancement: nowIso,
+                        updated_at: nowIso
+                    })
+                    .eq('document_vente', docVente);
+            }
+
+            alert(`La tournée "${tourneeName}" a été lancée avec succès (${uniqueDocs.length} commandes) !`);
             loadSuiviCommandes();
         };
 

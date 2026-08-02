@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Commandes Annulées - SoufStock WMS</title>
+    <title>Gestion des Commandes Annulées - SoufStock WMS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -31,7 +31,7 @@
             </div>
             <div>
                 <span class="font-bold text-sm block">SoufStock <span class="text-rose-400">WMS</span></span>
-                <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Gestion des Commandes Annulées (Suivi Lancement)</span>
+                <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Gestion des Commandes Annulées</span>
             </div>
         </div>
         <div class="flex items-center gap-4">
@@ -51,18 +51,18 @@
         <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-lg">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-                    <i class="fas fa-filter"></i>
+                    <i class="fas fa-search"></i>
                 </div>
                 <div>
-                    <h2 class="text-xs font-bold text-slate-100 uppercase tracking-wider">Filtre & Recherche</h2>
-                    <p class="text-[11px] text-slate-400">Recherche par Document de Vente (N° Commande) ou Client</p>
+                    <h2 class="text-xs font-bold text-slate-100 uppercase tracking-wider">Recherche & Filtre</h2>
+                    <p class="text-[11px] text-slate-400">Tapez un N° de commande (ex: 4000801073) pour chercher et annuler</p>
                 </div>
             </div>
             
             <div class="flex flex-wrap items-center gap-3">
                 <div class="relative">
                     <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-                    <input type="text" id="searchInput" placeholder="N° de Commande (document_vente)..." oninput="loadCommandesAnnulees()" class="bg-slate-950 border border-slate-800 text-xs text-slate-200 pl-10 pr-4 py-2 rounded-xl focus:outline-none font-mono w-72">
+                    <input type="text" id="searchInput" placeholder="N° de Commande..." oninput="loadCommandesAnnulees()" class="bg-slate-950 border border-slate-800 text-xs text-slate-200 pl-10 pr-4 py-2 rounded-xl focus:outline-none font-mono w-72">
                 </div>
                 <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl">
                     <span class="text-[10px] text-slate-400 uppercase">Du:</span>
@@ -78,7 +78,7 @@
         <!-- TABLE CONTAINER -->
         <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl flex-1 flex flex-col">
             <div class="p-3 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs">
-                <span class="font-bold text-slate-300"><i class="fas fa-list text-rose-400 mr-2"></i> Historique des Commandes Annulées</span>
+                <span class="font-bold text-slate-300"><i class="fas fa-list text-rose-400 mr-2"></i> Historique / Résultats de Recherche</span>
                 <span id="tableCountBadge" class="bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2.5 py-1 rounded-lg font-mono text-[11px]">0 éléments</span>
             </div>
 
@@ -87,11 +87,11 @@
                     <thead class="sticky top-0 bg-slate-950 text-slate-400 uppercase text-[10px] z-10 border-b border-slate-800">
                         <tr>
                             <th class="p-3.5">N° Commande (Document Vente)</th>
+                            <th class="p-3.5">Statut Actuel</th>
                             <th class="p-3.5">N° Lancement</th>
                             <th class="p-3.5">Client / Réceptionnaire</th>
                             <th class="p-3.5">Date Livraison</th>
-                            <th class="p-3.5">Date Annulation</th>
-                            <th class="p-3.5">Motif d'Annulation</th>
+                            <th class="p-3.5">Motif / Annulation</th>
                             <th class="p-3.5 text-center">Actions</th>
                         </tr>
                     </thead>
@@ -103,12 +103,39 @@
         </div>
     </main>
 
+    <!-- MODAL MOTIF ANNULATION -->
+    <div id="cancelModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-all duration-300">
+        <div class="bg-slate-900 border border-slate-800 w-[450px] rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fas fa-triangle-exclamation text-amber-400"></i> Annulation Commande : <span id="cancelDocTitle" class="text-rose-400"></span>
+                </h3>
+                <button onclick="closeCancelModal()" class="text-slate-400 hover:text-white cursor-pointer"><i class="fas fa-xmark text-lg"></i></button>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-2 uppercase">Motif d'annulation :</label>
+                <select id="motifSelect" onchange="checkCustomMotif(this.value)" class="w-full bg-slate-950 border border-slate-800 text-xs text-slate-200 p-2.5 rounded-xl mb-3 focus:outline-none">
+                    <option value="Erreur de saisie / Erreur client">Erreur de saisie / Erreur client</option>
+                    <option value="Rupture de stock articles">Rupture de stock articles</option>
+                    <option value="Commande annulée par le client">Commande annulée par le client</option>
+                    <option value="Problème de transport / Tournée">Problème de transport / Tournée</option>
+                    <option value="AUTRE">Autre motif (Saisir manuellement)...</option>
+                </select>
+                <textarea id="motifCustomInput" placeholder="Précisez le motif..." class="w-full bg-slate-950 border border-slate-800 text-xs text-slate-200 p-2.5 rounded-xl focus:outline-none hidden h-20"></textarea>
+            </div>
+            <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                <button onclick="closeCancelModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer">Fermer</button>
+                <button onclick="confirmAnnulerCommande()" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-xl text-xs font-bold cursor-pointer shadow">Confirmer l'Annulation</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL DETAILS -->
     <div id="detailModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-all duration-300">
         <div class="bg-slate-900 border border-slate-800 w-[750px] max-h-[85vh] rounded-2xl p-6 shadow-2xl flex flex-col">
             <div class="flex items-center justify-between pb-4 border-b border-slate-800">
                 <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
-                    <i class="fas fa-ban text-rose-400"></i> Détails Articles - Commande : <span id="modalDocTitle" class="text-rose-400"></span>
+                    <i class="fas fa-box text-sky-400"></i> Détails Articles - Commande : <span id="modalDocTitle" class="text-sky-400"></span>
                 </h3>
                 <button onclick="closeModal()" class="text-slate-400 hover:text-white cursor-pointer"><i class="fas fa-xmark text-lg"></i></button>
             </div>
@@ -136,6 +163,8 @@
     <script type="module">
         import supabase from '../assets/js/core/supabase.js';
 
+        let selectedDocVente = null;
+
         function getLocalDateString(dateObj) {
             const year = dateObj.getFullYear();
             const month = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -158,19 +187,19 @@
 
             let query = supabase
                 .from('suivi_commandes_lancer')
-                .select('id, commande_id, document_vente, client, date_livraison, date_annulation, motif_annulation, num_lancement')
-                .eq('statut', 'ANNULEE');
+                .select('id, commande_id, document_vente, client, date_livraison, date_annulation, motif_annulation, num_lancement, statut');
 
-            // Ila kan l-utilisateur k-yekteb document_vente, kan-dirou search direct f la base de données b ilike
             if (searchVal) {
+                // Ila ktab l-utilisateur code f recherche, kan-cherchiw 3lih b ilike f ay statut (bash yl9a LANCEE wla ghayrha)
                 query = query.ilike('document_vente', `%${searchVal}%`);
             } else {
-                // Ila makaynach recherche, kan-appliquer les filtres d dates w order b date_annulation
+                // Ila la recherche khawya, kan-jibou ghir les commandes li statuthom ANNULEE
+                query = query.eq('statut', 'ANNULEE');
                 if (dateDebut) query = query.gte('date_livraison', dateDebut);
                 if (dateFin) query = query.lte('date_livraison', dateFin);
             }
 
-            query = query.order('date_annulation', { ascending: false });
+            query = query.order('created_at', { ascending: false });
 
             const { data: list, error } = await query;
             if (error) {
@@ -182,31 +211,98 @@
             document.getElementById('tableCountBadge').textContent = `${filteredList.length} éléments`;
 
             if (filteredList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500">Aucune commande annulée trouvée pour ce document de vente.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500">Aucune commande trouvée.</td></tr>`;
                 return;
             }
 
             let html = "";
             for (let item of filteredList) {
-                const dateAnnulStr = item.date_annulation ? new Date(item.date_annulation).toLocaleString('fr-FR') : '-';
+                const isAnnulee = item.statut === 'ANNULEE';
+                const badgeColor = isAnnulee ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-sky-500/10 text-sky-400 border-sky-500/20';
                 
+                // Ila kant déjà annulée mabanch bouton annuler, wla ila kant LANCEE iban lina bouton dyal Annuler
+                const actionBtn = isAnnulee 
+                    ? `<span class="text-rose-400 font-semibold text-[11px]">Déjà Annulée</span>`
+                    : `<button onclick="openCancelModal('${item.document_vente}')" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 mx-auto cursor-pointer shadow"><i class="fas fa-ban"></i> Annuler</button>`;
+
                 html += `
                     <tr class="hover:bg-slate-800/30 transition">
                         <td class="p-3.5 font-bold text-rose-400">${item.document_vente}</td>
+                        <td class="p-3.5"><span class="${badgeColor} border px-2 py-0.5 rounded text-[10px] font-bold">${item.statut}</span></td>
                         <td class="p-3.5 text-amber-300 font-mono">${item.num_lancement || '-'}</td>
                         <td class="p-3.5 text-slate-200">${item.client || 'Client Divers'}</td>
                         <td class="p-3.5 text-sky-300 font-mono">${item.date_livraison || '-'}</td>
-                        <td class="p-3.5 text-slate-400 text-[11px]">${dateAnnulStr}</td>
-                        <td class="p-3.5 text-slate-300"><span class="bg-rose-500/10 text-rose-300 border border-rose-500/20 px-2.5 py-1 rounded-md text-[11px]">${item.motif_annulation || 'Aucun motif spécifié'}</span></td>
-                        <td class="p-3.5 text-center">
-                            <button onclick="openDetails('${item.document_vente}')" class="bg-slate-800 hover:bg-slate-700 text-sky-400 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 mx-auto cursor-pointer shadow">
-                                <i class="fas fa-eye"></i> Articles
+                        <td class="p-3.5 text-slate-300">${item.motif_annulation || '-'}</td>
+                        <td class="p-3.5 text-center flex items-center justify-center gap-2">
+                            <button onclick="openDetails('${item.document_vente}')" class="bg-slate-800 hover:bg-slate-700 text-sky-400 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow" title="Voir les articles">
+                                <i class="fas fa-eye"></i>
                             </button>
+                            ${actionBtn}
                         </td>
                     </tr>
                 `;
             }
             tbody.innerHTML = html;
+        };
+
+        window.openCancelModal = function(docVente) {
+            selectedDocVente = docVente;
+            document.getElementById("cancelDocTitle").textContent = docVente;
+            document.getElementById("motifSelect").value = "Erreur de saisie / Erreur client";
+            document.getElementById("motifCustomInput").value = "";
+            document.getElementById("motifCustomInput").classList.add("hidden");
+            
+            const modal = document.getElementById("cancelModal");
+            modal.classList.remove("hidden");
+            setTimeout(() => modal.classList.remove("opacity-0"), 10);
+        };
+
+        window.closeCancelModal = function() {
+            const modal = document.getElementById("cancelModal");
+            modal.classList.add("opacity-0");
+            setTimeout(() => modal.classList.add("hidden"), 300);
+            selectedDocVente = null;
+        };
+
+        window.checkCustomMotif = function(val) {
+            const customInput = document.getElementById("motifCustomInput");
+            if (val === "AUTRE") {
+                customInput.classList.remove("hidden");
+                customInput.focus();
+            } else {
+                customInput.classList.add("hidden");
+            }
+        };
+
+        window.confirmAnnulerCommande = async function() {
+            if (!selectedDocVente) return;
+
+            let motif = document.getElementById("motifSelect").value;
+            if (motif === "AUTRE") {
+                motif = document.getElementById("motifCustomInput").value.trim();
+                if (!motif) {
+                    alert("Veuillez saisir un motif d'annulation valide !");
+                    return;
+                }
+            }
+
+            // Mise à jour f Supabase w t-bdel statut l ANNULEE
+            const { error } = await supabase
+                .from('suivi_commandes_lancer')
+                .update({
+                    statut: 'ANNULEE',
+                    motif_annulation: motif,
+                    date_annulation: new Date().toISOString()
+                })
+                .eq('document_vente', selectedDocVente);
+
+            if (error) {
+                alert("Erreur lors de l'annulation: " + error.message);
+                return;
+            }
+
+            closeCancelModal();
+            loadCommandesAnnulees();
         };
 
         window.openDetails = async function(docVente) {

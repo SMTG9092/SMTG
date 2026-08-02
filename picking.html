@@ -220,7 +220,7 @@
                             </div>
                         </td>
                         <td class="p-3.5 text-center">
-                            <input type="number" step="0.001" id="input_qte_${uniqueId}" placeholder="0" oninput="verifierEtRecalculer('${numCmd}', ${row.Poste}, '${uniqueId}')" class="qte-saisie-input bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500" value="${qtePrepActuelle > 0 ? qtePrepActuelle : '0'}">
+                            <input type="number" step="0.001" id="input_qte_${uniqueId}" placeholder="" oninput="verifierEtRecalculer('${numCmd}', ${row.Poste}, '${uniqueId}')" class="qte-saisie-input bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500" value="${qtePrepActuelle > 0 ? qtePrepActuelle : ''}">
                             <div id="info_disp_${uniqueId}" class="text-[10px] text-slate-400 mt-1 font-mono"></div>
                         </td>
                         <td class="p-3.5 text-center">
@@ -349,7 +349,7 @@
                     </div>
                 </td>
                 <td class="p-3.5 text-center">
-                    <input type="number" step="0.001" id="input_qte_${uniqueId}" placeholder="0" value="0" oninput="verifierEtRecalculer('${numCmd}', ${poste}, '${uniqueId}')" class="qte-saisie-input bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500">
+                    <input type="number" step="0.001" id="input_qte_${uniqueId}" placeholder="" oninput="verifierEtRecalculer('${numCmd}', ${poste}, '${uniqueId}')" class="qte-saisie-input bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500">
                     <div id="info_disp_${uniqueId}" class="text-[10px] text-slate-400 mt-1 font-mono"></div>
                 </td>
                 <td class="p-3.5 text-center">
@@ -454,14 +454,31 @@
                 if (!inputLot || !inputQte) continue;
 
                 const lotVal = inputLot.value.trim();
-                const qteVal = Number(inputQte.value || 0);
+                const qteBrute = inputQte.value.trim();
 
-                if (qteVal > 0 && lotVal) {
+                // Validation : Champ quantité vide interdit
+                if (qteBrute === "") {
+                    alert(`Erreur (Poste ${poste}) : Le champ de la quantité préparée ne doit pas être vide. Veuillez saisir '0' ou une valeur.`);
+                    inputQte.focus();
+                    return;
+                }
+
+                const qteVal = Number(qteBrute);
+
+                // Validation : Si quantité > 0, le lot est obligatoire
+                if (qteVal > 0) {
+                    if (!lotVal) {
+                        alert(`Erreur (Poste ${poste}) : Le champ 'Lot' est obligatoire puisque la quantité préparée est supérieure à 0.`);
+                        inputLot.focus();
+                        return;
+                    }
+
                     const uniqueId = inputLot.id.replace('input_lot_', '');
                     const lotObj = window.selectedLotsData[uniqueId];
 
                     if (!lotObj || !lotObj.stock_id) {
-                        alert(`Veuillez sélectionner un lot valide depuis la liste pour l'article ${article} (Poste ${poste})`);
+                        alert(`Erreur (Poste ${poste}) : Veuillez sélectionner un lot valide depuis la liste déroulante.`);
+                        inputLot.focus();
                         return;
                     }
 
@@ -491,15 +508,14 @@
                         reserve: true,
                         est_valide: false
                     });
+                } 
+                else if (qteVal === 0) {
+                    const qteCmdSpan = document.getElementById(`qte_cmd_${poste}`);
+                    const qteCmdVal = qteCmdSpan ? Number(qteCmdSpan.textContent) : 0;
+                    totalQteCmdSum += qteCmdVal;
                 }
             }
 
-            if (detailsToInsert.length === 0) {
-                alert("Aucune quantité valide avec lot n'a été saisie pour l'enregistrement.");
-                return;
-            }
-
-            totalArticlesCount = articlesSet.size;
             const progressionVal = totalQteCmdSum > 0 ? Math.min(100, (totalPrepareSum / totalQteCmdSum) * 100) : 0;
 
             const { data: pickingHeader, error: pickErr } = await supabase
@@ -510,7 +526,7 @@
                     client: clientNom,
                     preparateur: userId,
                     statut: 'PICKING',
-                    total_articles: totalArticlesCount,
+                    total_articles: articlesSet.size,
                     total_lots: totalLotsCount,
                     total_quantite: totalQteCmdSum,
                     total_prepare: totalPrepareSum,
@@ -531,20 +547,29 @@
 
             await supabase.from('picking_details').delete().eq('picking_id', pickingId);
 
-            detailsToInsert.forEach(item => {
-                item.picking_id = pickingId;
-            });
+            if (detailsToInsert.length > 0) {
+                detailsToInsert.forEach(item => {
+                    item.picking_id = pickingId;
+                });
 
-            const { error: detailsErr } = await supabase
-                .from('picking_details')
-                .insert(detailsToInsert);
+                const { error: detailsErr } = await supabase
+                    .from('picking_details')
+                    .insert(detailsToInsert);
 
-            if (detailsErr) {
-                alert("Erreur lors de l'enregistrement des détails du picking : " + detailsErr.message);
-                return;
+                if (detailsErr) {
+                    alert("Erreur lors de l'enregistrement des détails du picking : " + detailsErr.message);
+                    return;
+                }
             }
 
-            alert("Commande enregistrée et lots réservés avec succès !");
+            await supabase.from('commandes_excel')
+                .update({ 
+                    statut: 'EN_PICKING',
+                    updated_at: new Date().toISOString()
+                })
+                .eq('document_vente', numCmd);
+
+            alert("Commande enregistrée avec succès (Statut: EN_PICKING) !");
         };
 
         window.actionModifier = function() {

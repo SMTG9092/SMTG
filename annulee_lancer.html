@@ -122,7 +122,7 @@
         </div>
     </main>
 
-    <!-- MODAL DETAILS -->
+    <!-- MODAL DETAILS & INFOS ANNULATION -->
     <div id="detailModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-all duration-300">
         <div class="bg-slate-900 border border-slate-800 w-[750px] max-h-[85vh] rounded-2xl p-6 shadow-2xl flex flex-col">
             <div class="flex items-center justify-between pb-4 border-b border-slate-800">
@@ -131,6 +131,19 @@
                 </h3>
                 <button onclick="closeModal()" class="text-slate-400 hover:text-white cursor-pointer"><i class="fas fa-xmark text-lg"></i></button>
             </div>
+
+            <!-- BLOC INFO ANNULATION (ZIDNAH HNA) -->
+            <div id="modalAnnulationInfo" class="mt-4 bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 text-xs hidden">
+                <div class="flex items-center gap-2 text-rose-400 font-bold mb-1">
+                    <i class="fas fa-circle-info"></i> Informations d'annulation
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-slate-300 font-mono text-[11px]">
+                    <div><span class="text-slate-400">Annulé par:</span> <span id="infoUserAnnule" class="text-white font-bold">-</span></div>
+                    <div><span class="text-slate-400">Date:</span> <span id="infoDateAnnule" class="text-white font-bold">-</span></div>
+                    <div class="col-span-2"><span class="text-slate-400">Motif:</span> <span id="infoMotifAnnule" class="text-rose-300 font-bold">-</span></div>
+                </div>
+            </div>
+
             <div class="flex-1 overflow-y-auto py-4">
                 <table class="w-full text-left text-xs font-mono">
                     <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] border-b border-slate-800">
@@ -173,7 +186,7 @@
             </div>
             <div class="pt-3 border-t border-slate-800 flex justify-end gap-2">
                 <button onclick="closeMotifModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer">Annuler</button>
-                <button onclick="validerAnnulationAvecMotif()" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow cursor-pointer">Confirmer l'Annulation</id>
+                <button onclick="validerAnnulationAvecMotif()" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow cursor-pointer">Confirmer l'Annulation</button>
             </div>
         </div>
     </div>
@@ -256,7 +269,6 @@
             tbody.innerHTML = html;
         };
 
-        // VERIFICATION DE LA COMMANDE PAR INPUT
         window.verifierEtInitierAnnulation = async function() {
             const inputVal = document.getElementById('searchCommandeInput').value.trim();
             if (!inputVal) {
@@ -280,7 +292,6 @@
                 alert(`La commande "${inputVal}" hiya أصلاً ANNULEE!`);
                 loadCommandesAnnulees();
             } else {
-                // Ouvre modal dyal l-motif d'annulation
                 selectedDocForAnnulation = inputVal;
                 document.getElementById('modalMotifDoc').textContent = inputVal;
                 document.getElementById('motifModal').classList.remove('hidden');
@@ -295,7 +306,6 @@
             selectedDocForAnnulation = null;
         };
 
-        // VALIDER L'ANNULATION AVEC MOTIF W T-SJL F SUIVI_COMMANDES_LANCER
         window.validerAnnulationAvecMotif = async function() {
             if (!selectedDocForAnnulation) return;
 
@@ -307,7 +317,6 @@
             const userId = user ? user.id : null;
             const nowIso = new Date().toISOString();
 
-            // 1. Update commandes_excel
             const { error: err1 } = await supabase
                 .from('commandes_excel')
                 .update({ 
@@ -323,7 +332,6 @@
                 return;
             }
 
-            // 2. Update suivi_commandes_lancer b l-m3lomat dyal l'annulation
             const { error: err2 } = await supabase
                 .from('suivi_commandes_lancer')
                 .update({
@@ -346,13 +354,39 @@
             loadCommandesAnnulees();
         };
 
+        // OPEN DETAILS M3A JIBAN M3LOMAT DYAL ANNULATION (USER + MOTIF)
         window.openDetails = async function(docVente) {
             document.getElementById("modalDocTitle").textContent = docVente;
             const modalBody = document.getElementById("modalDetailsBody");
+            const annulationInfoDiv = document.getElementById("modalAnnulationInfo");
+
             modalBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Chargement...</td></tr>`;
+            annulationInfoDiv.classList.add("hidden");
             document.getElementById("detailModal").classList.remove("hidden");
             setTimeout(() => document.getElementById("detailModal").classList.remove("opacity-0"), 10);
 
+            // 1. Jib l-m3lomat dyal l'annulation mn suivi_commandes_lancer m3a l-user mn user_profiles
+            const { data: suiviData } = await supabase
+                .from('suivi_commandes_lancer')
+                .select(`
+                    date_annulation,
+                    motif_annulation,
+                    user_profiles:annule_par (full_name, email)
+                `)
+                .eq('document_vente', docVente)
+                .single();
+
+            if (suiviData && suiviData.motif_annulation) {
+                const userName = suiviData.user_profiles?.full_name || suiviData.user_profiles?.email || 'Utilisateur inconnu';
+                const dateAnnuleFormatted = suiviData.date_annulation ? new Date(suiviData.date_annulation).toLocaleString('fr-FR') : '-';
+                
+                document.getElementById('infoUserAnnule').textContent = userName;
+                document.getElementById('infoDateAnnule').textContent = dateAnnuleFormatted;
+                document.getElementById('infoMotifAnnule').textContent = suiviData.motif_annulation;
+                annulationInfoDiv.classList.remove("hidden");
+            }
+
+            // 2. Jib les articles dyal la commande
             const { data } = await supabase.from('commandes_excel').select('"Poste", article, designation_article, quantite_commandee, nombre_pieces').eq('document_vente', docVente).order('"Poste"', { ascending: true });
             let html = "";
             if (data) {
@@ -389,7 +423,6 @@
                 return;
             }
 
-            // Ila rddnaha IMPORTEE, n-ms7o l-m3lomat dyal l'annulation f suivi_commandes_lancer ila bghiti ola nkhalwliw
             await supabase
                 .from('suivi_commandes_lancer')
                 .update({ 

@@ -190,10 +190,8 @@
                 .select('id, commande_id, document_vente, client, date_livraison, date_annulation, motif_annulation, num_lancement, statut');
 
             if (searchVal) {
-                // Ila ktab l-utilisateur code f recherche, kan-cherchiw 3lih b ilike f ay statut (bash yl9a LANCEE wla ghayrha)
                 query = query.ilike('document_vente', `%${searchVal}%`);
             } else {
-                // Ila la recherche khawya, kan-jibou ghir les commandes li statuthom ANNULEE
                 query = query.eq('statut', 'ANNULEE');
                 if (dateDebut) query = query.gte('date_livraison', dateDebut);
                 if (dateFin) query = query.lte('date_livraison', dateFin);
@@ -220,7 +218,6 @@
                 const isAnnulee = item.statut === 'ANNULEE';
                 const badgeColor = isAnnulee ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-sky-500/10 text-sky-400 border-sky-500/20';
                 
-                // Ila kant déjà annulée mabanch bouton annuler, wla ila kant LANCEE iban lina bouton dyal Annuler
                 const actionBtn = isAnnulee 
                     ? `<span class="text-rose-400 font-semibold text-[11px]">Déjà Annulée</span>`
                     : `<button onclick="openCancelModal('${item.document_vente}')" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 mx-auto cursor-pointer shadow"><i class="fas fa-ban"></i> Annuler</button>`;
@@ -286,13 +283,19 @@
                 }
             }
 
-            // Mise à jour f Supabase w t-bdel statut l ANNULEE
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError || !user) {
+                alert("Erreur: Impossible de récupérer l'utilisateur connecté. Veuillez vous reconnecter.");
+                return;
+            }
+
             const { error } = await supabase
                 .from('suivi_commandes_lancer')
                 .update({
                     statut: 'ANNULEE',
                     motif_annulation: motif,
-                    date_annulation: new Date().toISOString()
+                    date_annulation: new Date().toISOString(),
+                    annule_par: user.id
                 })
                 .eq('document_vente', selectedDocVente);
 

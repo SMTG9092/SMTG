@@ -36,6 +36,13 @@
             </div>
         </a>
         <div class="flex items-center gap-3">
+            <!-- RECHERCHE RAPIDE & VERIFICATION COMMANDE -->
+            <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl">
+                <i class="fas fa-search text-xs text-rose-400"></i>
+                <input type="text" id="searchCommandeInput" placeholder="N° Commande (Ex: C-123)..." class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono w-40">
+                <button onclick="verifierEtAnnulerParInput()" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer">Vérifier</button>
+            </div>
+
             <a href="lancer.html" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
                 <i class="fas fa-arrow-left"></i> Retour au Lancement
             </a>
@@ -220,6 +227,40 @@
             tbody.innerHTML = html;
         };
 
+        // FONCTION DE VERIFICATION PAR INPUT (RECHERCHE N° COMMANDE)
+        window.verifierEtAnnulerParInput = async function() {
+            const inputVal = document.getElementById('searchCommandeInput').value.trim();
+            if (!inputVal) {
+                alert("Kteb N° dyal la commande 3afak!");
+                return;
+            }
+
+            // 1. قلب واش كاينرة ف la base
+            const { data, error } = await supabase
+                .from('commandes_excel')
+                .select('document_vente, statut')
+                .eq('document_vente', inputVal);
+
+            if (error || !data || data.length === 0) {
+                alert(`La commande "${inputVal}" mat-l9atch ga3 f la base de données!`);
+                return;
+            }
+
+            const currentStatut = data[0].statut;
+
+            if (currentStatut === 'ANNULEE') {
+                alert(`La commande "${inputVal}" hiya أصلاً ANNULEE!`);
+                loadCommandesAnnulees();
+            } else {
+                // Ila kant f statut khor, swl user wach y-rddha ANNULEE
+                const confirmAnnuler = confirm(`La commande "${inputVal}" 3ndha statut [${currentStatut}]. Wesh bghiti t-rddha ANNULEE دابا؟`);
+                if (confirmAnnuler) {
+                    await changerStatutCommande(inputVal, 'ANNULEE');
+                    document.getElementById('searchCommandeInput').value = '';
+                }
+            }
+        };
+
         window.openDetails = async function(docVente) {
             document.getElementById("modalDocTitle").textContent = docVente;
             const modalBody = document.getElementById("modalDetailsBody");
@@ -244,11 +285,9 @@
         };
 
         window.changerStatutCommande = async function(docVente, nouveauStatut) {
-            if (!confirm(`Wesh bghiti t-rdd la commande ${docVente} l statut [${nouveauStatut}] ?`)) return;
-
             const nowIso = new Date().toISOString();
 
-            // 1. Update f commandes_excel (k-t-vérifia m3a la contrainte chk_commande_statut)
+            // 1. Update f commandes_excel
             const { error: errUpdate } = await supabase
                 .from('commandes_excel')
                 .update({ 
@@ -264,7 +303,7 @@
                 return;
             }
 
-            // 2. Update f suivi_commandes_lancer (ila kánt m-rabbta)
+            // 2. Update f suivi_commandes_lancer
             await supabase
                 .from('suivi_commandes_lancer')
                 .update({ 

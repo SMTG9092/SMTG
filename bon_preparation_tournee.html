@@ -7,43 +7,20 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <style>
         @media print { 
-            @page { 
-                size: A4 landscape; 
-                margin: 0mm !important; /* Ilghi ga3 les marges dyal l-printer bach t-7yd en-tête w pied de page dyal browser */
-            } 
-            html, body { 
-                width: 100% !important;
-                height: 100% !important;
-                background: white !important; 
-                -webkit-print-color-adjust: exact; 
-                margin: 0 !important;
-                padding: 0 !important;
-            } 
+            @page { size: A4 landscape; margin: 6mm; } 
+            body { background: white; -webkit-print-color-adjust: exact; } 
             .no-print { display: none !important; } 
-            .page-sheet { 
-                page-break-after: always; 
-                break-after: page; 
-                page-break-inside: avoid; 
-                break-inside: avoid;
-                width: 100vw !important;
-                height: 100vh !important;
-                margin: 0 !important;
-                border: none !important;
-                box-shadow: none !important;
-                padding: 6mm 10mm !important;
-                box-sizing: border-box !important;
-                position: relative !important;
-            }
+            .page-sheet { page-break-after: always; break-after: page; page-break-inside: avoid; break-inside: avoid; }
         }
         
         body { background-color: #f3f4f6; margin: 0; padding: 10px; font-family: Arial, sans-serif; }
         
         .page-sheet { 
-            width: 280mm; 
-            height: 192mm; 
+            width: 276mm; 
+            height: 188mm; 
             margin: 0 auto 10mm auto; 
             background: white; 
-            padding: 5mm 8mm; 
+            padding: 4mm 6mm; 
             border: 2px solid #000; 
             box-sizing: border-box; 
             display: flex; 
@@ -53,18 +30,17 @@
             page-break-after: always; 
             break-after: page; 
             overflow: hidden;
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
         }
         
-        .header-box { border: 2px solid black; padding: 4px 10px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; flex-shrink: 0; background: #fff; }
-        .commands-container { flex-grow: 1; display: flex; flex-direction: column; gap: 4px; justify-content: flex-start; overflow: hidden; }
+        .header-box { border: 2px solid black; padding: 3px 10px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; flex-shrink: 0; background: #fff; }
+        .commands-container { flex-grow: 1; display: flex; flex-direction: column; gap: 3px; justify-content: flex-start; overflow: hidden; }
         
         .command-block { display: flex; flex-direction: column; border: 1px solid #000; padding: 2px; background: #fff; flex-shrink: 0; }
-        .command-title { font-weight: bold; font-size: 9px; background: #e5e7eb; padding: 2px 5px; border-bottom: 1px solid #000; margin-bottom: 1px; }
+        .command-title { font-weight: bold; font-size: 9px; background: #e5e7eb; padding: 1px 5px; border-bottom: 1px solid #000; margin-bottom: 1px; }
 
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        th { background-color: #e5e7eb !important; font-weight: bold; font-size: 8px; padding: 2px; border: 1px solid black; text-align: center; color: black !important; }
-        td { border: 1px solid black; padding: 2px; text-align: center; font-size: 9px; color: black !important; }
+        th { background-color: #e5e7eb !important; font-weight: bold; font-size: 8px; padding: 1px; border: 1px solid black; text-align: center; }
+        td { border: 1px solid black; padding: 1px 2px; text-align: center; font-size: 9px; }
         
         .col-article { width: 42%; } 
         .col-kg { width: 9%; } 
@@ -73,14 +49,14 @@
         .col-prep { width: 10%; } 
         .col-ctrl { width: 8%; }
         
-        .product-name { font-weight: bold; font-size: 9px; text-align: left; padding-left: 4px; line-height: 1.1; }
-        .footer-section { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 4px; padding-top: 4px; border-top: 1px solid #000; flex-shrink: 0; background: #fff; }
+        .product-name { font-weight: bold; font-size: 9px; text-align: left; padding-left: 4px; line-height: 1; }
+        .footer-section { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 3px; padding-top: 3px; border-top: 1px solid #000; flex-shrink: 0; background: #fff; }
     </style>
 </head>
 <body class="space-y-4">
 
     <div class="text-center no-print py-2">
-        <button onclick="window.print()" class="bg-blue-600 text-white px-8 py-2 rounded-xl font-bold hover:bg-blue-700 shadow cursor-pointer">Imprimer Toute la Tournée</button>
+        <button onclick="window.print()" class="bg-blue-600 text-white px-8 py-2 rounded font-bold hover:bg-blue-700 shadow">Imprimer Toute la Tournée</button>
     </div>
 
     <div id="tournee-container">
@@ -88,36 +64,40 @@
     </div>
 
     <script type="module">
-        import supabase from '/assets/js/core/supabase.js';
+        import supabase from '../assets/js/core/supabase.js';
         
         const params = new URLSearchParams(window.location.search);
         const tourneeName = params.get('tournee');
         const datesParam = params.get('dates');
 
         async function loadTourneeBons() {
-            if (!tourneeName || !datesParam) {
-                document.getElementById('tournee-container').innerHTML = `<p class="text-center text-red-500 font-bold p-10">Paramètres de tournée invalides.</p>`;
+            if (!tourneeName) {
+                document.getElementById('tournee-container').innerHTML = `<p class="text-center text-red-500 font-bold p-10">Paramètre de tournée manquant dans l'URL.</p>`;
                 return;
             }
 
-            const dates = datesParam.split(',');
-
             try {
-                const { data: allCommandes, error } = await supabase
-                    .from("commandes_excel")
-                    .select("*")
-                    .in("date_livraison", dates);
+                // 1. Requetes flexible selon واش كاين dates ولا غير Tournée
+                let query = supabase.from("commandes_excel").select("*");
+
+                if (datesParam) {
+                    const dates = datesParam.split(',');
+                    query = query.in("date_livraison", dates);
+                }
+
+                const { data: allCommandes, error } = await query;
 
                 if (error || !allCommandes || allCommandes.length === 0) {
-                    document.getElementById('tournee-container').innerHTML = `<p class="text-center text-red-500 font-bold p-10">Aucune commande trouvée pour ces dates.</p>`;
+                    document.getElementById('tournee-container').innerHTML = `<p class="text-center text-red-500 font-bold p-10">Aucune commande trouvée dans la base de données.</p>`;
                     return;
                 }
 
+                // Filtrer b dmiir bikhsos itinaire / tournee / code_tournee
+                const target = decodeURIComponent(tourneeName).trim().toLowerCase();
                 const commandesList = allCommandes.filter(item => {
                     const it = (item.itineraire || "").trim().toLowerCase();
                     const tr = (item.tournee || "").trim().toLowerCase();
                     const ct = (item.code_tournee || "").trim().toLowerCase();
-                    const target = tourneeName.trim().toLowerCase();
 
                     return it === target || tr === target || ct === target;
                 });
@@ -125,20 +105,19 @@
                 if (!commandesList || commandesList.length === 0) {
                     document.getElementById('tournee-container').innerHTML = `
                         <div class="text-center p-10 text-red-500 font-bold">
-                            <p>Aucune commande trouvée pour la tournée (${tourneeName}).</p>
+                            <p>Aucune commande trouvée pour la tournée : (${tourneeName}).</p>
                         </div>`;
                     return;
                 }
 
+                // Récupérer les infos de suivi et pièces correspondantes
                 const { data: suiviList } = await supabase
                     .from("suivi_commandes_lancer")
-                    .select("num_lancement, document_vente, date_lancement, user_profiles:lance_par(nom_complet)")
-                    .in("date_livraison", dates);
+                    .select("num_lancement, document_vente, date_lancement, user_profiles:lance_par(nom_complet)");
 
                 const { data: piecesList } = await supabase
                     .from("commandes_clients_pieces")
-                    .select("document_vente, article, nombre_pieces")
-                    .in("date_livraison", dates);
+                    .select("document_vente, article, nombre_pieces");
 
                 const docsMap = new Map();
                 commandesList.forEach(item => {
@@ -216,14 +195,14 @@
                                 </table>
 
                                 <div class="flex items-center gap-2">
-                                    <div class="border border-black w-48 h-11 px-2 py-0.5 flex flex-col justify-center text-[8px] bg-white space-y-0.5">
+                                    <div class="border border-black w-44 h-10 px-2 py-0.5 flex flex-col justify-center text-[8px] bg-white space-y-0.2">
                                         <p><strong>N° Lancement:</strong> <span class="font-bold text-blue-700">${numLancement}</span></p>
                                         <p><strong>Lancement:</strong> <span>${dateLancementStr}</span> <span class="font-bold">${timeLancementStr}</span></p>
                                         <p><strong>Lancé par:</strong> <span class="font-semibold italic">${lancePar}</span></p>
                                     </div>
 
-                                    <div class="border border-black w-24 h-11 text-[8px] font-bold text-center pt-3 bg-white">Signature Préparateur</div>
-                                    <div class="border border-black w-24 h-11 text-[8px] font-bold text-center pt-3 bg-white">Signature Contrôle</div>
+                                    <div class="border border-black w-24 h-10 text-[8px] font-bold text-center pt-2.5 bg-white">Signature Préparateur</div>
+                                    <div class="border border-black w-24 h-10 text-[8px] font-bold text-center pt-2.5 bg-white">Signature Contrôle</div>
                                 </div>
                             </div>
                         </div>
@@ -243,7 +222,7 @@
                     items.forEach(item => {
                         const kg = Number(item.quantite_commandee || 0);
                         const pItem = (piecesList || []).find(p => p.document_vente === docVente && p.article === item.article);
-                        const pieces = Number(pItem?.nombre_pieces || 0);
+                        const pieces = Number(pItem?.nombre_pieces || item.nombre_pieces || 0);
 
                         cmdKg += kg;
                         cmdPieces += pieces;

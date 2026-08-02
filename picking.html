@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lancement & Suivi des Commandes - SoufStock WMS</title>
+    <title>Picking - SoufStock WMS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -25,24 +25,16 @@
 
     <!-- HEADER -->
     <header class="h-16 bg-slate-900/60 border-b border-slate-800 px-6 flex items-center justify-between shrink-0">
-        <a href="../commandes.html" class="flex items-center gap-3 group">
+        <a href="lancer.html" class="flex items-center gap-3 group">
             <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500/20 transition">
                 <i class="fas fa-snowflake"></i>
             </div>
             <div>
                 <span class="font-bold text-sm block">SoufStock <span class="text-emerald-400">WMS</span></span>
-                <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Module de Lancement des Commandes</span>
+                <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Module de Picking</span>
             </div>
         </a>
         <div class="flex items-center gap-3">
-            <!-- ZIR DYAL COMMANDES ANNULEES (F L-FOQ HDA RELANCE) -->
-            <a href="annulee_lancer.html" class="bg-slate-800 hover:bg-slate-700 text-rose-400 border border-rose-500/30 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
-                <i class="fas fa-ban"></i> Commandes Annulées
-            </a>
-            <!-- ZIR DYAL RELANCE.HTML -->
-            <a href="relance.html" class="bg-slate-800 hover:bg-slate-700 text-sky-400 border border-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
-                <i class="fas fa-magnifying-glass"></i> Recherche & Relance
-            </a>
             <div class="flex items-center gap-4 bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl font-mono text-xs">
                 <span id="liveClock" class="text-emerald-400">--:--:--</span>
             </div>
@@ -52,502 +44,141 @@
     <!-- MAIN WRAPPER -->
     <main class="flex-1 p-6 overflow-hidden flex flex-col gap-5">
         
-        <!-- BARRE DE FILTRE ET 4 STATISTIQUES -->
-        <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
+        <!-- SEARCH BAR INPUT FOR COMMAND NUMBER -->
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-lg">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                    <i class="fas fa-barcode"></i>
+                </div>
+                <div>
+                    <h2 class="text-xs font-bold text-slate-100 uppercase tracking-wider">Sélection de Commande</h2>
+                    <p class="text-[11px] text-slate-400">Entrez ou scannez le numéro de commande</p>
+                </div>
+            </div>
             
-            <!-- FILTRE DATES (7 COLUMNS) -->
-            <div class="xl:col-span-7 bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-lg">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                        <i class="fas fa-calendar-days"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-xs font-bold text-slate-100 uppercase tracking-wider">Filtrer par Période</h2>
-                        <p class="text-[11px] text-slate-400">Gestion et Lancement des Commandes</p>
-                    </div>
+            <div class="flex items-center gap-2 flex-1 max-w-md">
+                <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl flex-1">
+                    <i class="fas fa-magnifying-glass text-slate-400 text-xs"></i>
+                    <input type="text" id="inputNumCommande" placeholder="N° de commande (ex: CMD-...)" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono w-full uppercase">
                 </div>
-                
-                <div class="flex flex-wrap items-center gap-2">
-                    <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl">
-                        <span class="text-[10px] text-slate-400 uppercase">Du:</span>
-                        <input type="date" id="dateDebut" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono cursor-pointer">
-                    </div>
-                    <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl">
-                        <span class="text-[10px] text-slate-400 uppercase">Au:</span>
-                        <input type="date" id="dateFin" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono cursor-pointer">
-                    </div>
-                    <button onclick="loadSuiviCommandes()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
-                        <i class="fas fa-search"></i> Afficher
-                    </button>
-                </div>
+                <button onclick="chargerCommandePicking()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer shrink-0">
+                    <i class="fas fa-arrow-right"></i> Valider
+                </button>
             </div>
-
-            <!-- LES 4 STATISTIQUES / TOTAUX (5 COLUMNS) -->
-            <div class="xl:col-span-5 grid grid-cols-4 gap-2 bg-slate-900 border border-slate-800 p-3 rounded-xl shadow-lg items-center">
-                <div class="text-center border-r border-slate-800 pr-1">
-                    <span class="text-[9px] text-slate-400 uppercase block tracking-wider">Total</span>
-                    <span id="statTotal" class="text-base font-bold font-mono text-slate-100">0</span>
-                </div>
-                <div class="text-center border-r border-slate-800 pr-1">
-                    <span class="text-[9px] text-slate-400 uppercase block tracking-wider">Importée</span>
-                    <span id="statImportee" class="text-base font-bold font-mono text-amber-400">0</span>
-                </div>
-                <div class="text-center border-r border-slate-800 pr-1">
-                    <span class="text-[9px] text-slate-400 uppercase block tracking-wider">Lancée</span>
-                    <span id="statLancee" class="text-base font-bold font-mono text-emerald-400">0</span>
-                </div>
-                <div class="text-center">
-                    <span class="text-[9px] text-slate-400 uppercase block tracking-wider">Picking</span>
-                    <span id="statPicking" class="text-base font-bold font-mono text-sky-400">0</span>
-                </div>
-            </div>
-
         </div>
 
-        <!-- TABLE CONTAINER WITH MODE SWITCHER TABS -->
+        <!-- INFO & ARTICLES TABLE CONTAINER -->
         <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl flex-1 flex flex-col">
-            <div class="p-3 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs flex-wrap gap-3">
-                <div class="flex items-center gap-2">
-                    <span class="font-bold text-slate-300 mr-2"><i class="fas fa-list-check text-emerald-400 mr-2"></i> Affichage :</span>
-                    <button onclick="switchMode('commande')" id="tabModeCommande" class="px-3 py-1.5 rounded-lg font-bold text-xs transition bg-emerald-600 text-white shadow cursor-pointer">
-                        <i class="fas fa-file-lines mr-1.5"></i> Par Commande
-                    </button>
-                    <button onclick="switchMode('tournee')" id="tabModeTournee" class="px-3 py-1.5 rounded-lg font-bold text-xs transition bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer">
-                        <i class="fas fa-route mr-1.5"></i> Par Tournée (Itinéraire)
-                    </button>
+            <div class="p-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs flex-wrap gap-3">
+                <div class="flex items-center gap-6">
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase">Client / Réceptionnaire :</span>
+                        <span id="infoClient" class="font-bold text-slate-200 text-sm">-</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase">Itinéraire :</span>
+                        <span id="infoItineraire" class="font-bold text-sky-400 text-sm">-</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase">Statut :</span>
+                        <span id="infoStatut" class="font-bold text-amber-400 text-sm">-</span>
+                    </div>
                 </div>
-                <span id="tableCountBadge" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-lg font-mono text-[11px]">0 éléments</span>
+                <span id="tableCountBadge" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-lg font-mono text-xs">0 postes</span>
             </div>
 
-            <!-- TABLE COMMANDE -->
-            <div id="containerTableCommande" class="overflow-x-auto flex-1">
+            <div class="overflow-x-auto flex-1">
                 <table class="w-full text-left text-xs border-collapse">
                     <thead class="sticky top-0 bg-slate-950 text-slate-400 uppercase text-[10px] z-10 border-b border-slate-800">
                         <tr>
-                            <th class="p-3.5">N° Commande</th>
-                            <th class="p-3.5">Client / Réceptionnaire</th>
-                            <th class="p-3.5">Date Livraison</th>
-                            <th class="p-3.5 text-center">Nb Postes</th>
-                            <th class="p-3.5 text-right">Total KG</th>
-                            <th class="p-3.5 text-right text-emerald-400">Total Pièces</th>
-                            <th class="p-3.5">Itinéraire / Tournée</th>
-                            <th class="p-3.5">Statut</th>
-                            <th class="p-3.5 text-center">Actions & Lancement</th>
+                            <th class="p-3.5">Poste</th>
+                            <th class="p-3.5">Article</th>
+                            <th class="p-3.5">Désignation</th>
+                            <th class="p-3.5 text-right">Quantité Commandée</th>
+                            <th class="p-3.5 text-right text-emerald-400">Quantité Préparée</th>
+                            <th class="p-3.5 text-center">Unité</th>
                         </tr>
                     </thead>
-                    <tbody id="suiviTableBody" class="divide-y divide-slate-800/50 font-mono">
-                        <tr><td colspan="9" class="p-8 text-center text-slate-500">Chargement...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- TABLE TOURNEE -->
-            <div id="containerTableTournee" class="overflow-x-auto flex-1 hidden">
-                <table class="w-full text-left text-xs border-collapse">
-                    <thead class="sticky top-0 bg-slate-950 text-slate-400 uppercase text-[10px] z-10 border-b border-slate-800">
-                        <tr>
-                            <th class="p-3.5">Itinéraire / Tournée</th>
-                            <th class="p-3.5 text-center">Nb Commandes</th>
-                            <th class="p-3.5 text-center">Total Postes</th>
-                            <th class="p-3.5 text-right">Total KG</th>
-                            <th class="p-3.5 text-right text-emerald-400">Total Pièces</th>
-                            <th class="p-3.5 text-center">Actions & Lancement</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tourneeTableBody" class="divide-y divide-slate-800/50 font-mono">
-                        <tr><td colspan="6" class="p-8 text-center text-slate-500">Chargement...</td></tr>
+                    <tbody id="pickingTableBody" class="divide-y divide-slate-800/50 font-mono">
+                        <tr><td colspan="6" class="p-12 text-center text-slate-500">Veuillez scanner ou saisir un numéro de commande.</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </main>
 
-    <!-- MODAL DETAILS -->
-    <div id="detailModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-all duration-300">
-        <div class="bg-slate-900 border border-slate-800 w-[750px] max-h-[85vh] rounded-2xl p-6 shadow-2xl flex flex-col">
-            <div class="flex items-center justify-between pb-4 border-b border-slate-800">
-                <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
-                    <i class="fas fa-boxes-stacked text-emerald-400"></i> Détails : <span id="modalDocTitle" class="text-emerald-400"></span>
-                </h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-white cursor-pointer"><i class="fas fa-xmark text-lg"></i></button>
-            </div>
-            <div class="flex-1 overflow-y-auto py-4">
-                <table class="w-full text-left text-xs font-mono">
-                    <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] border-b border-slate-800" id="modalTableHead">
-                        <tr>
-                            <th class="p-2.5">Poste</th>
-                            <th class="p-2.5">Article</th>
-                            <th class="p-2.5">Désignation</th>
-                            <th class="p-2.5 text-right">Quantité KG</th>
-                            <th class="p-2.5 text-right text-emerald-400">Pièces</th>
-                        </tr>
-                    </thead>
-                    <tbody id="modalDetailsBody" class="divide-y divide-slate-800/40"></tbody>
-                </table>
-            </div>
-            <div class="pt-4 border-t border-slate-800 flex justify-end">
-                <button onclick="closeModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer">Fermer</button>
-            </div>
-        </div>
-    </div>
-
     <!-- APP SCRIPT -->
     <script type="module">
         import supabase from '../assets/js/core/supabase.js';
 
-        let currentMode = 'commande'; // 'commande' ou 'tournee'
+        const inputCmd = document.getElementById('inputNumCommande');
 
-        function getLocalDateString(dateObj) {
-            const year = dateObj.getFullYear();
-            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const day = String(dateObj.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        const today = new Date();
-        document.getElementById('dateDebut').value = getLocalDateString(today);
-        const demain = new Date(today);
-        demain.setDate(demain.getDate() + 1);
-        document.getElementById('dateFin').value = getLocalDateString(demain);
-
-        window.switchMode = function(mode) {
-            currentMode = mode;
-            const btnCmd = document.getElementById('tabModeCommande');
-            const tabCmd = document.getElementById('containerTableCommande');
-            const btnTrn = document.getElementById('tabModeTournee');
-            const tabTrn = document.getElementById('containerTableTournee');
-
-            // Reset styles
-            btnCmd.className = "px-3 py-1.5 rounded-lg font-bold text-xs transition bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer";
-            btnTrn.className = "px-3 py-1.5 rounded-lg font-bold text-xs transition bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer";
-            tabCmd.classList.remove('hidden');
-            tabTrn.classList.add('hidden');
-
-            if (mode === 'commande') {
-                btnCmd.className = "px-3 py-1.5 rounded-lg font-bold text-xs transition bg-emerald-600 text-white shadow cursor-pointer";
-            } else if (mode === 'tournee') {
-                btnTrn.className = "px-3 py-1.5 rounded-lg font-bold text-xs transition bg-emerald-600 text-white shadow cursor-pointer";
-                tabTrn.classList.remove('hidden');
-                tabCmd.classList.add('hidden');
+        inputCmd.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                chargerCommandePicking();
             }
-            loadSuiviCommandes();
-        };
+        });
 
-        window.loadSuiviCommandes = async function() {
-            const dateDebut = document.getElementById('dateDebut').value;
-            const dateFin = document.getElementById('dateFin').value;
-            
-            // 1. Charger Stats Globales
-            let queryStats = supabase.from('commandes_excel').select('document_vente, statut, date_livraison');
-            if (dateDebut) queryStats = queryStats.gte('date_livraison', dateDebut);
-            if (dateFin) queryStats = queryStats.lte('date_livraison', dateFin);
-            const { data: rawStats } = await queryStats;
-
-            if (rawStats) {
-                const commandesMap = {};
-                rawStats.forEach(r => { if (!commandesMap[r.document_vente]) commandesMap[r.document_vente] = r.statut; });
-                const statuts = Object.values(commandesMap);
-                document.getElementById('statTotal').textContent = statuts.length;
-                document.getElementById('statImportee').textContent = statuts.filter(s => s === 'IMPORTEE').length;
-                document.getElementById('statLancee').textContent = statuts.filter(s => s === 'LANCEE').length;
-                document.getElementById('statPicking').textContent = statuts.filter(s => s === 'EN_PICKING').length;
-            }
-
-            if (currentMode === 'commande') {
-                await loadTableCommandes(dateDebut, dateFin, 'IMPORTEE');
-            } else {
-                await loadTableTournees(dateDebut, dateFin);
-            }
-        };
-
-        async function loadTableCommandes(dateDebut, dateFin, targetStatut) {
-            const tbody = document.getElementById("suiviTableBody");
-            tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Chargement...</td></tr>`;
-
-            let query = supabase.from('commandes_excel').select('document_vente, nom_receptionnaire, date_livraison, itineraire, statut').eq('statut', targetStatut);
-            if (dateDebut) query = query.gte('date_livraison', dateDebut);
-            if (dateFin) query = query.lte('date_livraison', dateFin);
-            const { data: tableRows } = await query;
-
-            const uniqueMap = {};
-            if (tableRows) tableRows.forEach(r => { if (!uniqueMap[r.document_vente]) uniqueMap[r.document_vente] = r; });
-            const list = Object.values(uniqueMap);
-            document.getElementById('tableCountBadge').textContent = `${list.length} commandes`;
-
-            if (list.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-500">Aucune commande trouvée avec le statut [${targetStatut}].</td></tr>`;
+        window.chargerCommandePicking = async function() {
+            const numCmd = inputCmd.value.trim();
+            if (!numCmd) {
+                alert("Veuillez entrer un numéro de commande.");
                 return;
             }
 
-            let html = "";
-            for (let item of list) {
-                const { data: details } = await supabase.from('commandes_excel').select('quantite_commandee, nombre_pieces, "Poste"').eq('document_vente', item.document_vente);
-                const nbPostes = details ? details.length : 0;
-                const totalKg = details ? details.reduce((a, c) => a + Number(c.quantite_commandee || 0), 0) : 0;
-                const totalPieces = details ? details.reduce((a, c) => a + Number(c.nombre_pieces || 0), 0) : 0;
+            const tbody = document.getElementById("pickingTableBody");
+            tbody.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Chargement des articles...</td></tr>`;
 
-                const badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-                
-                let actionButtons = `
-                    <button onclick="openDetailsCommande('${item.document_vente}')" class="bg-slate-800 hover:bg-slate-700 text-sky-400 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow">
-                        <i class="fas fa-eye"></i> Articles
-                    </button>
-                    <button onclick="lancerCommande('${item.document_vente}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow">
-                        <i class="fas fa-play"></i> Lancer
-                    </button>
-                `;
-
-                html += `
-                    <tr class="hover:bg-slate-800/30 transition">
-                        <td class="p-3.5 font-bold text-emerald-400">${item.document_vente}</td>
-                        <td class="p-3.5 text-slate-200">${item.nom_receptionnaire || 'Client Divers'}</td>
-                        <td class="p-3.5 text-sky-300 font-mono">${item.date_livraison || '-'}</td>
-                        <td class="p-3.5 text-center font-bold text-sky-400">${nbPostes} Postes</td>
-                        <td class="p-3.5 text-right font-bold text-slate-100">${totalKg.toFixed(2)} KG</td>
-                        <td class="p-3.5 text-right font-bold text-emerald-400">${totalPieces} Pcs</td>
-                        <td class="p-3.5 text-slate-300"><span class="bg-slate-950 px-2 py-1 rounded border border-slate-800 text-[11px]">${item.itineraire || 'Non assigné'}</span></td>
-                        <td class="p-3.5"><span class="border px-2.5 py-1 rounded-full text-[10px] font-bold ${badgeColor}">${item.statut}</span></td>
-                        <td class="p-3.5 text-center flex items-center justify-center gap-2">
-                            ${actionButtons}
-                        </td>
-                    </tr>
-                `;
-            }
-            tbody.innerHTML = html;
-        }
-
-        async function loadTableTournees(dateDebut, dateFin) {
-            const tbody = document.getElementById("tourneeTableBody");
-            tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Chargement...</td></tr>`;
-
-            let query = supabase.from('commandes_excel').select('document_vente, itineraire, quantite_commandee, nombre_pieces, "Poste"').eq('statut', 'IMPORTEE');
-            if (dateDebut) query = query.gte('date_livraison', dateDebut);
-            if (dateFin) query = query.lte('date_livraison', dateFin);
-            const { data: rows } = await query;
-
-            if (!rows || rows.length === 0) {
-                document.getElementById('tableCountBadge').textContent = `0 tournées`;
-                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500">Aucune tournée avec commandes IMPORTEE.</td></tr>`;
-                return;
-            }
-
-            const tourneesMap = {};
-            rows.forEach(r => {
-                const tourneeName = r.itineraire || 'Non assigné';
-                if (!tourneesMap[tourneeName]) {
-                    tourneesMap[tourneeName] = { name: tourneeName, docs: new Set(), totalPostes: 0, totalKg: 0, totalPieces: 0 };
-                }
-                tourneesMap[tourneeName].docs.add(r.document_vente);
-                tourneesMap[tourneeName].totalPostes += 1;
-                tourneesMap[tourneeName].totalKg += Number(r.quantite_commandee || 0);
-                tourneesMap[tourneeName].totalPieces += Number(r.nombre_pieces || 0);
-            });
-
-            const tourneesList = Object.values(tourneesMap);
-            document.getElementById('tableCountBadge').textContent = `${tourneesList.length} tournées`;
-
-            let html = "";
-            for (let t of tourneesList) {
-                const nbCommandes = t.docs.size;
-                html += `
-                    <tr class="hover:bg-slate-800/30 transition">
-                        <td class="p-3.5 font-bold text-emerald-400"><i class="fas fa-route mr-2 text-sky-400"></i>${t.name}</td>
-                        <td class="p-3.5 text-center text-sky-300 font-bold">${nbCommandes} Commandes</td>
-                        <td class="p-3.5 text-center text-slate-200">${t.totalPostes} Postes</td>
-                        <td class="p-3.5 text-right font-bold text-slate-100">${t.totalKg.toFixed(2)} KG</td>
-                        <td class="p-3.5 text-right font-bold text-emerald-400">${t.totalPieces} Pcs</td>
-                        <td class="p-3.5 text-center flex items-center justify-center gap-2">
-                            <button onclick="openDetailsTournee('${t.name}')" class="bg-slate-800 hover:bg-slate-700 text-sky-400 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow">
-                                <i class="fas fa-eye"></i> Commandes & Articles
-                            </button>
-                            <button onclick="lancerTournee('${t.name}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow">
-                                <i class="fas fa-play"></i> Lancer Tournée
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            }
-            tbody.innerHTML = html;
-        }
-
-        window.openDetailsCommande = async function(docVente) {
-            document.getElementById("modalDocTitle").textContent = docVente;
-            document.getElementById("modalTableHead").innerHTML = `
-                <tr>
-                    <th class="p-2.5">Poste</th>
-                    <th class="p-2.5">Article</th>
-                    <th class="p-2.5">Désignation</th>
-                    <th class="p-2.5 text-right">Quantité KG</th>
-                    <th class="p-2.5 text-right text-emerald-400">Pièces</th>
-                </tr>`;
-            const modalBody = document.getElementById("modalDetailsBody");
-            modalBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Chargement...</td></tr>`;
-            document.getElementById("detailModal").classList.remove("hidden");
-            setTimeout(() => document.getElementById("detailModal").classList.remove("opacity-0"), 10);
-
-            const { data } = await supabase.from('commandes_excel').select('"Poste", article, designation_article, quantite_commandee, nombre_pieces').eq('document_vente', docVente).order('"Poste"', { ascending: true });
-            let html = "";
-            if (data) {
-                data.forEach(row => {
-                    html += `<tr class="hover:bg-slate-800/40"><td class="p-2.5 text-amber-400 font-bold">${row.Poste}</td><td class="p-2.5 text-sky-400">${row.article}</td><td class="p-2.5 text-slate-200">${row.designation_article}</td><td class="p-2.5 text-right font-bold text-slate-100">${row.quantite_commandee} KG</td><td class="p-2.5 text-right font-bold text-emerald-400">${row.nombre_pieces} Pcs</td></tr>`;
-                });
-            }
-            modalBody.innerHTML = html;
-        };
-
-        window.openDetailsTournee = async function(tourneeName) {
-            document.getElementById("modalDocTitle").textContent = `Tournée : ${tourneeName}`;
-            document.getElementById("modalTableHead").innerHTML = `
-                <tr>
-                    <th class="p-2.5">N° Commande</th>
-                    <th class="p-2.5">Client</th>
-                    <th class="p-2.5 text-center">Postes</th>
-                    <th class="p-2.5 text-right">KG</th>
-                    <th class="p-2.5 text-right text-emerald-400">Pièces</th>
-                </tr>`;
-            const modalBody = document.getElementById("modalDetailsBody");
-            modalBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Chargement...</td></tr>`;
-            document.getElementById("detailModal").classList.remove("hidden");
-            setTimeout(() => document.getElementById("detailModal").classList.remove("opacity-0"), 10);
-
-            const dateDebut = document.getElementById('dateDebut').value;
-            const dateFin = document.getElementById('dateFin').value;
-            let query = supabase.from('commandes_excel').select('document_vente, nom_receptionnaire, quantite_commandee, nombre_pieces, "Poste"').eq('statut', 'IMPORTEE').eq('itineraire', tourneeName);
-            if (dateDebut) query = query.gte('date_livraison', dateDebut);
-            if (dateFin) query = query.lte('date_livraison', dateFin);
-            const { data } = await query;
-
-            const mapCmds = {};
-            if (data) {
-                data.forEach(r => {
-                    if (!mapCmds[r.document_vente]) {
-                        mapCmds[r.document_vente] = { client: r.nom_receptionnaire, postes: 0, kg: 0, pcs: 0 };
-                    }
-                    mapCmds[r.document_vente].postes += 1;
-                    mapCmds[r.document_vente].kg += Number(r.quantite_commandee || 0);
-                    mapCmds[r.document_vente].pcs += Number(r.nombre_pieces || 0);
-                });
-            }
-
-            let html = "";
-            Object.entries(mapCmds).forEach(([doc, info]) => {
-                html += `<tr class="hover:bg-slate-800/40"><td class="p-2.5 text-emerald-400 font-bold">${doc}</td><td class="p-2.5 text-slate-200">${info.client || '-'}</td><td class="p-2.5 text-center text-sky-400">${info.postes} Postes</td><td class="p-2.5 text-right font-bold text-slate-100">${info.kg.toFixed(2)} KG</td><td class="p-2.5 text-right font-bold text-emerald-400">${info.pcs} Pcs</td></tr>`;
-            });
-            modalBody.innerHTML = html;
-        };
-
-        window.closeModal = function() {
-            const modal = document.getElementById("detailModal");
-            modal.classList.add("opacity-0");
-            setTimeout(() => modal.classList.add("hidden"), 300);
-        };
-
-        async function genererNumLancement(prefix) {
-            const now = new Date();
-            const jj = String(now.getDate()).padStart(2, '0');
-            const mm = String(now.getMonth() + 1).padStart(2, '0');
-            const yy = String(now.getFullYear()).slice(-2);
-            const datePrefix = `${prefix}-${jj}${mm}${yy}-`;
-
-            const { data } = await supabase
-                .from('suivi_commandes_lancer')
-                .select('num_lancement')
-                .like('num_lancement', `${datePrefix}%`);
-
-            let nextSeq = 1;
-            if (data && data.length > 0) {
-                const seqs = data.map(item => {
-                    if (!item.num_lancement) return 0;
-                    const parts = item.num_lancement.split('-');
-                    return parseInt(parts[parts.length - 1], 10) || 0;
-                });
-                nextSeq = Math.max(...seqs, 0) + 1;
-            }
-            return `${datePrefix}${String(nextSeq).padStart(3, '0')}`;
-        }
-
-        window.lancerCommande = async function(docVente) {
-            if (!confirm(`Voulez-vous lancer la commande ${docVente} ?`)) return;
-            
-            const { data: { user } } = await supabase.auth.getUser();
-            const userId = user ? user.id : null;
-            const numLancement = await genererNumLancement('C');
-            const nowIso = new Date().toISOString();
-
-            const { error: err1 } = await supabase
+            const { data, error } = await supabase
                 .from('commandes_excel')
-                .update({ statut: 'LANCEE', updated_at: nowIso })
-                .eq('document_vente', docVente);
-                
-            if (err1) { alert("Erreur commandes_excel: " + err1.message); return; }
+                .select('*')
+                .eq('document_vente', numCmd)
+                .order('"Poste"', { ascending: true });
 
-            const { error: err2 } = await supabase
-                .from('suivi_commandes_lancer')
-                .update({
-                    statut: 'LANCEE',
-                    num_lancement: numLancement,
-                    lance_par: userId,
-                    date_lancement: nowIso,
-                    updated_at: nowIso
-                })
-                .eq('document_vente', docVente);
-
-            if (err2) { alert("Erreur suivi_commandes_lancer: " + err2.message); return; }
-            
-            window.open(`bon_preparation.html?cmd=${docVente}`, '_blank');
-            loadSuiviCommandes();
-        };
-
-        window.lancerTournee = async function(tourneeName) {
-            if (!confirm(`Voulez-vous vraiment lancer toute la tournée "${tourneeName}" ?`)) return;
-            
-            const dateDebut = document.getElementById('dateDebut').value;
-            const dateFin = document.getElementById('dateFin').value;
-
-            const { data: { user } } = await supabase.auth.getUser();
-            const userId = user ? user.id : null;
-            const nowIso = new Date().toISOString();
-
-            let queryDocs = supabase.from('commandes_excel').select('document_vente').eq('statut', 'IMPORTEE').eq('itineraire', tourneeName);
-            if (dateDebut) queryDocs = queryDocs.gte('date_livraison', dateDebut);
-            if (dateFin) queryDocs = queryDocs.lte('date_livraison', dateFin);
-            const { data: docsRows } = await queryDocs;
-
-            if (!docsRows || docsRows.length === 0) {
-                alert("Aucune commande trouvée pour cette tournée.");
+            if (error) {
+                alert("Erreur lors du chargement : " + error.message);
+                tbody.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-rose-400">Erreur de chargement.</td></tr>`;
                 return;
             }
 
-            const uniqueDocs = [...new Set(docsRows.map(r => r.document_vente))];
-
-            for (let docVente of uniqueDocs) {
-                const numLancement = await genererNumLancement('T');
-
-                await supabase.from('commandes_excel')
-                    .update({ statut: 'LANCEE', updated_at: nowIso })
-                    .eq('document_vente', docVente);
-
-                await supabase.from('suivi_commandes_lancer')
-                    .update({
-                        statut: 'LANCEE',
-                        num_lancement: numLancement,
-                        lance_par: userId,
-                        date_lancement: nowIso,
-                        updated_at: nowIso
-                    })
-                    .eq('document_vente', docVente);
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-slate-500">Aucune commande trouvée avec le numéro [${numCmd}].</td></tr>`;
+                document.getElementById('infoClient').textContent = '-';
+                document.getElementById('infoItineraire').textContent = '-';
+                document.getElementById('infoStatut').textContent = '-';
+                document.getElementById('tableCountBadge').textContent = '0 postes';
+                return;
             }
 
-            alert(`La tournée "${tourneeName}" a été lancée avec succès (${uniqueDocs.length} commandes) !`);
-            window.open(`bon_preparation_tournee.html?tournee=${encodeURIComponent(tourneeName)}`, '_blank');
-            loadSuiviCommandes();
+            // Remplir les informations générales de la commande
+            const premiereLigne = data[0];
+            document.getElementById('infoClient').textContent = premiereLigne.nom_receptionnaire || 'Client Divers';
+            document.getElementById('infoItineraire').textContent = premiereLigne.itineraire || 'Non assigné';
+            document.getElementById('infoStatut').textContent = premiereLigne.statut || '-';
+            document.getElementById('tableCountBadge').textContent = `${data.length} postes`;
+
+            let html = "";
+            data.forEach(row => {
+                const qteCmd = Number(row.quantite_commandee || 0);
+                const qtePrep = row.quantite_preparee !== null ? Number(row.quantite_preparee) : qteCmd;
+                
+                html += `
+                    <tr class="hover:bg-slate-800/30 transition">
+                        <td class="p-3.5 text-amber-400 font-bold">${row.Poste}</td>
+                        <td class="p-3.5 text-sky-400">${row.article}</td>
+                        <td class="p-3.5 text-slate-200">${row.designation_article}</td>
+                        <td class="p-3.5 text-right font-bold text-slate-100">${qteCmd.toFixed(3)}</td>
+                        <td class="p-3.5 text-right font-bold text-emerald-400">${qtePrep.toFixed(3)}</td>
+                        <td class="p-3.5 text-center text-slate-400">${row.unite || 'KG'}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
         };
 
         setInterval(() => {
             document.getElementById("liveClock").innerText = new Date().toLocaleTimeString('fr-FR');
         }, 1000);
-
-        loadSuiviCommandes();
     </script>
 </body>
 </html>

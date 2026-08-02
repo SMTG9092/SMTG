@@ -127,40 +127,74 @@
             }
 
             const tbody = document.getElementById("pickingTableBody");
-            tbody.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Chargement des articles...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Vérification et chargement...</td></tr>`;
 
-            const { data, error } = await supabase
+            // 1. Nchoufo lwél wach la commande kayna f 'commandes_excel' w wach tLansat wla f status 'LANCEE' / 'EN_PICKING'
+            const { data: dataCmd, error: errCmd } = await supabase
                 .from('commandes_excel')
                 .select('*')
                 .eq('document_vente', numCmd)
                 .order('"Poste"', { ascending: true });
 
-            if (error) {
-                alert("Erreur lors du chargement : " + error.message);
-                tbody.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-rose-400">Erreur de chargement.</td></tr>`;
+            if (errCmd || !dataCmd || dataCmd.length === 0) {
+                alert("Aucune commande trouvée avec le numéro : " + numCmd);
+                tbody.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-rose-400">Commande introuvable.</td></tr>`;
+                resetInfos();
                 return;
             }
 
-            if (!data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-slate-500">Aucune commande trouvée avec le numéro [${numCmd}].</td></tr>`;
-                document.getElementById('infoClient').textContent = '-';
-                document.getElementById('infoItineraire').textContent = '-';
-                document.getElementById('infoStatut').textContent = '-';
-                document.getElementById('tableCountBadge').textContent = '0 postes';
+            const statutActuel = dataCmd[0].statut;
+
+            // Wach mlança wla la? (Ila kant IMPORTEE mardich tkll3 w tswd lina message)
+            if (statutActuel === 'IMPORTEE') {
+                alert(`Erreur : La commande [${numCmd}] n'a pas encore été lancée ! (Statut actuel : IMPORTEE)`);
+                tbody.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-amber-400">Cette commande doit être lancée d'abord depuis le module de lancement.</td></tr>`;
+                resetInfos();
                 return;
             }
 
-            // Remplir les informations générales de la commande
-            const premiereLigne = data[0];
+            if (statutActuel === 'EXPEDIEE' || statutActuel === 'ANNULEE') {
+                alert(`Attention : Cette commande est déjà ${statutActuel}.`);
+                tbody.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-rose-400">Cette commande est fermée (${statutActuel}).</td></tr>`;
+                resetInfos();
+                return;
+            }
+
+            // 2. Ila kanet 'LANCEE', nreddouha 'EN_PICKING' f la base de données w ntsajlo l'utilisateur + date debut picking
+            if (statutActuel === 'LANCEE') {
+                const { data: { user } } = await supabase.auth.getUser();
+                const userId = user ? user.id : null;
+                const nowIso = new Date().toISOString();
+
+                // Update f commandes_excel
+                await supabase.from('commandes_excel')
+                    .update({ statut: 'EN_PICKING', updated_at: nowIso })
+                    .eq('document_vente', numCmd);
+
+                // Update f suivi_commandes_lancer
+                await supabase.from('suivi_commandes_lancer')
+                    .update({
+                        statut: 'EN_PICKING',
+                        picking_par: userId,
+                        date_debut_picking: nowIso,
+                        updated_at: nowIso
+                    })
+                    .eq('document_vente', numCmd);
+
+                dataCmd.forEach(row => row.statut = 'EN_PICKING');
+            }
+
+            // 3. Affichage dyal l-informations w l-articles b tartib dyal l-poste
+            const premiereLigne = dataCmd[0];
             document.getElementById('infoClient').textContent = premiereLigne.nom_receptionnaire || 'Client Divers';
             document.getElementById('infoItineraire').textContent = premiereLigne.itineraire || 'Non assigné';
             document.getElementById('infoStatut').textContent = premiereLigne.statut || '-';
-            document.getElementById('tableCountBadge').textContent = `${data.length} postes`;
+            document.getElementById('tableCountBadge').textContent = `${dataCmd.length} postes`;
 
             let html = "";
-            data.forEach(row => {
+            dataCmd.forEach(row => {
                 const qteCmd = Number(row.quantite_commandee || 0);
-                const qtePrep = row.quantite_preparee !== null ? Number(row.quantite_preparee) : qteCmd;
+                const qtePrep = row.quantite_preparee !== null ? Number(row.quantite_preparee) : 0;
                 
                 html += `
                     <tr class="hover:bg-slate-800/30 transition">
@@ -175,6 +209,13 @@
             });
             tbody.innerHTML = html;
         };
+
+        function resetInfos() {
+            document.getElementById('infoClient').textContent = '-';
+            document.getElementById('infoItineraire').textContent = '-';
+            document.getElementById('infoStatut').textContent = '-';
+            document.getElementById('tableCountBadge').textContent = '0 postes';
+        }
 
         setInterval(() => {
             document.getElementById("liveClock").innerText = new Date().toLocaleTimeString('fr-FR');

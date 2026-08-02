@@ -62,7 +62,6 @@
                     <input type="text" id="inputNumCommande" placeholder="N° de commande..." class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono w-full uppercase">
                 </div>
                 
-                <!-- GROUP OF 4 BUTTONS (Valider, Modifier, Enregistrer, Valider Global) -->
                 <div class="flex items-center gap-2 flex-wrap">
                     <button onclick="chargerCommandePicking()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
                         <i class="fas fa-arrow-right"></i> Valider
@@ -221,7 +220,7 @@
                             </div>
                         </td>
                         <td class="p-3.5 text-center">
-                            <input type="number" step="0.001" id="input_qte_${uniqueId}" placeholder="" oninput="verifierEtRecalculer('${numCmd}', ${row.Poste}, '${uniqueId}')" class="qte-saisie-input bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500" value="${qtePrepActuelle > 0 ? qtePrepActuelle : ''}">
+                            <input type="number" step="0.001" id="input_qte_${uniqueId}" placeholder="0" oninput="verifierEtRecalculer('${numCmd}', ${row.Poste}, '${uniqueId}')" class="qte-saisie-input bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500" value="${qtePrepActuelle > 0 ? qtePrepActuelle : '0'}">
                             <div id="info_disp_${uniqueId}" class="text-[10px] text-slate-400 mt-1 font-mono"></div>
                         </td>
                         <td class="p-3.5 text-center">
@@ -246,7 +245,7 @@
 
             const { data, error } = await supabase
                 .from('stock')
-                .select('lot, stock_disponible')
+                .select('id, lot, magasin, emplacement, stock_disponible')
                 .eq('article', articleCode)
                 .ilike('lot', `%${terme}%`)
                 .gt('stock_disponible', 0)
@@ -261,7 +260,7 @@
             let html = "";
             data.forEach(item => {
                 html += `
-                    <div onclick="selectionnerLot('${uniqueId}', '${item.lot}', ${item.stock_disponible})" class="p-2 hover:bg-emerald-500/10 hover:text-emerald-400 cursor-pointer transition flex items-center justify-between text-[11px]">
+                    <div onclick="selectionnerLot('${uniqueId}', '${item.lot}', ${item.stock_disponible}, ${item.id}, '${item.magasin || ''}', '${item.emplacement || ''}')" class="p-2 hover:bg-emerald-500/10 hover:text-emerald-400 cursor-pointer transition flex items-center justify-between text-[11px]">
                         <span class="font-bold text-slate-200">${item.lot}</span>
                         <span class="text-emerald-400 font-mono">Disp: ${Number(item.stock_disponible).toFixed(3)}</span>
                     </div>
@@ -272,7 +271,7 @@
             dropdown.classList.remove('hidden');
         };
 
-        window.selectionnerLot = function(uniqueId, lotValue, stockDisp) {
+        window.selectionnerLot = function(uniqueId, lotValue, stockDisp, stockId, magasin, emplacement) {
             const input = document.getElementById(`input_lot_${uniqueId}`);
             if (input) {
                 input.value = lotValue;
@@ -282,7 +281,13 @@
                 dropdown.classList.add('hidden');
             }
 
-            window.selectedLotsData[uniqueId] = Number(stockDisp);
+            window.selectedLotsData[uniqueId] = {
+                stock_id: stockId,
+                lot: lotValue,
+                stock_disponible: Number(stockDisp),
+                magasin: magasin,
+                emplacement: emplacement
+            };
 
             const infoDiv = document.getElementById(`info_disp_${uniqueId}`);
             if (infoDiv) {
@@ -290,7 +295,7 @@
             }
 
             const qteInp = document.getElementById(`input_qte_${uniqueId}`);
-            if (qteInp && qteInp.value) {
+            if (qteInp) {
                 qteInp.dispatchEvent(new Event('input'));
             }
         };
@@ -299,7 +304,8 @@
             const qteInp = document.getElementById(`input_qte_${uniqueId}`);
             const infoDiv = document.getElementById(`info_disp_${uniqueId}`);
             const saisieVal = Number(qteInp.value || 0);
-            const stockDisp = window.selectedLotsData[uniqueId];
+            const lotObj = window.selectedLotsData[uniqueId];
+            const stockDisp = lotObj ? lotObj.stock_disponible : undefined;
 
             if (stockDisp !== undefined && saisieVal > stockDisp) {
                 infoDiv.innerHTML = `<span class="text-rose-400 font-bold animate-pulse">Max dispo : ${stockDisp.toFixed(3)}</span>`;
@@ -343,7 +349,7 @@
                     </div>
                 </td>
                 <td class="p-3.5 text-center">
-                    <input type="number" step="0.001" id="input_qte_${uniqueId}" placeholder="" oninput="verifierEtRecalculer('${numCmd}', ${poste}, '${uniqueId}')" class="qte-saisie-input bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500">
+                    <input type="number" step="0.001" id="input_qte_${uniqueId}" placeholder="0" value="0" oninput="verifierEtRecalculer('${numCmd}', ${poste}, '${uniqueId}')" class="qte-saisie-input bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500">
                     <div id="info_disp_${uniqueId}" class="text-[10px] text-slate-400 mt-1 font-mono"></div>
                 </td>
                 <td class="p-3.5 text-center">
@@ -407,17 +413,146 @@
                 .eq('Poste', poste);
         };
 
-        // Fonctions dyal les 3 azrar jdoud (Radi tswrhom liya)
-        window.actionModifier = function() {
-            console.log("Action Modifier cliquée");
+        window.actionEnregistrer = async function() {
+            const numCmd = inputNumCommande.value.trim();
+            if (!numCmd) {
+                alert("Veuillez d'abord charger une commande.");
+                return;
+            }
+
+            const { data: authData } = await supabase.auth.getUser();
+            const userId = authData?.user?.id || null;
+
+            const { data: suiviData, error: suiviErr } = await supabase
+                .from('suivi_commandes_lancer')
+                .select('id')
+                .eq('document_vente', numCmd)
+                .single();
+
+            if (suiviErr || !suiviData) {
+                alert("Erreur : Impossible de trouver les informations de suivi pour cette commande.");
+                return;
+            }
+            const suiviId = suiviData.id;
+            const clientNom = document.getElementById('infoClient').textContent;
+
+            const allRows = document.querySelectorAll('tr.row-poste, tr.row-sup');
+            let detailsToInsert = [];
+            let totalArticlesCount = 0;
+            let totalLotsCount = 0;
+            let totalQteCmdSum = 0;
+            let totalPrepareSum = 0;
+            let articlesSet = new Set();
+
+            for (const row of allRows) {
+                const poste = row.getAttribute('data-poste');
+                const article = row.getAttribute('data-article');
+                
+                const inputLot = row.querySelector('input[id*="input_lot_"]');
+                const inputQte = row.querySelector('input[id*="input_qte_"]');
+                
+                if (!inputLot || !inputQte) continue;
+
+                const lotVal = inputLot.value.trim();
+                const qteVal = Number(inputQte.value || 0);
+
+                if (qteVal > 0 && lotVal) {
+                    const uniqueId = inputLot.id.replace('input_lot_', '');
+                    const lotObj = window.selectedLotsData[uniqueId];
+
+                    if (!lotObj || !lotObj.stock_id) {
+                        alert(`Veuillez sélectionner un lot valide depuis la liste pour l'article ${article} (Poste ${poste})`);
+                        return;
+                    }
+
+                    articlesSet.add(article);
+                    totalLotsCount++;
+                    totalPrepareSum += qteVal;
+
+                    const qteCmdSpan = document.getElementById(`qte_cmd_${poste}`);
+                    const qteCmdVal = qteCmdSpan ? Number(qteCmdSpan.textContent) : 0;
+                    totalQteCmdSum += qteCmdVal;
+
+                    detailsToInsert.push({
+                        suivi_id: suiviId,
+                        document_vente: numCmd,
+                        ligne_commande: Number(poste),
+                        article: article,
+                        designation_article: row.querySelector('td:nth-child(3)')?.textContent || '-',
+                        lot: lotVal,
+                        stock_id: lotObj.stock_id,
+                        magasin: lotObj.magasin || 'DEFAULT',
+                        emplacement: lotObj.emplacement || '',
+                        quantite_commandee: qteCmdVal,
+                        quantite_preparee: qteVal,
+                        quantite_restante: Math.max(0, qteCmdVal - qteVal),
+                        preparateur: userId,
+                        statut: 'RESERVE',
+                        reserve: true,
+                        est_valide: false
+                    });
+                }
+            }
+
+            if (detailsToInsert.length === 0) {
+                alert("Aucune quantité valide avec lot n'a été saisie pour l'enregistrement.");
+                return;
+            }
+
+            totalArticlesCount = articlesSet.size;
+            const progressionVal = totalQteCmdSum > 0 ? Math.min(100, (totalPrepareSum / totalQteCmdSum) * 100) : 0;
+
+            const { data: pickingHeader, error: pickErr } = await supabase
+                .from('picking')
+                .upsert({
+                    suivi_id: suiviId,
+                    document_vente: numCmd,
+                    client: clientNom,
+                    preparateur: userId,
+                    statut: 'PICKING',
+                    total_articles: totalArticlesCount,
+                    total_lots: totalLotsCount,
+                    total_quantite: totalQteCmdSum,
+                    total_prepare: totalPrepareSum,
+                    progression: progressionVal.toFixed(2),
+                    est_valide: false,
+                    est_annule: false,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'document_vente' })
+                .select('id')
+                .single();
+
+            if (pickErr || !pickingHeader) {
+                alert("Erreur lors de l'enregistrement de l'en-tête du picking : " + (pickErr?.message || 'Erreur inconnue'));
+                return;
+            }
+
+            const pickingId = pickingHeader.id;
+
+            await supabase.from('picking_details').delete().eq('picking_id', pickingId);
+
+            detailsToInsert.forEach(item => {
+                item.picking_id = pickingId;
+            });
+
+            const { error: detailsErr } = await supabase
+                .from('picking_details')
+                .insert(detailsToInsert);
+
+            if (detailsErr) {
+                alert("Erreur lors de l'enregistrement des détails du picking : " + detailsErr.message);
+                return;
+            }
+
+            alert("Commande enregistrée et lots réservés avec succès !");
         };
 
-        window.actionEnregistrer = function() {
-            console.log("Action Enregistrer cliquée");
+        window.actionModifier = function() {
+            alert("Mode modification activé.");
         };
 
         window.actionValiderGlobal = function() {
-            console.log("Action Valider Global cliquée");
+            alert("Validation globale en cours...");
         };
 
         function resetInfos() {

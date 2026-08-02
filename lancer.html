@@ -94,17 +94,6 @@
 
         </div>
 
-        <!-- ACTION BAR / LANCER TOUT -->
-        <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between shadow-lg">
-            <div class="flex items-center gap-2 text-xs text-slate-300">
-                <i class="fas fa-circle-info text-sky-400"></i>
-                <span>Seules les commandes non lancées (<strong class="text-amber-400">IMPORTEE</strong>) s'affichent et peuvent être lancées.</span>
-            </div>
-            <button onclick="lancerToutFiltre()" class="bg-sky-600 hover:bg-sky-500 text-white px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
-                <i class="fas fa-rocket"></i> Lancer Tout le Filtre (Bon Global)
-            </button>
-        </div>
-
         <!-- TABLE CONTAINER WITH MODE SWITCHER TABS -->
         <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl flex-1 flex flex-col">
             <div class="p-3 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs flex-wrap gap-3">
@@ -205,15 +194,6 @@
             return `${year}-${month}-${day}`;
         }
 
-        function formatDateFr(dateStr) {
-            if (!dateStr) return '-';
-            const parts = dateStr.split('-');
-            if (parts.length === 3) {
-                return `${parts[2]}/${parts[1]}/${parts[0]}`;
-            }
-            return dateStr;
-        }
-
         const today = new Date();
         document.getElementById('dateDebut').value = getLocalDateString(today);
         const demain = new Date(today);
@@ -245,6 +225,7 @@
             const dateDebut = document.getElementById('dateDebut').value;
             const dateFin = document.getElementById('dateFin').value;
             
+            // 1. Charger Stats Globales
             let queryStats = supabase.from('commandes_excel').select('document_vente, statut, date_livraison');
             if (dateDebut) queryStats = queryStats.gte('date_livraison', dateDebut);
             if (dateFin) queryStats = queryStats.lte('date_livraison', dateFin);
@@ -297,7 +278,7 @@
                     <tr class="hover:bg-slate-800/30 transition">
                         <td class="p-3.5 font-bold text-emerald-400">${item.document_vente}</td>
                         <td class="p-3.5 text-slate-200">${item.nom_receptionnaire || 'Client Divers'}</td>
-                        <td class="p-3.5 text-sky-300 font-mono">${formatDateFr(item.date_livraison)}</td>
+                        <td class="p-3.5 text-sky-300 font-mono">${item.date_livraison || '-'}</td>
                         <td class="p-3.5 text-center font-bold text-sky-400">${nbPostes} Postes</td>
                         <td class="p-3.5 text-right font-bold text-slate-100">${totalKg.toFixed(2)} KG</td>
                         <td class="p-3.5 text-right font-bold text-emerald-400">${totalPieces} Pcs</td>
@@ -443,6 +424,7 @@
             setTimeout(() => modal.classList.add("hidden"), 300);
         };
 
+        // FONCTION AUXILIAIRE POUR GÉNÉRER LE NUMERO DE LANCEMENT (C-JJMMYY-XXX ou T-JJMMYY-XXX)
         async function genererNumLancement(prefix) {
             const now = new Date();
             const jj = String(now.getDate()).padStart(2, '0');
@@ -467,6 +449,7 @@
             return `${datePrefix}${String(nextSeq).padStart(3, '0')}`;
         }
 
+        // LANCEMENT PAR COMMANDE
         window.lancerCommande = async function(docVente) {
             if (!confirm(`Voulez-vous lancer la commande ${docVente} ?`)) return;
             
@@ -475,15 +458,16 @@
             const numLancement = await genererNumLancement('C');
             const nowIso = new Date().toISOString();
 
+            // 1. Mettre à jour commandes_excel
             const { error: err1 } = await supabase
                 .from('commandes_excel')
                 .update({ statut: 'LANCEE', updated_at: nowIso })
-                .eq('document_vente', docVente)
-                .eq('statut', 'IMPORTEE');
+                .eq('document_vente', docVente);
                 
-            if (err1) { alert("Erreur: " + err1.message); return; }
+            if (err1) { alert("Erreur commandes_excel: " + err1.message); return; }
 
-            await supabase
+            // 2. Mettre à jour suivi_commandes_lancer
+            const { error: err2 } = await supabase
                 .from('suivi_commandes_lancer')
                 .update({
                     statut: 'LANCEE',
@@ -493,12 +477,14 @@
                     updated_at: nowIso
                 })
                 .eq('document_vente', docVente);
+
+            if (err2) { alert("Erreur suivi_commandes_lancer: " + err2.message); return; }
             
             window.open(`bon_preparation.html?cmd=${docVente}`, '_blank');
             loadSuiviCommandes();
         };
 
-        // Lancer Tournée (Ouvre 1 SEULE page globale pour toute la tournée)
+        // LANCEMENT PAR TOURNEE
         window.lancerTournee = async function(tourneeName) {
             if (!confirm(`Voulez-vous vraiment lancer toute la tournée "${tourneeName}" ?`)) return;
             
@@ -515,7 +501,7 @@
             const { data: docsRows } = await queryDocs;
 
             if (!docsRows || docsRows.length === 0) {
-                alert("Aucune commande IMPORTEE trouvée pour cette tournée.");
+                alert("Aucune commande trouvée pour cette tournée.");
                 return;
             }
 
@@ -526,8 +512,7 @@
 
                 await supabase.from('commandes_excel')
                     .update({ statut: 'LANCEE', updated_at: nowIso })
-                    .eq('document_vente', docVente)
-                    .eq('statut', 'IMPORTEE');
+                    .eq('document_vente', docVente);
 
                 await supabase.from('suivi_commandes_lancer')
                     .update({
@@ -540,57 +525,11 @@
                     .eq('document_vente', docVente);
             }
 
-            // Ouverture d'une SEULE page globale pour la tournée
-            window.open(`bon_preparation_global.html?mode=tournee&val=${encodeURIComponent(tourneeName)}`, '_blank');
+            alert(`La tournée "${tourneeName}" a été lancée avec succès (${uniqueDocs.length} commandes) !`);
             
-            loadSuiviCommandes();
-        };
-
-        // Lancer Tout le Filtre (Ouvre 1 SEULE page globale pour toutes les commandes du filtre)
-        window.lancerToutFiltre = async function() {
-            const dateDebut = document.getElementById('dateDebut').value;
-            const dateFin = document.getElementById('dateFin').value;
-
-            if (!confirm(`Attention ! Voulez-vous vraiment lancer TOUTES les commandes IMPORTEES de la période affichée et ouvrir le bon global ?`)) return;
-
-            const { data: { user } } = await supabase.auth.getUser();
-            const userId = user ? user.id : null;
-            const nowIso = new Date().toISOString();
-
-            let queryDocs = supabase.from('commandes_excel').select('document_vente, itineraire').eq('statut', 'IMPORTEE');
-            if (dateDebut) queryDocs = queryDocs.gte('date_livraison', dateDebut);
-            if (dateFin) queryDocs = queryDocs.lte('date_livraison', dateFin);
-            const { data: docsRows } = await queryDocs;
-
-            if (!docsRows || docsRows.length === 0) {
-                alert("Aucune commande IMPORTEE trouvée dans cette période.");
-                return;
-            }
-
-            const uniqueDocs = [...new Set(docsRows.map(r => r.document_vente))];
-
-            for (let docVente of uniqueDocs) {
-                const numLancement = await genererNumLancement('G');
-
-                await supabase.from('commandes_excel')
-                    .update({ statut: 'LANCEE', updated_at: nowIso })
-                    .eq('document_vente', docVente)
-                    .eq('statut', 'IMPORTEE');
-
-                await supabase.from('suivi_commandes_lancer')
-                    .update({
-                        statut: 'LANCEE',
-                        num_lancement: numLancement,
-                        lance_par: userId,
-                        date_lancement: nowIso,
-                        updated_at: nowIso
-                    })
-                    .eq('document_vente', docVente);
-            }
-
-            // Ouverture d'une SEULE page globale regroupant toutes les commandes du filtre
-            window.open(`bon_preparation_global.html?mode=filtre&debut=${dateDebut}&fin=${dateFin}`, '_blank');
-
+            // Ouverture automatique du bon de préparation groupé pour la tournée
+            window.open(`bon_preparation_tournee.html?tournee=${encodeURIComponent(tourneeName)}`, '_blank');
+            
             loadSuiviCommandes();
         };
 

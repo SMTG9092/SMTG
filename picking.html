@@ -181,8 +181,10 @@
                 .maybeSingle();
 
             isOrderLocked = existingPicking ? Boolean(existingPicking.est_valide) : false;
-            // Check wach la commande t-salat (TERMINE) wla t-valdat (VALIDE)
-            isOrderTerminated = (existingPicking && (existingPicking.statut === 'TERMINE' || existingPicking.statut === 'VALIDE')) || statutActuel === 'PREPAREE';
+            
+            // Hna zedna n-t2akkado wach statut f picking wla f commandes_excel hiya TERMINE wla VALIDE
+            const pStatut = existingPicking ? existingPicking.statut : '';
+            isOrderTerminated = (pStatut === 'TERMINE' || pStatut === 'VALIDE' || existingPicking?.est_valide === true) || statutActuel === 'PREPAREE';
 
             let existingDetailsMap = {};
             if (existingPicking) {
@@ -225,7 +227,7 @@
             const premiereLigne = dataCmd[0];
             document.getElementById('infoClient').textContent = premiereLigne.nom_receptionnaire || 'Client Divers';
             document.getElementById('infoItineraire').textContent = premiereLigne.itineraire || 'Non assigné';
-            document.getElementById('infoStatut').textContent = isOrderTerminated ? 'TERMINE' : (isOrderLocked ? 'VALIDE' : (premiereLigne.statut || '-'));
+            document.getElementById('infoStatut').textContent = isOrderTerminated ? (pStatut || 'TERMINE') : (isOrderLocked ? 'VALIDE' : (premiereLigne.statut || '-'));
             document.getElementById('tableCountBadge').textContent = `${dataCmd.length} postes`;
 
             window.selectedLotsData = {};
@@ -486,7 +488,7 @@
 
         async function executerSauvegardeDonnees(numCmd) {
             if (isOrderTerminated) {
-                alert("Action interdite : Cette commande est TERMINEE et ne peut plus être modifiée.");
+                alert("Action interdite : Cette commande est TERMINEE / VALIDEE et ne peut plus être modifiée.");
                 return false;
             }
 
@@ -638,7 +640,7 @@
 
         window.actionEnregistrer = async function() {
             if (isOrderTerminated) {
-                alert("Impossible d'enregistrer : Cette commande est TERMINEE et verrouillée.");
+                alert("Impossible d'enregistrer : Cette commande est TERMINEE/VALIDEE et verrouillée.");
                 return;
             }
             if (isOrderLocked) {
@@ -657,16 +659,11 @@
 
         window.actionValiderGlobal = async function() {
             if (isOrderTerminated) {
-                alert("Cette commande est déjà TERMINEE.");
+                alert("Cette commande est déjà TERMINEE / VALIDEE.");
                 return;
             }
             const numCmd = inputNumCommande.value.trim();
             if (!numCmd) { alert("Veuillez d'abord charger une commande."); return; }
-
-            if (isOrderLocked) {
-                alert("Cette commande est déjà validée globalement.");
-                return;
-            }
 
             if (!confirm("Voulez-vous vraiment valider définitivement cette commande ? Cela va basculer le statut à TERMINE et enregistrer les données.")) {
                 return;
@@ -680,7 +677,7 @@
             const { data: authData } = await supabase.auth.getUser();
             const userId = authData?.user?.id || null;
 
-            // 1. Mise à jour f table picking (Statut: TERMINE)
+            // 1. Mise à jour f table picking (Statut: TERMINE wla VALIDE - hna k-nsta3mlo TERMINE)
             await supabase.from('picking')
                 .update({ 
                     est_valide: true, 
@@ -710,14 +707,14 @@
                 })
                 .eq('document_vente', numCmd);
 
-            alert("Commande validée globalement et marquée comme TERMINE avec succès !");
+            alert("Commande validée globalement et verrouillée avec succès !");
             location.reload();
         };
 
         window.actionModifier = async function() {
-            // Hna fin m-no3 3la l-modifi ila kant TERMINE
+            // Hna fin m-no3 3la l-modifi ila kant TERMINE wla VALIDE
             if (isOrderTerminated) {
-                alert("Modification impossible : Cette commande a le statut TERMINE et est définitivement verrouillée.");
+                alert("Modification impossible : Cette commande a le statut TERMINE / VALIDE et est définitivement verrouillée.");
                 return;
             }
 
@@ -764,7 +761,7 @@
                 btn.classList.add('opacity-40', 'cursor-not-allowed');
             });
             
-            // Désactiver les boutons d'action
+            // Désactiver les boutons d'action (Modifier, Enregistrer, Valider Global)
             const btnMod = document.getElementById('btnModifier');
             if (btnMod) {
                 btnMod.disabled = true;

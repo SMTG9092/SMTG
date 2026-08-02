@@ -313,7 +313,6 @@
                 return;
             }
 
-            // Grouper par Itineraire (Tournée)
             const tourneesMap = {};
             rows.forEach(r => {
                 const tourneeName = r.itineraire || 'Non assigné';
@@ -427,9 +426,11 @@
 
         window.lancerCommande = async function(docVente) {
             if (!confirm(`Voulez-vous lancer la commande ${docVente} ?`)) return;
+            
             const { error } = await supabase.from('commandes_excel').update({ statut: 'LANCEE', updated_at: new Date().toISOString() }).eq('document_vente', docVente);
             if (error) { alert("Erreur: " + error.message); return; }
-            alert(`Commande ${docVente} lancée !`);
+            
+            window.open(`bon_preparation.html?cmd=${docVente}`, '_blank');
             loadSuiviCommandes();
         };
 

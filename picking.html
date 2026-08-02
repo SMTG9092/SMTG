@@ -129,7 +129,7 @@
             const tbody = document.getElementById("pickingTableBody");
             tbody.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Vérification et chargement...</td></tr>`;
 
-            // 1. Nchoufo lwél wach la commande kayna f 'commandes_excel' w wach tLansat wla f status 'LANCEE' / 'EN_PICKING'
+            // 1. Nchoufo lwél wach la commande kayna f 'commandes_excel'
             const { data: dataCmd, error: errCmd } = await supabase
                 .from('commandes_excel')
                 .select('*')
@@ -145,7 +145,7 @@
 
             const statutActuel = dataCmd[0].statut;
 
-            // Wach mlança wla la? (Ila kant IMPORTEE mardich tkll3 w tswd lina message)
+            // Wach mlança wla la?
             if (statutActuel === 'IMPORTEE') {
                 alert(`Erreur : La commande [${numCmd}] n'a pas encore été lancée ! (Statut actuel : IMPORTEE)`);
                 tbody.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-amber-400">Cette commande doit être lancée d'abord depuis le module de lancement.</td></tr>`;
@@ -160,19 +160,23 @@
                 return;
             }
 
-            // 2. Ila kanet 'LANCEE', nreddouha 'EN_PICKING' f la base de données w ntsajlo l'utilisateur + date debut picking
+            // 2. Ila kanet 'LANCEE', nreddouha 'EN_PICKING' f la base de données w ntsajlo l'utilisateur + date debut picking f suivi_commandes_lancer
             if (statutActuel === 'LANCEE') {
-                const { data: { user } } = await supabase.auth.getUser();
-                const userId = user ? user.id : null;
+                const { data: authData } = await supabase.auth.getUser();
+                const userId = authData?.user?.id || null;
                 const nowIso = new Date().toISOString();
 
                 // Update f commandes_excel
-                await supabase.from('commandes_excel')
+                const { error: updateErr1 } = await supabase.from('commandes_excel')
                     .update({ statut: 'EN_PICKING', updated_at: nowIso })
                     .eq('document_vente', numCmd);
 
-                // Update f suivi_commandes_lancer
-                await supabase.from('suivi_commandes_lancer')
+                if (updateErr1) {
+                    console.error("Erreur update commandes_excel:", updateErr1.message);
+                }
+
+                // Update f suivi_commandes_lancer (B document_vente b1itou)
+                const { error: updateErr2 } = await supabase.from('suivi_commandes_lancer')
                     .update({
                         statut: 'EN_PICKING',
                         picking_par: userId,
@@ -180,6 +184,10 @@
                         updated_at: nowIso
                     })
                     .eq('document_vente', numCmd);
+
+                if (updateErr2) {
+                    console.error("Erreur update suivi_commandes_lancer:", updateErr2.message);
+                }
 
                 dataCmd.forEach(row => row.statut = 'EN_PICKING');
             }

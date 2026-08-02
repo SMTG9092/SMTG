@@ -55,14 +55,14 @@
                 </div>
                 <div>
                     <h2 class="text-xs font-bold text-slate-100 uppercase tracking-wider">Filtre & Recherche</h2>
-                    <p class="text-[11px] text-slate-400">Filtrer par N° de commande, client ou motif</p>
+                    <p class="text-[11px] text-slate-400">Recherche par Document de Vente (N° Commande) ou Client</p>
                 </div>
             </div>
             
             <div class="flex flex-wrap items-center gap-3">
                 <div class="relative">
                     <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-                    <input type="text" id="searchInput" placeholder="Rechercher (N° Commande, Client)..." oninput="loadCommandesAnnulees()" class="bg-slate-950 border border-slate-800 text-xs text-slate-200 pl-10 pr-4 py-2 rounded-xl focus:outline-none font-mono w-72">
+                    <input type="text" id="searchInput" placeholder="N° de Commande (document_vente)..." oninput="loadCommandesAnnulees()" class="bg-slate-950 border border-slate-800 text-xs text-slate-200 pl-10 pr-4 py-2 rounded-xl focus:outline-none font-mono w-72">
                 </div>
                 <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl">
                     <span class="text-[10px] text-slate-400 uppercase">Du:</span>
@@ -78,7 +78,7 @@
         <!-- TABLE CONTAINER -->
         <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl flex-1 flex flex-col">
             <div class="p-3 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs">
-                <span class="font-bold text-slate-300"><i class="fas fa-list text-rose-400 mr-2"></i> Historique des Commandes Annulées (suivi_commandes_lancer)</span>
+                <span class="font-bold text-slate-300"><i class="fas fa-list text-rose-400 mr-2"></i> Historique des Commandes Annulées</span>
                 <span id="tableCountBadge" class="bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2.5 py-1 rounded-lg font-mono text-[11px]">0 éléments</span>
             </div>
 
@@ -86,7 +86,7 @@
                 <table class="w-full text-left text-xs border-collapse">
                     <thead class="sticky top-0 bg-slate-950 text-slate-400 uppercase text-[10px] z-10 border-b border-slate-800">
                         <tr>
-                            <th class="p-3.5">N° Commande</th>
+                            <th class="p-3.5">N° Commande (Document Vente)</th>
                             <th class="p-3.5">N° Lancement</th>
                             <th class="p-3.5">Client / Réceptionnaire</th>
                             <th class="p-3.5">Date Livraison</th>
@@ -159,14 +159,18 @@
             let query = supabase
                 .from('suivi_commandes_lancer')
                 .select('id, commande_id, document_vente, client, date_livraison, date_annulation, motif_annulation, num_lancement')
-                .eq('statut', 'ANNULEE')
-                .order('date_annulation', { ascending: false });
+                .eq('statut', 'ANNULEE');
 
-            // Ila kan l-utilisateur k-yekteb f recherche, kan-hniw (bypass) l-filter d les dates bsh yqelleb f kolchi
-            if (!searchVal) {
+            // Ila kan l-utilisateur k-yekteb document_vente, kan-dirou search direct f la base de données b ilike
+            if (searchVal) {
+                query = query.ilike('document_vente', `%${searchVal}%`);
+            } else {
+                // Ila makaynach recherche, kan-appliquer les filtres d dates w order b date_annulation
                 if (dateDebut) query = query.gte('date_livraison', dateDebut);
                 if (dateFin) query = query.lte('date_livraison', dateFin);
             }
+
+            query = query.order('date_annulation', { ascending: false });
 
             const { data: list, error } = await query;
             if (error) {
@@ -174,19 +178,11 @@
                 return;
             }
 
-            let filteredList = list || [];
-            if (searchVal) {
-                filteredList = filteredList.filter(r => 
-                    r.document_vente.toLowerCase().includes(searchVal.toLowerCase()) ||
-                    (r.client || '').toLowerCase().includes(searchVal.toLowerCase()) ||
-                    (r.num_lancement || '').toLowerCase().includes(searchVal.toLowerCase())
-                );
-            }
-
+            const filteredList = list || [];
             document.getElementById('tableCountBadge').textContent = `${filteredList.length} éléments`;
 
             if (filteredList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500">Aucune commande annulée trouvée dans le suivi.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500">Aucune commande annulée trouvée pour ce document de vente.</td></tr>`;
                 return;
             }
 

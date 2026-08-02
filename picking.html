@@ -438,11 +438,12 @@
 
             const allRows = document.querySelectorAll('tr.row-poste, tr.row-sup');
             let detailsToInsert = [];
-            let totalArticlesCount = 0;
             let totalLotsCount = 0;
             let totalQteCmdSum = 0;
             let totalPrepareSum = 0;
             let articlesSet = new Set();
+            
+            let stockUpdatesMap = {};
 
             for (const row of allRows) {
                 const poste = row.getAttribute('data-poste');
@@ -456,7 +457,6 @@
                 const lotVal = inputLot.value.trim();
                 const qteBrute = inputQte.value.trim();
 
-                // Validation : Champ quantité vide interdit
                 if (qteBrute === "") {
                     alert(`Erreur (Poste ${poste}) : Le champ de la quantité préparée ne doit pas être vide. Veuillez saisir '0' ou une valeur.`);
                     inputQte.focus();
@@ -465,7 +465,6 @@
 
                 const qteVal = Number(qteBrute);
 
-                // Validation : Si quantité > 0, le lot est obligatoire
                 if (qteVal > 0) {
                     if (!lotVal) {
                         alert(`Erreur (Poste ${poste}) : Le champ 'Lot' est obligatoire puisque la quantité préparée est supérieure à 0.`);
@@ -508,6 +507,12 @@
                         reserve: true,
                         est_valide: false
                     });
+
+                    if (!stockUpdatesMap[lotObj.stock_id]) {
+                        stockUpdatesMap[lotObj.stock_id] = 0;
+                    }
+                    stockUpdatesMap[lotObj.stock_id] += qteVal;
+
                 } 
                 else if (qteVal === 0) {
                     const qteCmdSpan = document.getElementById(`qte_cmd_${poste}`);
@@ -562,6 +567,27 @@
                 }
             }
 
+            // Mise à jour de stock_reserve dans la table stock
+            for (const [stockId, qteReserver] of Object.entries(stockUpdatesMap)) {
+                const { data: currentStock, error: fetchStockErr } = await supabase
+                    .from('stock')
+                    .select('stock_reserve')
+                    .eq('id', stockId)
+                    .single();
+
+                if (!fetchStockErr && currentStock) {
+                    const nouveauStockReserve = Number(currentStock.stock_reserve || 0) + Number(qteReserver);
+                    
+                    await supabase
+                        .from('stock')
+                        .update({ 
+                            stock_reserve: nouveauStockReserve,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', stockId);
+                }
+            }
+
             await supabase.from('commandes_excel')
                 .update({ 
                     statut: 'EN_PICKING',
@@ -569,7 +595,7 @@
                 })
                 .eq('document_vente', numCmd);
 
-            alert("Commande enregistrée avec succès (Statut: EN_PICKING) !");
+            alert("Commande enregistrée avec succès, stock réservé et statut mis à jour !");
         };
 
         window.actionModifier = function() {

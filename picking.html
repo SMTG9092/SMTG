@@ -172,7 +172,6 @@
                 return;
             }
 
-            // Récupérer l'ancien picking s'il existe pour charger les lots et quantités saisis précédemment
             const { data: existingPicking } = await supabase
                 .from('picking')
                 .select('id')
@@ -510,7 +509,6 @@
             const suiviId = suiviData.id;
             const clientNom = document.getElementById('infoClient').textContent;
 
-            // Récupérer l'ancien picking_id et les détails pour calculer le delta du stock
             const { data: oldPicking } = await supabase
                 .from('picking')
                 .select('id')
@@ -655,7 +653,6 @@
                 }
             }
 
-            // Mise à jour de stock_reserve en fonction du delta calculé (différence)
             let allStockIds = new Set([...Object.keys(oldDetailsMap), ...Object.keys(newStockMap)]);
 
             for (const stockId of allStockIds) {
@@ -691,7 +688,10 @@
                 })
                 .eq('document_vente', numCmd);
 
-            alert("Enregistrement réussi ! Stock réservé mis à jour selon la différence.");
+            alert("Enregistrement réussi ! Stock réservé mis à jour.");
+            
+            // Rafraîchir la page automatiquement pour vider l'interface et pouvoir enchaîner une nouvelle commande
+            location.reload();
         };
 
         window.actionModifier = function() {

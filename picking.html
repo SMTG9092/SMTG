@@ -220,7 +220,6 @@
             tbody.innerHTML = html;
         };
 
-        // Stocker la quantité dispo dyal kol lot mli y-sélectionnéh l-maghazini
         window.selectedLotsData = {};
 
         window.filtrerLots = async function(articleCode, terme, uniqueId) {
@@ -270,16 +269,15 @@
                 dropdown.classList.add('hidden');
             }
 
-            // N-sajlo la quantité dispo f had l-lot
+            // N-sajlo la quantité dispo f had l-lot siratiquement walakin ma n-biniwhach f l-wajiha
             window.selectedLotsData[uniqueId] = Number(stockDisp);
 
-            // N-biniw l-message tht la quantité saisie b la quantité mtwajda f dak l-lot
+            // N-khwiw text dyal l-info ila tbdal l-lot
             const infoDiv = document.getElementById(`info_disp_${uniqueId}`);
             if (infoDiv) {
-                infoDiv.innerHTML = `<span class="text-sky-400">Lot Disp: <b>${Number(stockDisp).toFixed(3)}</b></span>`;
+                infoDiv.innerHTML = "";
             }
 
-            // N-fihmo wach l-input dyal quantité 3amer bch n-vérifiw w n-recalculiw
             const qteInp = document.getElementById(`input_qte_${uniqueId}`);
             if (qteInp && qteInp.value) {
                 qteInp.dispatchEvent(new Event('input'));
@@ -292,12 +290,12 @@
             const saisieVal = Number(qteInp.value || 0);
             const stockDisp = window.selectedLotsData[uniqueId];
 
-            // Ila khtari lot w ktab quantité katfout dispo, n-bloquiw w n-nbiih
+            // Ila fatet la quantité dispo 3ad katban l-quantité mtwajda f dak l-lot
             if (stockDisp !== undefined && saisieVal > stockDisp) {
-                infoDiv.innerHTML = `<span class="text-rose-400 font-bold animate-pulse">Max dispo: ${stockDisp.toFixed(3)} !</span>`;
+                infoDiv.innerHTML = `<span class="text-rose-400 font-bold animate-pulse">Max dispo : ${stockDisp.toFixed(3)}</span>`;
                 qteInp.classList.add('border-rose-500', 'text-rose-400');
-            } else if (stockDisp !== undefined) {
-                infoDiv.innerHTML = `<span class="text-sky-400">Lot Disp: <b>${stockDisp.toFixed(3)}</b></span>`;
+            } else {
+                infoDiv.innerHTML = ""; // Katbqa mkhbya ila kan dakchi 3adi wla sghir 3la dispo
                 qteInp.classList.remove('border-rose-500', 'text-rose-400');
             }
 

@@ -94,6 +94,17 @@
 
         </div>
 
+        <!-- ACTION BAR / LANCER TOUT -->
+        <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between shadow-lg">
+            <div class="flex items-center gap-2 text-xs text-slate-300">
+                <i class="fas fa-circle-info text-sky-400"></i>
+                <span>Seules les commandes non lancées (<strong class="text-amber-400">IMPORTEE</strong>) s'affichent et peuvent être lancées.</span>
+            </div>
+            <button onclick="lancerToutFiltre()" class="bg-sky-600 hover:bg-sky-500 text-white px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
+                <i class="fas fa-rocket"></i> Lancer Tout le Filtre (En Masse)
+            </button>
+        </div>
+
         <!-- TABLE CONTAINER WITH MODE SWITCHER TABS -->
         <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl flex-1 flex flex-col">
             <div class="p-3 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs flex-wrap gap-3">
@@ -194,10 +205,8 @@
             return `${year}-${month}-${day}`;
         }
 
-        // Fonction pour formater la date en format français (JJ/MM/AAAA)
         function formatDateFr(dateStr) {
             if (!dateStr) return '-';
-            // Si la date vient sous format YYYY-MM-DD
             const parts = dateStr.split('-');
             if (parts.length === 3) {
                 return `${parts[2]}/${parts[1]}/${parts[0]}`;
@@ -469,11 +478,12 @@
             const { error: err1 } = await supabase
                 .from('commandes_excel')
                 .update({ statut: 'LANCEE', updated_at: nowIso })
-                .eq('document_vente', docVente);
+                .eq('document_vente', docVente)
+                .eq('statut', 'IMPORTEE'); // Safety check anti-doublon
                 
-            if (err1) { alert("Erreur commandes_excel: " + err1.message); return; }
+            if (err1) { alert("Erreur: " + err1.message); return; }
 
-            const { error: err2 } = await supabase
+            await supabase
                 .from('suivi_commandes_lancer')
                 .update({
                     statut: 'LANCEE',
@@ -483,8 +493,6 @@
                     updated_at: nowIso
                 })
                 .eq('document_vente', docVente);
-
-            if (err2) { alert("Erreur suivi_commandes_lancer: " + err2.message); return; }
             
             window.open(`bon_preparation.html?cmd=${docVente}`, '_blank');
             loadSuiviCommandes();
@@ -506,7 +514,7 @@
             const { data: docsRows } = await queryDocs;
 
             if (!docsRows || docsRows.length === 0) {
-                alert("Aucune commande trouvée pour cette tournée.");
+                alert("Aucune commande IMPORTEE trouvée pour cette tournée.");
                 return;
             }
 
@@ -517,7 +525,8 @@
 
                 await supabase.from('commandes_excel')
                     .update({ statut: 'LANCEE', updated_at: nowIso })
-                    .eq('document_vente', docVente);
+                    .eq('document_vente', docVente)
+                    .eq('statut', 'IMPORTEE');
 
                 await supabase.from('suivi_commandes_lancer')
                     .update({
@@ -532,6 +541,52 @@
 
             alert(`La tournée "${tourneeName}" a été lancée avec succès (${uniqueDocs.length} commandes) !`);
             window.open(`bon_preparation_tournee.html?tournee=${encodeURIComponent(tourneeName)}`, '_blank');
+            loadSuiviCommandes();
+        };
+
+        // Option 3: Lancer Tout le Filtre en cours (Swa 3la 7sab les dates)
+        window.lancerToutFiltre = async function() {
+            const dateDebut = document.getElementById('dateDebut').value;
+            const dateFin = document.getElementById('dateFin').value;
+
+            if (!confirm(`Attention ! Voulez-vous vraiment lancer TOUTES les commandes IMPORTEES de la période affichée ?`)) return;
+
+            const { data: { user } } = await supabase.auth.getUser();
+            const userId = user ? user.id : null;
+            const nowIso = new Date().toISOString();
+
+            let queryDocs = supabase.from('commandes_excel').select('document_vente, itineraire').eq('statut', 'IMPORTEE');
+            if (dateDebut) queryDocs = queryDocs.gte('date_livraison', dateDebut);
+            if (dateFin) queryDocs = queryDocs.lte('date_livraison', dateFin);
+            const { data: docsRows } = await queryDocs;
+
+            if (!docsRows || docsRows.length === 0) {
+                alert("Aucune commande IMPORTEE trouvée dans cette période.");
+                return;
+            }
+
+            const uniqueDocs = [...new Set(docsRows.map(r => r.document_vente))];
+
+            for (let docVente of uniqueDocs) {
+                const numLancement = await genererNumLancement('G'); // G for Global
+
+                await supabase.from('commandes_excel')
+                    .update({ statut: 'LANCEE', updated_at: nowIso })
+                    .eq('document_vente', docVente)
+                    .eq('statut', 'IMPORTEE');
+
+                await supabase.from('suivi_commandes_lancer')
+                    .update({
+                        statut: 'LANCEE',
+                        num_lancement: numLancement,
+                        lance_par: userId,
+                        date_lancement: nowIso,
+                        updated_at: nowIso
+                    })
+                    .eq('document_vente', docVente);
+            }
+
+            alert(`Succès ! ${uniqueDocs.length} commandes ont été lancées en masse.`);
             loadSuiviCommandes();
         };
 

@@ -55,7 +55,7 @@
                 </div>
                 <div>
                     <h2 class="text-xs font-bold text-slate-100 uppercase tracking-wider">Recherche & Filtre</h2>
-                    <p class="text-[11px] text-slate-400">Tapez un N° de commande (ex: 4000801073) pour voir les détails d'annulation</p>
+                    <p class="text-[11px] text-slate-400">Tapez un N° de commande (ex: 4000801073) pour chercher et voir les détails</p>
                 </div>
             </div>
             
@@ -121,7 +121,7 @@
                 </table>
             </div>
 
-            <!-- SECTION INFORMATIONS D'ANNULATION (NEW) -->
+            <!-- SECTION INFORMATIONS D'ANNULATION -->
             <div id="annulationInfoSection" class="bg-slate-950 border border-rose-500/30 rounded-xl p-4 flex flex-col gap-2 font-mono text-xs">
                 <div class="text-[11px] font-bold text-rose-400 uppercase flex items-center gap-2 border-b border-rose-500/20 pb-2">
                     <i class="fas fa-triangle-exclamation"></i> Informations sur l'annulation
@@ -210,7 +210,6 @@
             const modalBody = document.getElementById("modalDetailsBody");
             modalBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Chargement...</td></tr>`;
             
-            // Reset info annulation
             document.getElementById("annuleParUser").textContent = "Chargement...";
             document.getElementById("annuleDate").textContent = "-";
             document.getElementById("annuleMotif").textContent = "-";
@@ -218,7 +217,7 @@
             document.getElementById("detailModal").classList.remove("hidden");
             setTimeout(() => document.getElementById("detailModal").classList.remove("opacity-0"), 10);
 
-            // 1. Jib l-articles d commande
+            // 1. Jib l-articles
             const { data: articles } = await supabase
                 .from('commandes_excel')
                 .select('"Poste", article, designation_article, quantite_commandee, nombre_pieces')
@@ -235,10 +234,10 @@
             }
             modalBody.innerHTML = html;
 
-            // 2. Jib l-ma3loumat d annulation w l-user li anullaha m3a table user_profiles
-            const { data: suiviData, error } = await supabase
+            // 2. Jib ma3loumat l-annulation w l-user men user_profiles
+            const { data: suiviData } = await supabase
                 .from('suivi_commandes_lancer')
-                .select('motif_annulation, date_annulation, user_profiles(full_name, email)')
+                .select('motif_annulation, date_annulation, user_profiles(nom_complet, nom, prenom, email)')
                 .eq('document_vente', docVente)
                 .single();
 
@@ -246,16 +245,15 @@
                 document.getElementById("annuleMotif").textContent = suiviData.motif_annulation || 'Aucun motif spécifié';
                 
                 if (suiviData.date_annulation) {
-                    const dateFormatted = new Date(suiviData.date_annulation).toLocaleString('fr-FR');
-                    document.getElementById("annuleDate").textContent = dateFormatted;
+                    document.getElementById("annuleDate").textContent = new Date(suiviData.date_annulation).toLocaleString('fr-FR');
                 } else {
                     document.getElementById("annuleDate").textContent = '-';
                 }
 
-                // Chkon li darha (full_name ola email)
                 const userProf = suiviData.user_profiles;
                 if (userProf) {
-                    document.getElementById("annuleParUser").textContent = userProf.full_name || userProf.email || 'Utilisateur inconnu';
+                    const fullName = userProf.nom_complet || `${userProf.prenom || ''} ${userProf.nom || ''}`.trim() || userProf.email;
+                    document.getElementById("annuleParUser").textContent = fullName || 'Utilisateur inconnu';
                 } else {
                     document.getElementById("annuleParUser").textContent = 'Système / Non assigné';
                 }

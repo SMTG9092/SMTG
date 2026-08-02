@@ -34,7 +34,11 @@
                 <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Module de Lancement des Commandes</span>
             </div>
         </a>
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3">
+            <!-- ZIR DYAL COMMANDES ANNULEES (F L-FOQ HDA RELANCE) -->
+            <a href="annulee_lancer.html" class="bg-slate-800 hover:bg-slate-700 text-rose-400 border border-rose-500/30 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
+                <i class="fas fa-ban"></i> Commandes Annulées
+            </a>
             <!-- ZIR DYAL RELANCE.HTML -->
             <a href="relance.html" class="bg-slate-800 hover:bg-slate-700 text-sky-400 border border-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
                 <i class="fas fa-magnifying-glass"></i> Recherche & Relance
@@ -111,10 +115,6 @@
                     <button onclick="switchMode('tournee')" id="tabModeTournee" class="px-3 py-1.5 rounded-lg font-bold text-xs transition bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer">
                         <i class="fas fa-route mr-1.5"></i> Par Tournée (Itinéraire)
                     </button>
-                    <!-- ZIR DYAL ANNULEE KAT-DIDI L ANNULEE_LANCER.HTML -->
-                    <a href="annulee_lancer.html" id="tabModeAnnulee" class="px-3 py-1.5 rounded-lg font-bold text-xs transition bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer border border-rose-500/30 flex items-center gap-1.5">
-                        <i class="fas fa-ban text-rose-400"></i> Commandes Annulées
-                    </a>
                 </div>
                 <span id="tableCountBadge" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-lg font-mono text-[11px]">0 éléments</span>
             </div>

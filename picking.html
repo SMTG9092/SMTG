@@ -190,7 +190,7 @@
             let html = "";
             dataCmd.forEach(row => {
                 const qteCmd = Number(row.quantite_commandee || 0);
-                const qtePrep = row.quantite_preparee !== null ? Number(row.quantite_preparee) : 0;
+                const qtePrepActuelle = row.quantite_preparee !== null ? Number(row.quantite_preparee) : 0;
                 
                 html += `
                     <tr class="hover:bg-slate-800/30 transition">
@@ -198,18 +198,34 @@
                         <td class="p-3.5 text-sky-400">${row.article}</td>
                         <td class="p-3.5 text-slate-200">${row.designation_article}</td>
                         <td class="p-3.5 text-right font-bold text-slate-100">${qteCmd.toFixed(3)}</td>
-                        <td class="p-3.5 text-right font-bold text-emerald-400">${qtePrep.toFixed(3)}</td>
+                        <td class="p-3.5 text-right font-bold text-emerald-400" id="qte_aff_${row.Poste}">${qtePrepActuelle.toFixed(3)}</td>
                         <td class="p-3.5 text-center">
                             <input type="text" placeholder="Lot..." class="bg-slate-950 border border-slate-700 text-slate-200 text-center px-2 py-1 rounded-lg text-xs w-24 focus:outline-none focus:border-emerald-500">
                         </td>
                         <td class="p-3.5 text-center">
-                            <input type="number" step="0.001" value="${qtePrep}" class="bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500">
+                            <input type="number" step="0.001" placeholder="" oninput="mettreAJourQtePrep('${numCmd}', ${row.Poste}, this.value)" class="bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500">
                         </td>
                         <td class="p-3.5 text-center text-slate-400">${row.unite || 'KG'}</td>
                     </tr>
                 `;
             });
             tbody.innerHTML = html;
+        };
+
+        window.mettreAJourQtePrep = async function(documentVente, poste, valeur) {
+            const spanAffichage = document.getElementById(`qte_aff_${poste}`);
+            const nouvelleQte = valeur === "" ? 0 : Number(valeur);
+            
+            spanAffichage.textContent = nouvelleQte.toFixed(3);
+
+            // Enregistrement f Base de données otmatik
+            await supabase.from('commandes_excel')
+                .update({ 
+                    quantite_preparee: nouvelleQte,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('document_vente', documentVente)
+                .eq('Poste', poste);
         };
 
         function resetInfos() {

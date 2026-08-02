@@ -165,24 +165,10 @@
 
         let selectedDocVente = null;
 
-        function getLocalDateString(dateObj) {
-            const year = dateObj.getFullYear();
-            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const day = String(dateObj.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        const today = new Date();
-        const debutMois = new Date(today.getFullYear(), today.getMonth(), 1);
-        document.getElementById('dateDebut').value = getLocalDateString(debutMois);
-        document.getElementById('dateFin').value = getLocalDateString(today);
-
         window.loadCommandesAnnulees = async function() {
             const tbody = document.getElementById("annuleeTableBody");
             tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Chargement...</td></tr>`;
 
-            const dateDebut = document.getElementById('dateDebut').value;
-            const dateFin = document.getElementById('dateFin').value;
             const searchVal = document.getElementById('searchInput').value.trim();
 
             let query = supabase
@@ -190,11 +176,11 @@
                 .select('id, commande_id, document_vente, client, date_livraison, date_annulation, motif_annulation, num_lancement, statut');
 
             if (searchVal) {
+                // Ila ktab chi haja f recherche, nqllbo 3liha biha bzif
                 query = query.ilike('document_vente', `%${searchVal}%`);
             } else {
+                // Ila maktab walo, njibo GA3 les commandes li statut dyalhom ANNULEE bla taaweed d t-tawarikh
                 query = query.eq('statut', 'ANNULEE');
-                if (dateDebut) query = query.gte('date_livraison', dateDebut);
-                if (dateFin) query = query.lte('date_livraison', dateFin);
             }
 
             query = query.order('created_at', { ascending: false });
@@ -209,7 +195,7 @@
             document.getElementById('tableCountBadge').textContent = `${filteredList.length} éléments`;
 
             if (filteredList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500">Aucune commande trouvée.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500">Aucune commande annulée trouvée.</td></tr>`;
                 return;
             }
 

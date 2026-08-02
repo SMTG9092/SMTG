@@ -132,15 +132,15 @@
                 <button onclick="closeModal()" class="text-slate-400 hover:text-white cursor-pointer"><i class="fas fa-xmark text-lg"></i></button>
             </div>
 
-            <!-- BLOC INFO ANNULATION (ZIDNAH HNA) -->
-            <div id="modalAnnulationInfo" class="mt-4 bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 text-xs hidden">
+            <!-- BLOC INFO ANNULATION -->
+            <div id="modalAnnulationInfo" class="mt-4 bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 text-xs">
                 <div class="flex items-center gap-2 text-rose-400 font-bold mb-1">
                     <i class="fas fa-circle-info"></i> Informations d'annulation
                 </div>
                 <div class="grid grid-cols-2 gap-2 text-slate-300 font-mono text-[11px]">
-                    <div><span class="text-slate-400">Annulé par:</span> <span id="infoUserAnnule" class="text-white font-bold">-</span></div>
-                    <div><span class="text-slate-400">Date:</span> <span id="infoDateAnnule" class="text-white font-bold">-</span></div>
-                    <div class="col-span-2"><span class="text-slate-400">Motif:</span> <span id="infoMotifAnnule" class="text-rose-300 font-bold">-</span></div>
+                    <div><span class="text-slate-400">Annulé par:</span> <span id="infoUserAnnule" class="text-white font-bold">Chargement...</span></div>
+                    <div><span class="text-slate-400">Date:</span> <span id="infoDateAnnule" class="text-white font-bold">Chargement...</span></div>
+                    <div class="col-span-2"><span class="text-slate-400">Motif:</span> <span id="infoMotifAnnule" class="text-rose-300 font-bold">Chargement...</span></div>
                 </div>
             </div>
 
@@ -354,36 +354,49 @@
             loadCommandesAnnulees();
         };
 
-        // OPEN DETAILS M3A JIBAN M3LOMAT DYAL ANNULATION (USER + MOTIF)
+        // OPEN DETAILS BLOC FIX MANUEL & ROBUSTE
         window.openDetails = async function(docVente) {
             document.getElementById("modalDocTitle").textContent = docVente;
             const modalBody = document.getElementById("modalDetailsBody");
-            const annulationInfoDiv = document.getElementById("modalAnnulationInfo");
+            
+            // Set default values while loading
+            document.getElementById('infoUserAnnule').textContent = "Non spécifié";
+            document.getElementById('infoDateAnnule').textContent = "-";
+            document.getElementById('infoMotifAnnule').textContent = "Aucun motif enregistré";
 
             modalBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Chargement...</td></tr>`;
-            annulationInfoDiv.classList.add("hidden");
             document.getElementById("detailModal").classList.remove("hidden");
             setTimeout(() => document.getElementById("detailModal").classList.remove("opacity-0"), 10);
 
-            // 1. Jib l-m3lomat dyal l'annulation mn suivi_commandes_lancer m3a l-user mn user_profiles
-            const { data: suiviData } = await supabase
+            // 1. Jib l-m3lomat mn suivi_commandes_lancer bl-isnad 3adi
+            const { data: suiviData, error: suiviErr } = await supabase
                 .from('suivi_commandes_lancer')
-                .select(`
-                    date_annulation,
-                    motif_annulation,
-                    user_profiles:annule_par (full_name, email)
-                `)
+                .select('annule_par, date_annulation, motif_annulation')
                 .eq('document_vente', docVente)
                 .single();
 
-            if (suiviData && suiviData.motif_annulation) {
-                const userName = suiviData.user_profiles?.full_name || suiviData.user_profiles?.email || 'Utilisateur inconnu';
-                const dateAnnuleFormatted = suiviData.date_annulation ? new Date(suiviData.date_annulation).toLocaleString('fr-FR') : '-';
-                
-                document.getElementById('infoUserAnnule').textContent = userName;
-                document.getElementById('infoDateAnnule').textContent = dateAnnuleFormatted;
-                document.getElementById('infoMotifAnnule').textContent = suiviData.motif_annulation;
-                annulationInfoDiv.classList.remove("hidden");
+            if (suiviData) {
+                if (suiviData.motif_annulation) {
+                    document.getElementById('infoMotifAnnule').textContent = suiviData.motif_annulation;
+                }
+                if (suiviData.date_annulation) {
+                    document.getElementById('infoDateAnnule').textContent = new Date(suiviData.date_annulation).toLocaleString('fr-FR');
+                }
+
+                // Ila kayn annule_par (UUID dyal l-user), n-jiboh mn user_profiles b query msta9lla
+                if (suiviData.annule_par) {
+                    const { data: userData, error: userErr } = await supabase
+                        .from('user_profiles')
+                        .select('full_name, email')
+                        .eq('id', suiviData.annule_par)
+                        .single();
+
+                    if (userData) {
+                        document.getElementById('infoUserAnnule').textContent = userData.full_name || userData.email || 'Utilisateur';
+                    } else {
+                        document.getElementById('infoUserAnnule').textContent = suiviData.annule_par; // Affichiw ID ila mat-l9a walo
+                    }
+                }
             }
 
             // 2. Jib les articles dyal la commande

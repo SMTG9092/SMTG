@@ -96,7 +96,7 @@
                             <th class="p-3.5">Désignation</th>
                             <th class="p-3.5 text-right">Quantité Commandée</th>
                             <th class="p-3.5 text-right text-emerald-400">Quantité Préparée</th>
-                            <th class="p-3.5 text-center">Lot (Stock)</th>
+                            <th class="p-3.5 text-center">Lot (Recherche)</th>
                             <th class="p-3.5 text-center">Qte Prép (Saisie)</th>
                             <th class="p-3.5 text-center">Action</th>
                         </tr>
@@ -193,20 +193,23 @@
                 const qtePrepActuelle = row.quantite_preparee !== null ? Number(row.quantite_preparee) : 0;
                 
                 // Njbdou les lots mn la table stock b code d'article
-                const optionsLots = await chargerLotsArticle(row.article);
+                const lotsData = await chargerLotsArticle(row.article);
+                const datalistId = `lots_list_${row.Poste}_${Math.random().toString(36).substr(2, 9)}`;
+
+                let optionsHtml = lotsData.map(item => `<option value="${item.lot}">Dispo: ${Number(item.stock_disponible).toFixed(3)}</option>`).join('');
 
                 html += `
                     <tr class="hover:bg-slate-800/30 transition row-poste" data-poste="${row.Poste}" data-qte-cmd="${qteCmd}">
                         <td class="p-3.5 text-amber-400 font-bold">${row.Poste}</td>
-                        <td class="p-3.5 text-sky-400" id="article_${row.Poste}">${row.article}</td>
+                        <td class="p-3.5 text-sky-400">${row.article}</td>
                         <td class="p-3.5 text-slate-200">${row.designation_article}</td>
                         <td class="p-3.5 text-right font-bold text-slate-100" id="qte_cmd_${row.Poste}">${qteCmd.toFixed(3)}</td>
                         <td class="p-3.5 text-right font-bold text-emerald-400" id="qte_aff_${row.Poste}">${qtePrepActuelle.toFixed(3)}</td>
                         <td class="p-3.5 text-center">
-                            <select class="bg-slate-950 border border-slate-700 text-slate-200 text-center px-2 py-1 rounded-lg text-xs w-44 focus:outline-none focus:border-emerald-500">
-                                <option value="">-- Choisir Lot --</option>
-                                ${optionsLots}
-                            </select>
+                            <input type="text" list="${datalistId}" placeholder="Taper lot..." class="bg-slate-950 border border-slate-700 text-slate-200 text-center px-2 py-1 rounded-lg text-xs w-40 focus:outline-none focus:border-emerald-500 uppercase">
+                            <datalist id="${datalistId}">
+                                ${optionsHtml}
+                            </datalist>
                         </td>
                         <td class="p-3.5 text-center">
                             <input type="number" step="0.001" placeholder="" oninput="recalculerTotalPoste('${numCmd}', ${row.Poste})" class="qte-saisie-input bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500" value="${qtePrepActuelle > 0 ? qtePrepActuelle : ''}">
@@ -228,11 +231,8 @@
                 .eq('article', articleCode)
                 .gt('stock_disponible', 0);
 
-            if (error || !data || data.length === 0) {
-                return `<option value="" disabled>Aucun lot en stock</option>`;
-            }
-
-            return data.map(item => `<option value="${item.lot}">${item.lot} (Disp: ${Number(item.stock_disponible).toFixed(3)})</option>`).join('');
+            if (error || !data) return [];
+            return data;
         }
 
         window.ajouterLigneSup = async function(poste, article, numCmd) {
@@ -248,7 +248,9 @@
                 return;
             }
 
-            const optionsLots = await chargerLotsArticle(article);
+            const lotsData = await chargerLotsArticle(article);
+            const datalistId = `lots_list_sup_${poste}_${Math.random().toString(36).substr(2, 9)}`;
+            let optionsHtml = lotsData.map(item => `<option value="${item.lot}">Dispo: ${Number(item.stock_disponible).toFixed(3)}</option>`).join('');
 
             const trSup = document.createElement('tr');
             trSup.className = "hover:bg-slate-800/30 transition border-t border-slate-800/30 bg-slate-900/45 row-sup";
@@ -260,10 +262,10 @@
                 <td class="p-3.5 text-right text-slate-500">-</td>
                 <td class="p-3.5 text-right text-slate-500">-</td>
                 <td class="p-3.5 text-center">
-                    <select class="bg-slate-950 border border-slate-700 text-slate-200 text-center px-2 py-1 rounded-lg text-xs w-44 focus:outline-none focus:border-emerald-500">
-                        <option value="">-- Choisir Lot --</option>
-                        ${optionsLots}
-                    </select>
+                    <input type="text" list="${datalistId}" placeholder="Taper lot..." class="bg-slate-950 border border-slate-700 text-slate-200 text-center px-2 py-1 rounded-lg text-xs w-40 focus:outline-none focus:border-emerald-500 uppercase">
+                    <datalist id="${datalistId}">
+                        ${optionsHtml}
+                    </datalist>
                 </td>
                 <td class="p-3.5 text-center">
                     <input type="number" step="0.001" placeholder="" oninput="recalculerTotalPoste('${numCmd}', ${poste})" class="qte-saisie-input bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500">

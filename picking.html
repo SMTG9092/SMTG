@@ -3,321 +3,887 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion Picking - SoufStock WMS</title>
+    <title>Préparation Picking - SoufStock Enterprise ERP/WMS</title>
+    
+    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS Play CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        slate: { 950: '#020617', 900: '#0f172a', 800: '#1e293b', 700: '#334155' },
-                        emerald: { 600: '#059669', 500: '#10b981', 400: '#34d399' },
-                        sky: { 600: '#0284c7', 500: '#0ea5e9', 400: '#38bdf8' },
-                        amber: { 600: '#d97706', 500: '#f59e0b', 400: '#fbbf24' }
+                        slate: {
+                            950: '#020617',
+                            900: '#0f172a',
+                            800: '#1e293b',
+                            700: '#334155',
+                            400: '#94a3b8',
+                            300: '#cbd5e1',
+                            100: '#f1f5f9'
+                        },
+                        emerald: {
+                            500: '#10b981',
+                            600: '#059669',
+                            400: '#34d399',
+                            300: '#6ee7b7'
+                        }
                     }
                 }
             }
         }
     </script>
-</head>
-<body class="bg-slate-950 text-slate-100 font-sans antialiased h-screen flex flex-col overflow-hidden">
 
-    <!-- HEADER -->
-    <header class="h-16 bg-slate-900/60 border-b border-slate-800 px-6 flex items-center justify-between shrink-0">
-        <a href="lancer.html" class="flex items-center gap-3 group">
-            <div class="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 group-hover:bg-sky-500/20 transition">
-                <i class="fas fa-clipboard-list"></i>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #090d16; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+        body { background-color: #020617; color: #f1f5f9; font-family: ui-sans-serif, system-ui, sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex overflow-hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-screen p-4 select-none shrink-0">
+        <div class="flex items-center gap-3 px-2 mb-6">
+            <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                <i class="fas fa-snowflake text-lg"></i>
             </div>
             <div>
-                <span class="font-bold text-sm block">SoufStock <span class="text-sky-400">WMS</span></span>
-                <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Module de Picking</span>
-            </div>
-        </a>
-        <div class="flex items-center gap-3">
-            <!-- RECHERCHE RAPIDE -->
-            <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl">
-                <i class="fas fa-search text-xs text-sky-400"></i>
-                <input type="text" id="searchPickingInput" placeholder="N° Commande / Client..." class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono w-48">
-                <button onclick="filtrerPicking()" class="bg-sky-600 hover:bg-sky-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer">Chercher</button>
-            </div>
-
-            <a href="lancer.html" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
-                <i class="fas fa-arrow-left"></i> Retour au Lancement
-            </a>
-            <div class="flex items-center gap-4 bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl font-mono text-xs">
-                <span id="liveClock" class="text-sky-400">--:--:--</span>
+                <span class="font-bold text-base tracking-wide block text-slate-100">SoufStock</span>
+                <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Gestion</span>
             </div>
         </div>
-    </header>
-
-    <!-- MAIN WRAPPER -->
-    <main class="flex-1 p-6 overflow-hidden flex flex-col gap-5">
         
-        <!-- BARRE DE STATS ET FILTRES -->
-        <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
-            <div class="xl:col-span-9 bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-lg">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
-                        <i class="fas fa-filter"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-xs font-bold text-slate-100 uppercase tracking-wider">Filtrer par Statut Picking</h2>
-                        <p class="text-[11px] text-slate-400">Suivi des ordres de préparation en cours</p>
+        <nav id="sidebarNav" class="flex-1 overflow-y-auto pr-1">
+            <!-- Dynamic Sidebar -->
+        </nav>
+
+        <div class="pt-4 mt-auto border-t border-slate-800/80">
+            <div class="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3 mb-2">
+                <span id="sidebarUserName" class="block text-xs font-bold text-slate-200 truncate uppercase">YAHYA SOUFIANE</span>
+                <span class="block text-[10px] text-emerald-400 font-medium mt-0.5">Administrateur</span>
+            </div>
+            <button id="logoutBtn" class="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl py-2 px-3 text-xs font-semibold transition flex items-center justify-center gap-2 cursor-pointer">
+                <i class="fas fa-sign-out-alt"></i> Déconnexion
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTAINER -->
+    <div class="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">
+        
+        <!-- HEADER -->
+        <header class="h-20 bg-slate-900/40 border-b border-slate-800/80 px-8 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-4">
+                <div>
+                    <h1 id="pageTitle" class="text-xl font-bold tracking-tight text-slate-100">Préparation Picking</h1>
+                    <div id="breadcrumb" class="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
+                        <span>Accueil</span>
+                        <span>/</span>
+                        <strong class="text-slate-300">Préparation Picking</strong>
                     </div>
                 </div>
+            </div>
+            
+            <div class="flex items-center gap-4 bg-slate-900/80 border border-slate-800 px-4 py-2 rounded-xl">
+                <div class="text-right">
+                    <span id="currentDate" class="text-xs font-medium text-slate-300 block">--</span>
+                    <span id="currentTime" class="text-[10px] text-emerald-400 font-mono block">--:--:--</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- PAGE BODY -->
+        <main class="flex-1 p-8 overflow-y-auto">
+            <div class="max-w-7xl mx-auto flex flex-col gap-6">
                 
-                <div class="flex flex-wrap items-center gap-2">
-                    <select id="filterStatut" onchange="loadPickingSessions()" class="bg-slate-950 border border-slate-800 text-xs text-slate-200 px-3 py-2 rounded-xl focus:outline-none cursor-pointer">
-                        <option value="">Tous les statuts</option>
-                        <option value="EN_COURS">En Cours</option>
-                        <option value="PICKING">En Picking</option>
-                        <option value="VALIDE">Validé</option>
-                        <option value="TERMINE">Terminé</option>
-                        <option value="ANNULE">Annulé</option>
-                    </select>
-                    <button onclick="loadPickingSessions()" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
-                        <i class="fas fa-rotate"></i> Actualiser
-                    </button>
+                <!-- TOP ACTION BAR & SEARCH -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                            <i class="fas fa-clipboard-list text-emerald-400"></i> Picking Commande / BL
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">
+                            Saisissez ou scannez le document de vente (Appuyez sur Entrée ou cliquez Charger) pour démarrer la préparation[cite: 2].
+                        </p>
+                    </div>
+                    
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <div class="relative flex items-center">
+                            <i class="fas fa-file-invoice absolute left-3.5 text-slate-500 text-sm"></i>
+                            <input type="text" id="documentInput" placeholder="N° Document (Ex: 4000795424)" value=""
+                                class="bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-64 transition shadow-inner font-mono">
+                        </div>
+                        <button id="searchDocBtn" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs transition flex items-center gap-2 shadow-sm cursor-pointer">
+                            <i class="fas fa-search"></i> Charger
+                        </button>
+                        <button id="enableModifyBtn" onclick="enableModification()" disabled class="bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/20 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 opacity-50 cursor-not-allowed">
+                            <i class="fas fa-edit"></i> Modifier
+                        </button>
+                        <button onclick="savePicking('EN_COURS')" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 cursor-pointer">
+                            <i class="fas fa-save"></i> Enregistrer
+                        </button>
+                        <button onclick="validatePicking('PICKING')" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 cursor-pointer">
+                            <i class="fas fa-check-circle"></i> Valider
+                        </button>
+                    </div>
                 </div>
-            </div>
 
-            <!-- STAT TOTAL PICKING -->
-            <div class="xl:col-span-3 bg-slate-900 border border-slate-800 p-3 rounded-xl shadow-lg flex items-center justify-around">
-                <div class="text-center">
-                    <span class="text-[9px] text-slate-400 uppercase block tracking-wider">Total Pickings</span>
-                    <span id="statTotalPicking" class="text-xl font-bold font-mono text-sky-400">0</span>
+                <!-- ORDER INFO CARDS -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg">
+                        <span class="text-[10px] text-slate-400 uppercase font-semibold tracking-wider block">Client</span>
+                        <span id="infoClient" class="text-sm font-bold text-slate-200 mt-1 block truncate">-</span>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg">
+                        <span class="text-[10px] text-slate-400 uppercase font-semibold tracking-wider block">Date Création</span>
+                        <span id="infoCreation" class="text-sm font-bold text-slate-200 font-mono mt-1 block">-</span>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg">
+                        <span class="text-[10px] text-slate-400 uppercase font-semibold tracking-wider block">Date Livraison</span>
+                        <span id="infoLivraison" class="text-sm font-bold text-slate-200 font-mono mt-1 block">-</span>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold tracking-wider block">Tournée / Itinéraire</span>
+                            <span id="infoTournee" class="text-sm font-bold text-sky-400 mt-1 block">-</span>
+                        </div>
+                        <span id="infoStatut" class="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">EN ATTENTE</span>
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- TABLE CONTAINER -->
-        <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl flex-1 flex flex-col">
-            <div class="p-3 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs">
-                <span class="font-bold text-slate-300"><i class="fas fa-boxes-packing text-sky-400 mr-2"></i> Liste des Sessions de Picking</span>
-                <span id="tableCountBadge" class="bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2.5 py-1 rounded-lg font-mono text-[11px]">0 éléments</span>
-            </div>
+                <!-- TABLE CONTAINER -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+                    <div class="overflow-x-auto flex-1">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-950/60 text-slate-400 uppercase text-[11px] tracking-wider border-b border-slate-800 font-semibold">
+                                    <th class="p-4 w-2/6">Article & Désignation</th>
+                                    <th class="p-4 w-1/6 text-center">Qté Commandée</th>
+                                    <th class="p-4 w-1/6 text-center">Qté Préparée</th>
+                                    <th class="p-4 w-1/6 text-center">Lot (Saisie)</th>
+                                    <th class="p-4 w-1/6 text-center">Qté Lot</th>
+                                    <th class="p-4 w-12 text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pickingTableBody" class="divide-y divide-slate-800/50">
+                                <tr>
+                                    <td colspan="6" class="p-12 text-center text-slate-400 text-xs">
+                                        <i class="fas fa-barcode mr-2 text-emerald-500 text-base"></i> Veuillez charger un document de vente pour afficher les articles à préparer.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
-            <div class="overflow-x-auto flex-1">
-                <table class="w-full text-left text-xs border-collapse">
-                    <thead class="sticky top-0 bg-slate-950 text-slate-400 uppercase text-[10px] z-10 border-b border-slate-800">
-                        <tr>
-                            <th class="p-3.5">N° Commande</th>
-                            <th class="p-3.5">Client</th>
-                            <th class="p-3.5">Préparateur</th>
-                            <th class="p-3.5 text-center">Progression</th>
-                            <th class="p-3.5 text-right">Total KG</th>
-                            <th class="p-3.5 text-right text-emerald-400">Préparé KG</th>
-                            <th class="p-3.5 text-center">Statut</th>
-                            <th class="p-3.5 text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="pickingTableBody" class="divide-y divide-slate-800/50 font-mono">
-                        <tr><td colspan="8" class="p-8 text-center text-slate-500">Chargement...</td></tr>
-                    </tbody>
-                </table>
             </div>
-        </div>
-    </main>
-
-    <!-- MODAL DETAILS PICKING & ARTICLES -->
-    <div id="pickingDetailModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-all duration-300">
-        <div class="bg-slate-900 border border-slate-800 w-[950px] max-h-[90vh] rounded-2xl p-6 shadow-2xl flex flex-col">
-            <div class="flex items-center justify-between pb-4 border-b border-slate-800">
-                <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
-                    <i class="fas fa-clipboard-check text-sky-400"></i> Détails Picking - Commande : <span id="modalPickingDoc" class="text-sky-400"></span>
-                </h3>
-                <button onclick="closePickingModal()" class="text-slate-400 hover:text-white cursor-pointer"><i class="fas fa-xmark text-lg"></i></button>
-            </div>
-
-            <!-- INFOS GENERALES SESSION -->
-            <div class="mt-4 bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs grid grid-cols-3 gap-3 font-mono">
-                <div><span class="text-slate-400 block text-[10px]">CLIENT:</span> <span id="modalClient" class="text-white font-bold">-</span></div>
-                <div><span class="text-slate-400 block text-[10px]">PREPARATEUR:</span> <span id="modalPreparateur" class="text-sky-300 font-bold">-</span></div>
-                <div><span class="text-slate-400 block text-[10px]">STATUT:</span> <span id="modalStatut" class="text-emerald-400 font-bold">-</span></div>
-            </div>
-
-            <div class="flex-1 overflow-y-auto py-4">
-                <table class="w-full text-left text-xs font-mono">
-                    <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] border-b border-slate-800">
-                        <tr>
-                            <th class="p-2.5">Article</th>
-                            <th class="p-2.5">Désignation</th>
-                            <th class="p-2.5">Magasin / Emplacement</th>
-                            <th class="p-2.5">Lot</th>
-                            <th class="p-2.5 text-right">Commandé</th>
-                            <th class="p-2.5 text-right text-emerald-400">Préparé</th>
-                            <th class="p-2.5 text-center">Statut Ligne</th>
-                        </tr>
-                    </thead>
-                    <tbody id="modalPickingDetailsBody" class="divide-y divide-slate-800/40">
-                        <tr><td colspan="7" class="p-6 text-center text-slate-400">Chargement des lignes...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="pt-4 border-t border-slate-800 flex justify-end">
-                <button onclick="closePickingModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer">Fermer</button>
-            </div>
-        </div>
+        </main>
     </div>
 
-    <!-- APP SCRIPT -->
+    <!-- SCRIPTS -->
     <script type="module">
+        import Navigation from '../assets/js/core/navigation.js';
         import supabase from '../assets/js/core/supabase.js';
 
-        let allPickingList = [];
+        let currentOrderLines = [];
+        let currentDocNumber = "";
+        let currentSuiviId = null;
+        let currentUserProfileId = null;
+        let isEditableMode = false;
 
-        window.loadPickingSessions = async function() {
-            const tbody = document.getElementById("pickingTableBody");
-            const statutFiltre = document.getElementById("filterStatut").value;
+        document.addEventListener("DOMContentLoaded", async () => {
+            await Navigation.init();
 
-            tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Chargement des picking...</td></tr>`;
+            // Clock & Date display
+            const updateClock = () => {
+                const now = new Date();
+                document.getElementById("currentDate").textContent = now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                document.getElementById("currentTime").textContent = now.toLocaleTimeString('fr-FR');
+            };
+            setInterval(updateClock, 1000);
+            updateClock();
 
-            let query = supabase.from('picking').select('*').order('created_at', { ascending: false });
-            if (statutFiltre) {
-                query = query.eq('statut', statutFiltre);
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    const { data: profile } = await supabase.from('user_profiles').select('id').eq('auth_user_id', user.id).single();
+                    if (profile) currentUserProfileId = profile.id;
+                }
+            } catch (e) {
+                console.error("Erreur user session:", e);
             }
 
-            const { data, error } = await query;
-            if (error) {
-                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-rose-500">Erreur: ${error.message}</td></tr>`;
+            const searchBtn = document.getElementById("searchDocBtn");
+            const docInput = document.getElementById("documentInput");
+
+            if (searchBtn) searchBtn.addEventListener("click", loadOrderForPicking);
+            if (docInput) {
+                docInput.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        loadOrderForPicking();
+                    }
+                });
+            }
+
+            const logoutBtn = document.getElementById("logoutBtn");
+            if (logoutBtn) {
+                logoutBtn.addEventListener("click", async () => {
+                    await supabase.auth.signOut();
+                    window.location.href = "login.html";
+                });
+            }
+        });
+
+        async function loadOrderForPicking() {
+            const docNum = document.getElementById("documentInput").value.trim();
+            const tbody = document.getElementById("pickingTableBody");
+            const modifyBtn = document.getElementById("enableModifyBtn");
+
+            isEditableMode = false;
+            modifyBtn.disabled = true;
+            modifyBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            if (!docNum) {
+                alert("Veuillez saisir un numéro de document de vente.");
                 return;
             }
 
-            allPickingList = data || [];
-            document.getElementById('statTotalPicking').textContent = allPickingList.length;
-            renderTable(allPickingList);
-        };
+            tbody.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-slate-400 text-xs"><i class="fas fa-spinner fa-spin mr-2 text-emerald-500"></i> Recherche de la commande...</td></tr>`;
 
-        async function renderTable(list) {
-            const tbody = document.getElementById("pickingTableBody");
-            document.getElementById('tableCountBadge').textContent = `${list.length} éléments`;
+            try {
+                const { data: suiviData, error: suiviErr } = await supabase
+                    .from('suivi_commandes_lancer')
+                    .select('*')
+                    .ilike('document_vente', `%${docNum}%`)
+                    .limit(1)
+                    .single();
 
-            if (list.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-500">Aucune session de picking trouvée.</td></tr>`;
-                return;
+                if (suiviErr || !suiviData) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-red-400 text-xs"><i class="fas fa-exclamation-triangle mr-2"></i> Aucun suivi trouvé pour le document "${docNum}".</td></tr>`;
+                    clearHeaderInfo();
+                    return;
+                }
+
+                currentSuiviId = suiviData.id;
+                const currentStatut = (suiviData.statut || "").toUpperCase();
+
+                if (currentStatut === "IMPORTEE") {
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-amber-400 text-xs"><i class="fas fa-lock mr-2 text-amber-500"></i> Commande ${docNum} non lancée</td></tr>`;
+                    clearHeaderInfo();
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('commandes_excel')
+                    .select('*')
+                    .ilike('document_vente', `%${docNum}%`)
+                    .order('ligne_commande', { ascending: true });
+
+                if (error || !data || data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-red-400 text-xs"><i class="fas fa-exclamation-triangle mr-2"></i> Aucune ligne d'article trouvée pour le document "${docNum}".</td></tr>`;
+                    clearHeaderInfo();
+                    return;
+                }
+
+                currentDocNumber = docNum;
+                currentOrderLines = data;
+                updateHeaderInfo(suiviData);
+
+                const { data: existingPicking } = await supabase
+                    .from('picking')
+                    .select('*')
+                    .eq('document_vente', docNum)
+                    .single();
+
+                let existingDetails = [];
+                if (existingPicking) {
+                    document.getElementById("infoStatut").textContent = existingPicking.statut;
+                    if (existingPicking.statut !== 'EN_COURS') {
+                        modifyBtn.disabled = false;
+                        modifyBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+                    
+                    const { data: detailsData } = await supabase
+                        .from('picking_details')
+                        .select('*')
+                        .eq('picking_id', existingPicking.id);
+                    
+                    if (detailsData) existingDetails = detailsData;
+                } else {
+                    document.getElementById("infoStatut").textContent = suiviData.statut || "LANCEE";
+                }
+
+                const canEdit = (currentStatut === "LANCEE" && !existingPicking) || (existingPicking && existingPicking.statut === 'EN_COURS') || (currentStatut === "EN_PICKING");
+                renderPickingTable(data, existingDetails, canEdit);
+
+            } catch (err) {
+                console.error("Erreur technique:", err);
+                tbody.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-red-400 text-xs">Erreur de connexion lors du chargement.</td></tr>`;
             }
+        }
 
+        window.enableModification = function() {
+            if (!currentDocNumber) return;
+            isEditableMode = true;
+            
+            document.querySelectorAll('.lot-input, .qty-input').forEach(input => {
+                input.removeAttribute('disabled');
+                input.classList.remove('opacity-60', 'cursor-not-allowed');
+            });
+            document.querySelectorAll('#pickingTableBody button').forEach(btn => {
+                btn.removeAttribute('disabled');
+                btn.classList.remove('opacity-60', 'cursor-not-allowed');
+            });
+
+            const modifyBtn = document.getElementById("enableModifyBtn");
+            modifyBtn.classList.add('bg-sky-500/20', 'border-sky-500/40');
+            alert(`Mode modification activé pour la commande ${currentDocNumber}.`);
+        }
+
+        function updateHeaderInfo(suiviData) {
+            document.getElementById("infoClient").textContent = suiviData.client || '-';
+            document.getElementById("infoCreation").textContent = suiviData.date_creation || '-';
+            document.getElementById("infoLivraison").textContent = suiviData.date_livraison || '-';
+            document.getElementById("infoTournee").textContent = suiviData.itineraire || '-';
+        }
+
+        function clearHeaderInfo() {
+            currentDocNumber = "";
+            currentSuiviId = null;
+            currentOrderLines = [];
+            isEditableMode = false;
+            document.getElementById("infoClient").textContent = '-';
+            document.getElementById("infoCreation").textContent = '-';
+            document.getElementById("infoLivraison").textContent = '-';
+            document.getElementById("infoTournee").textContent = '-';
+            document.getElementById("infoStatut").textContent = "EN ATTENTE";
+            
+            const modifyBtn = document.getElementById("enableModifyBtn");
+            modifyBtn.disabled = true;
+            modifyBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            modifyBtn.classList.remove('bg-sky-500/20', 'border-sky-500/40');
+        }
+
+        function renderPickingTable(lines, savedDetails, isInitialEditable) {
+            const tbody = document.getElementById("pickingTableBody");
             let html = "";
-            for (let item of list) {
-                // Jib ism l-preparateur mn user_profiles b nom_complet
-                let prepName = "Non assigné";
-                if (item.preparateur) {
-                    const { data: userProf } = await supabase
-                        .from('user_profiles')
-                        .select('nom_complet, nom, prenom, email')
-                        .eq('id', item.preparateur)
-                        .single();
+            
+            const isDisabledAttr = (!isInitialEditable && !isEditableMode) ? 'disabled' : '';
+            const disabledClass = (!isInitialEditable && !isEditableMode) ? 'opacity-60 cursor-not-allowed' : '';
 
-                    if (userProf) {
-                        prepName = userProf.nom_complet || `${userProf.prenom || ''} ${userProf.nom || ''}`.trim() || userProf.email;
+            lines.forEach((item, index) => {
+                const qteCmd = Number(item.quantite_commandee || 0);
+                const itemDetails = savedDetails.filter(d => d.article === item.article && d.ligne_commande === item.ligne_commande);
+                
+                if (itemDetails.length > 0) {
+                    itemDetails.forEach((detail, subIdx) => {
+                        const isFirst = subIdx === 0;
+                        const rowClass = isFirst ? `main-row` : `sub-row-${index} border-t border-slate-800/30`;
+                        const indentClass = isFirst ? '' : 'pl-8 text-slate-400 text-xs italic';
+                        const iconHtml = isFirst ? '' : '<i class="fas fa-level-up-alt fa-rotate-90 mr-1 text-emerald-500"></i> Lot additionnel';
+                        
+                        html += `
+                            <tr class="hover:bg-slate-800/35 transition ${rowClass}" data-index="${index}" data-stock-id="${detail.stock_id || ''}" data-magasin="${detail.magasin || ''}" data-detail-id="${detail.id || ''}">
+                                <td class="p-4 ${indentClass}">
+                                    ${iconHtml}
+                                    <span class="font-semibold text-emerald-400 text-xs block">${item.article || '-'}</span>
+                                    <span class="text-slate-400 text-[11px] block mt-0.5">${item.designation_article || '-'}</span>
+                                </td>
+                                <td class="p-4 text-center font-bold text-slate-200 text-xs">${isFirst ? qteCmd.toLocaleString() : '-'}</td>
+                                <td class="p-4 text-center font-mono font-semibold text-sky-400 text-xs total-prep" id="total_prep_${index}">0.00</td>
+                                <td class="p-4 text-center align-top">
+                                    <div class="relative">
+                                        <input type="text" placeholder="Saisir Lot..." value="${detail.lot || ''}" oninput="searchLots(this, '${item.article}', ${index})" ${isDisabledAttr}
+                                            class="lot-input bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-full text-center shadow-inner font-mono ${disabledClass}">
+                                        <div class="lot-suggestions absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 hidden max-h-45 overflow-y-auto text-left font-mono"></div>
+                                    </div>
+                                </td>
+                                <td class="p-4 text-center align-top">
+                                    <div class="relative">
+                                        <input type="number" step="0.001" placeholder="0.00" value="${detail.quantite_preparee || ''}" oninput="calculatePrepared(${index})" data-max-stock="999999" ${isDisabledAttr}
+                                            class="qty-input bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-full text-center shadow-inner font-mono ${disabledClass}">
+                                        <span class="error-msg text-[10px] text-red-400 font-medium hidden block mt-1 leading-tight text-center"></span>
+                                    </div>
+                                </td>
+                                <td class="p-4 text-center align-top">
+                                    ${isFirst ? `
+                                    <button type="button" onclick="addLotRow(${index})" ${isDisabledAttr} class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 w-8 h-8 rounded-xl text-xs transition flex items-center justify-center mx-auto shadow-sm cursor-pointer ${disabledClass}">
+                                        <i class="fas fa-plus"></i>
+                                    </button>` : `
+                                    <button type="button" onclick="removeLotRow(this, ${index})" ${isDisabledAttr} class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 w-8 h-8 rounded-xl text-xs transition flex items-center justify-center mx-auto cursor-pointer ${disabledClass}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>`}
+                                </td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    html += `
+                        <tr class="hover:bg-slate-800/35 transition main-row" data-index="${index}">
+                            <td class="p-4">
+                                <span class="font-semibold text-emerald-400 text-xs block">${item.article || '-'}</span>
+                                <span class="text-slate-400 text-[11px] block mt-0.5">${item.designation_article || '-'}</span>
+                            </td>
+                            <td class="p-4 text-center font-bold text-slate-200 text-xs">${qteCmd.toLocaleString()}</td>
+                            <td class="p-4 text-center font-mono font-semibold text-sky-400 text-xs total-prep" id="total_prep_${index}">0.00</td>
+                            <td class="p-4 text-center align-top">
+                                <div class="relative">
+                                    <input type="text" placeholder="Saisir Lot..." oninput="searchLots(this, '${item.article}', ${index})" ${isDisabledAttr}
+                                        class="lot-input bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-full text-center shadow-inner font-mono ${disabledClass}">
+                                    <div class="lot-suggestions absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 hidden max-h-45 overflow-y-auto text-left font-mono"></div>
+                                </div>
+                            </td>
+                            <td class="p-4 text-center align-top">
+                                <div class="relative">
+                                    <input type="number" step="0.001" placeholder="0.00" oninput="calculatePrepared(${index})" data-max-stock="0" ${isDisabledAttr}
+                                        class="qty-input bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-full text-center shadow-inner font-mono ${disabledClass}">
+                                    <span class="error-msg text-[10px] text-red-400 font-medium hidden block mt-1 leading-tight text-center"></span>
+                                </div>
+                            </td>
+                            <td class="p-4 text-center align-top">
+                                <button type="button" onclick="addLotRow(${index})" ${isDisabledAttr} class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 w-8 h-8 rounded-xl text-xs transition flex items-center justify-center mx-auto shadow-sm cursor-pointer ${disabledClass}">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+
+            tbody.innerHTML = html;
+            lines.forEach((_, index) => calculatePrepared(index));
+        }
+
+        window.calculatePrepared = function(index) {
+            const mainRow = document.querySelector(`tr.main-row[data-index="${index}"]`);
+            if (!mainRow) return;
+
+            let sum = 0;
+            const collectAndCheck = (r) => {
+                const qtyInput = r.querySelector(".qty-input");
+                const errorMsg = r.querySelector(".error-msg");
+                if (!qtyInput) return 0;
+
+                const val = parseFloat(qtyInput.value) || 0;
+                const maxStock = parseFloat(qtyInput.dataset.maxStock) || 0;
+
+                if (maxStock > 0 && val > maxStock) {
+                    if (errorMsg) {
+                        errorMsg.textContent = `Max dispo: ${maxStock}`;
+                        errorMsg.classList.remove('hidden');
+                    }
+                    qtyInput.classList.add('border-red-500');
+                } else {
+                    if (errorMsg) {
+                        errorMsg.textContent = '';
+                        errorMsg.classList.add('hidden');
+                    }
+                    qtyInput.classList.remove('border-red-500');
+                }
+
+                return val;
+            };
+
+            sum += collectAndCheck(mainRow);
+
+            let nextElement = mainRow.nextElementSibling;
+            while (nextElement && nextElement.classList.contains(`sub-row-${index}`)) {
+                sum += collectAndCheck(nextElement);
+                nextElement = nextElement.nextElementSibling;
+            }
+
+            const totalElem = document.getElementById(`total_prep_${index}`);
+            if (totalElem) totalElem.textContent = sum.toFixed(2);
+        }
+
+        window.addLotRow = function(index) {
+            const mainRow = document.querySelector(`tr.main-row[data-index="${index}"]`);
+            if (!mainRow) return;
+            
+            const articleCode = currentOrderLines[index]?.article || '';
+            const newTr = document.createElement('tr');
+            newTr.className = `hover:bg-slate-800/35 transition border-t border-slate-800/30 sub-row-${index}`;
+            newTr.innerHTML = `
+                <td class="p-4 pl-8 text-slate-400 text-xs italic">
+                    <i class="fas fa-level-up-alt fa-rotate-90 mr-1 text-emerald-500"></i> Lot additionnel
+                </td>
+                <td class="p-4 text-center text-slate-500 text-xs">-</td>
+                <td class="p-4 text-center text-slate-500 text-xs">-</td>
+                <td class="p-4 text-center align-top">
+                    <div class="relative">
+                        <input type="text" placeholder="Saisir Lot..." oninput="searchLots(this, '${articleCode}', ${index})"
+                            class="lot-input bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-full text-center shadow-inner font-mono">
+                        <div class="lot-suggestions absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 hidden max-h-45 overflow-y-auto text-left font-mono"></div>
+                    </div>
+                </td>
+                <td class="p-4 text-center align-top">
+                    <div class="relative">
+                        <input type="number" step="0.001" placeholder="0.00" oninput="calculatePrepared(${index})" data-max-stock="0"
+                            class="qty-input bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-full text-center shadow-inner font-mono">
+                        <span class="error-msg text-[10px] text-red-400 font-medium hidden block mt-1 leading-tight text-center"></span>
+                    </div>
+                </td>
+                <td class="p-4 text-center align-top">
+                    <button type="button" onclick="removeLotRow(this, ${index})" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 w-8 h-8 rounded-xl text-xs transition flex items-center justify-center mx-auto cursor-pointer">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
+            `;
+
+            let lastGroupRow = mainRow;
+            let next = mainRow.nextElementSibling;
+            while (next && next.classList.contains(`sub-row-${index}`)) {
+                lastGroupRow = next;
+                next = next.nextElementSibling;
+            }
+
+            lastGroupRow.after(newTr);
+        }
+
+        window.removeLotRow = function(buttonElem, index) {
+            const tr = buttonElem.closest('tr');
+            if (tr) {
+                tr.remove();
+                calculatePrepared(index);
+            }
+        }
+
+        window.searchLots = async function(inputElem, articleCode, index) {
+            const queryVal = inputElem.value.trim();
+            const suggestionsBox = inputElem.nextElementSibling;
+
+            if (queryVal.length < 1) {
+                suggestionsBox.classList.add('hidden');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase
+                    .from('stock')
+                    .select('id, lot, magasin, emplacement, stock_disponible, stock_reserve, unite')
+                    .eq('article', articleCode)
+                    .ilike('lot', `%${queryVal}%`);
+
+                if (error || !data || data.length === 0) {
+                    suggestionsBox.innerHTML = `<div class="p-2 text-[10px] text-slate-400 text-center">Aucun lot trouvé</div>`;
+                    suggestionsBox.classList.remove('hidden');
+                    return;
+                }
+
+                let html = "";
+                data.forEach(item => {
+                    const dispo = item.stock_disponible !== undefined ? item.stock_disponible : 0;
+                    html += `<div onclick='selectLot(this, ${JSON.stringify(item)}, ${index})' class="p-2.5 text-xs text-slate-200 hover:bg-slate-800 cursor-pointer flex items-center justify-between border-b border-slate-800/50 last:border-none">
+                        <div>
+                            <span class="font-mono font-semibold text-emerald-400">${item.lot}</span>
+                            <span class="text-[10px] text-slate-400 block">Mag: ${item.magasin} | Emp: ${item.emplacement || '-'}</span>
+                        </div>
+                        <span class="text-sky-400 font-bold bg-sky-500/10 px-2 py-0.5 rounded-lg border border-sky-500/20">Dispo: ${parseFloat(dispo).toFixed(2)}</span>
+                    </div>`;
+                });
+
+                suggestionsBox.innerHTML = html;
+                suggestionsBox.classList.remove('hidden');
+
+            } catch (err) {
+                console.error("Erreur recherche lots:", err);
+            }
+        }
+
+        window.selectLot = function(element, stockItem, index) {
+            const suggestionDiv = element.parentElement;
+            const input = suggestionDiv.previousElementSibling;
+            input.value = stockItem.lot;
+            
+            const row = input.closest('tr');
+            row.dataset.stockId = stockItem.id;
+            row.dataset.magasin = stockItem.magasin || 'PRINCIPAL';
+            row.dataset.emplacement = stockItem.emplacement || '';
+            row.dataset.unite = stockItem.unite || 'KG';
+
+            const dispo = stockItem.stock_disponible !== undefined ? stockItem.stock_disponible : 0;
+            const qtyInput = row.querySelector('.qty-input');
+            if (qtyInput) {
+                qtyInput.dataset.maxStock = dispo;
+            }
+
+            suggestionDiv.classList.add('hidden');
+            calculatePrepared(index);
+        }
+
+        async function saveOrValidatePicking(targetStatut) {
+            if (!currentDocNumber || currentOrderLines.length === 0) {
+                alert("Aucun document chargé.");
+                return;
+            }
+
+            let hasStockError = false;
+            const allRows = document.querySelectorAll('tr.main-row, [class*="sub-row-"]');
+            allRows.forEach(r => {
+                const qtyInput = r.querySelector('.qty-input');
+                if (qtyInput) {
+                    const val = parseFloat(qtyInput.value) || 0;
+                    const maxStock = parseFloat(qtyInput.dataset.maxStock) || 999999;
+                    if (val > maxStock) {
+                        hasStockError = true;
+                    }
+                }
+            });
+
+            if (hasStockError) {
+                alert("Erreur: Certaines quantités préparées dépassent le stock disponible dans le lot choisi !");
+                return;
+            }
+
+            try {
+                let activeSuiviId = currentSuiviId;
+                if (!activeSuiviId) {
+                    const { data: checkRow } = await supabase
+                        .from('suivi_commandes_lancer')
+                        .select('id')
+                        .ilike('document_vente', currentDocNumber)
+                        .limit(1)
+                        .single();
+                    if (checkRow && checkRow.id) {
+                        activeSuiviId = checkRow.id;
                     }
                 }
 
-                const prog = Number(item.progression || 0).toFixed(0);
-                let badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
-                if (item.statut === 'VALIDE' || item.statut === 'TERMINE') badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
-                if (item.statut === 'ANNULE') badgeColor = "bg-rose-500/10 text-rose-400 border-rose-500/20";
-                if (item.statut === 'PICKING') badgeColor = "bg-sky-500/10 text-sky-400 border-sky-500/20";
+                if (!activeSuiviId) {
+                    alert("Erreur: Impossible de récupérer l'identifiant de suivi dans 'suivi_commandes_lancer' pour ce document.");
+                    return;
+                }
 
-                html += `
-                    <tr class="hover:bg-slate-800/30 transition">
-                        <td class="p-3.5 font-bold text-sky-400">${item.document_vente}</td>
-                        <td class="p-3.5 text-slate-200">${item.client || 'Client Divers'}</td>
-                        <td class="p-3.5 text-slate-300">${prepName}</td>
-                        <td class="p-3.5 text-center">
-                            <div class="flex items-center gap-2 justify-center">
-                                <div class="w-20 bg-slate-950 rounded-full h-2 border border-slate-800 overflow-hidden">
-                                    <div class="bg-sky-500 h-full rounded-full" style="width: ${prog}%"></div>
-                                </div>
-                                <span class="text-[10px] text-sky-300 font-bold">${prog}%</span>
-                            </div>
-                        </td>
-                        <td class="p-3.5 text-right font-bold text-slate-100">${Number(item.total_quantite || 0).toFixed(2)} KG</td>
-                        <td class="p-3.5 text-right font-bold text-emerald-400">${Number(item.total_prepare || 0).toFixed(2)} KG</td>
-                        <td class="p-3.5 text-center"><span class="border ${badgeColor} px-2.5 py-1 rounded-full text-[10px] font-bold">${item.statut}</span></td>
-                        <td class="p-3.5 text-center">
-                            <button onclick="openPickingDetails('${item.id}', '${item.document_vente}', '${item.client || ''}', '${prepName}', '${item.statut}')" class="bg-slate-800 hover:bg-slate-700 text-sky-400 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow mx-auto">
-                                <i class="fas fa-eye"></i> Détails
-                            </button>
-                        </td>
-                    </tr>
-                `;
+                let totalArticlesCount = currentOrderLines.length;
+                let totalLotsCount = 0;
+                let totalQuantiteCmd = 0;
+                let totalPrepareVal = 0;
+
+                currentOrderLines.forEach(item => {
+                    totalQuantiteCmd += Number(item.quantite_commandee || 0);
+                });
+
+                const progressionVal = totalQuantiteCmd > 0 ? Math.min(100, (totalPrepareVal / totalQuantiteCmd) * 100) : 0;
+
+                const pickingHeader = {
+                    suivi_id: activeSuiviId,
+                    document_vente: currentDocNumber,
+                    client: currentOrderLines[0].client || currentOrderLines[0].nom_receptionnaire || 'CLIENT',
+                    preparateur: currentUserProfileId,
+                    statut: targetStatut === 'PICKING' ? 'VALIDE' : 'EN_COURS',
+                    total_articles: totalArticlesCount,
+                    total_lots: totalLotsCount,
+                    total_quantite: totalQuantiteCmd,
+                    total_prepare: totalPrepareVal,
+                    progression: progressionVal.toFixed(2),
+                    est_valide: targetStatut === 'PICKING',
+                    date_fin: targetStatut === 'PICKING' ? new Date().toISOString() : null,
+                    date_validation: targetStatut === 'PICKING' ? new Date().toISOString() : null,
+                    updated_at: new Date().toISOString()
+                };
+
+                const { data: existingPicking } = await supabase
+                    .from('picking')
+                    .select('id')
+                    .eq('document_vente', currentDocNumber)
+                    .single();
+
+                let pickingId;
+                let oldReservationsMap = new Map();
+
+                if (existingPicking) {
+                    pickingId = existingPicking.id;
+                    
+                    const { data: oldResData } = await supabase
+                        .from('reservations_stock')
+                        .select('stock_id, quantite_reservee')
+                        .eq('picking_id', pickingId);
+                    
+                    if (oldResData) {
+                        oldResData.forEach(res => {
+                            if (res.stock_id) {
+                                const currentSum = oldReservationsMap.get(res.stock_id) || 0;
+                                oldReservationsMap.set(res.stock_id, currentSum + Number(res.quantite_reservee || 0));
+                            }
+                        });
+                    }
+
+                    await supabase.from('reservations_stock').delete().eq('picking_id', pickingId);
+                    await supabase.from('picking_details').delete().eq('picking_id', pickingId);
+
+                    const { error: updErr } = await supabase.from('picking').update(pickingHeader).eq('id', pickingId);
+                    if (updErr) throw updErr;
+                } else {
+                    const { data: newPick, error: pickErr } = await supabase
+                        .from('picking')
+                        .insert([pickingHeader])
+                        .select('id')
+                        .single();
+                    if (pickErr) throw pickErr;
+                    pickingId = newPick.id;
+                }
+
+                const newStockDeductions = new Map();
+                const reservationsPayload = [];
+                const detailsPayload = [];
+
+                currentOrderLines.forEach((item, index) => {
+                    const mainRow = document.querySelector(`tr.main-row[data-index="${index}"]`);
+                    if (!mainRow) return;
+
+                    const collectRowData = (r) => {
+                        const lotInput = r.querySelector('.lot-input');
+                        const qtyInput = r.querySelector('.qty-input');
+                        const lotVal = lotInput ? lotInput.value.trim() : '';
+                        const qtePrep = parseFloat(qtyInput ? qtyInput.value : 0) || 0;
+                        const stockId = r.dataset.stockId ? parseInt(r.dataset.stockId) : null;
+
+                        if (lotVal || qtePrep > 0) {
+                            totalLotsCount++;
+                            totalPrepareVal += qtePrep;
+
+                            if (stockId && qtePrep > 0) {
+                                const currentSum = newStockDeductions.get(stockId) || 0;
+                                newStockDeductions.set(stockId, currentSum + qtePrep);
+                            }
+                            
+                            detailsPayload.push({
+                                picking_id: pickingId,
+                                suivi_id: activeSuiviId,
+                                document_vente: currentDocNumber,
+                                stock_id: stockId,
+                                ligne_commande: item.ligne_commande || (index + 1),
+                                article: item.article,
+                                designation_article: item.designation_article || '',
+                                lot: lotVal || 'STANDARD',
+                                magasin: r.dataset.magasin || item.magasin || 'PRINCIPAL',
+                                quantite_commandee: Number(item.quantite_commandee || 0),
+                                quantite_preparee: qtePrep,
+                                quantite_restante: Math.max(0, Number(item.quantite_commandee || 0) - qtePrep),
+                                unite: item.unite || 'KG',
+                                preparateur: currentUserProfileId,
+                                statut: targetStatut === 'PICKING' ? 'VALIDE' : 'EN_COURS'
+                            });
+                        }
+                    };
+
+                    collectRowData(mainRow);
+
+                    let next = mainRow.nextElementSibling;
+                    while (next && next.classList.contains(`sub-row-${index}`)) {
+                        collectRowData(next);
+                        next = next.nextElementSibling;
+                    }
+                });
+
+                let insertedDetails = [];
+                if (detailsPayload.length > 0) {
+                    const { data: insDetails, error: detErr } = await supabase
+                        .from('picking_details')
+                        .insert(detailsPayload)
+                        .select('id, article, lot, stock_id, quantite_preparee, magasin');
+                    
+                    if (detErr) throw detErr;
+                    insertedDetails = insDetails || [];
+                }
+
+                insertedDetails.forEach(detail => {
+                    if (detail.stock_id && detail.quantite_preparee > 0) {
+                        reservationsPayload.push({
+                            stock_id: detail.stock_id,
+                            picking_id: pickingId,
+                            picking_detail_id: detail.id,
+                            suivi_id: activeSuiviId,
+                            document_vente: currentDocNumber,
+                            article: detail.article,
+                            designation_article: currentOrderLines.log ? '' : (currentOrderLines.find(l => l.article === detail.article)?.designation_article || ''),
+                            lot: detail.lot,
+                            magasin: detail.magasin || 'PRINCIPAL',
+                            quantite_reservee: detail.quantite_preparee,
+                            unite: 'KG',
+                            statut: targetStatut === 'PICKING' ? 'VALIDEE' : 'RESERVEE',
+                            est_active: true,
+                            reserve_par: currentUserProfileId
+                        });
+                    }
+                });
+
+                if (reservationsPayload.length > 0) {
+                    const { error: resErr } = await supabase.from('reservations_stock').insert(reservationsPayload);
+                    if (resErr) throw resErr;
+                }
+
+                const allStockIds = new Set([...oldReservationsMap.keys(), ...newStockDeductions.keys()]);
+
+                for (let stockId of allStockIds) {
+                    const oldQty = oldReservationsMap.get(stockId) || 0;
+                    const newQty = newStockDeductions.get(stockId) || 0;
+                    const diff = newQty - oldQty;
+
+                    if (diff !== 0) {
+                        const { data: stockRow, error: fetchStockErr } = await supabase
+                            .from('stock')
+                            .select('stock_reserve')
+                            .eq('id', stockId)
+                            .single();
+
+                        if (!fetchStockErr && stockRow) {
+                            const currentReserve = Number(stockRow.stock_reserve || 0);
+                            const updatedReserve = Math.max(0, currentReserve + diff);
+
+                            await supabase
+                                .from('stock')
+                                .update({ 
+                                    stock_reserve: updatedReserve, 
+                                    updated_at: new Date().toISOString() 
+                                })
+                                .eq('id', stockId);
+                        }
+                    }
+                }
+
+                const finalProgression = totalQuantiteCmd > 0 ? Math.min(100, (totalPrepareVal / totalQuantiteCmd) * 100) : 0;
+                await supabase.from('picking').update({
+                    total_lots: totalLotsCount,
+                    total_prepare: totalPrepareVal,
+                    progression: finalProgression.toFixed(2)
+                }).eq('id', pickingId);
+
+                const newSuiviStatut = targetStatut === 'PICKING' ? 'PICKING_TERMINE' : 'EN_PICKING';
+                await supabase
+                    .from('suivi_commandes_lancer')
+                    .update({ 
+                        statut: newSuiviStatut,
+                        picking_par: currentUserProfileId,
+                        date_debut_picking: new Date().toISOString(),
+                        date_fin_picking: targetStatut === 'PICKING' ? new Date().toISOString() : null
+                    })
+                    .eq('id', activeSuiviId);
+
+                alert(targetStatut === 'PICKING' ? "Préparation validée et stock réservé mis à jour avec succès !" : "Préparation enregistrée et stock réservé mis à jour avec succès !");
+                window.location.reload();
+
+            } catch (err) {
+                console.error("Erreur technique détaillée:", err);
+                alert("Erreur lors de l'enregistrement: " + (err.message || JSON.stringify(err)));
             }
-            tbody.innerHTML = html;
         }
 
-        window.filtrerPicking = function() {
-            const val = document.getElementById('searchPickingInput').value.toLowerCase().trim();
-            if (!val) {
-                renderTable(allPickingList);
-                return;
-            }
-            const filtered = allPickingList.filter(item => 
-                item.document_vente.toLowerCase().includes(val) || 
-                (item.client && item.client.toLowerCase().includes(val))
-            );
-            renderTable(filtered);
-        };
+        window.savePicking = function() {
+            saveOrValidatePicking('EN_COURS');
+        }
 
-        window.openPickingDetails = async function(pickingId, docVente, client, preparateurName, statut) {
-            document.getElementById('modalPickingDoc').textContent = docVente;
-            document.getElementById('modalClient').textContent = client || 'Client Divers';
-            document.getElementById('modalPreparateur').textContent = preparateurName;
-            document.getElementById('modalStatut').textContent = statut;
-
-            const modalBody = document.getElementById('modalPickingDetailsBody');
-            modalBody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">Chargement des articles...</td></tr>`;
-
-            document.getElementById('pickingDetailModal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('pickingDetailModal').classList.remove('opacity-0'), 10);
-
-            const { data: details, error } = await supabase
-                .from('picking_details')
-                .select('*')
-                .eq('picking_id', pickingId)
-                .order('ordre_preparation', { ascending: true });
-
-            if (error || !details || details.length === 0) {
-                modalBody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500">Aucun détail trouvé pour ce picking.</td></tr>`;
-                return;
-            }
-
-            let html = "";
-            for (let row of details) {
-                let badgeLigne = "bg-amber-500/10 text-amber-400 border-amber-500/20";
-                if (row.statut === 'VALIDE') badgeLigne = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
-                if (row.statut === 'ANNULE') badgeLigne = "bg-rose-500/10 text-rose-400 border-rose-500/20";
-
-                html += `
-                    <tr class="hover:bg-slate-800/40">
-                        <td class="p-2.5 text-sky-400 font-bold">${row.article}</td>
-                        <td class="p-2.5 text-slate-200">${row.designation_article}</td>
-                        <td class="p-2.5 text-slate-300"><span class="bg-slate-950 px-2 py-1 rounded border border-slate-800 text-[10px]">${row.magasin} / ${row.emplacement || '-'}</span></td>
-                        <td class="p-2.5 text-amber-300 font-mono">${row.lot}</td>
-                        <td class="p-2.5 text-right font-bold text-slate-100">${Number(row.quantite_commandee).toFixed(2)} ${row.unite || 'KG'}</td>
-                        <td class="p-2.5 text-right font-bold text-emerald-400">${Number(row.quantite_preparee).toFixed(2)} ${row.unite || 'KG'}</td>
-                        <td class="p-2.5 text-center"><span class="border ${badgeLigne} px-2 py-0.5 rounded-full text-[9px] font-bold">${row.statut}</span></td>
-                    </tr>
-                `;
-            }
-            modalBody.innerHTML = html;
-        };
-
-        window.closePickingModal = function() {
-            const modal = document.getElementById('pickingDetailModal');
-            modal.classList.add('opacity-0');
-            setTimeout(() => modal.classList.add('hidden'), 300);
-        };
-
-        setInterval(() => {
-            document.getElementById("liveClock").innerText = new Date().toLocaleTimeString('fr-FR');
-        }, 1000);
-
-        loadPickingSessions();
+        window.validatePicking = function() {
+            saveOrValidatePicking('PICKING');
+        }
     </script>
 </body>
 </html>

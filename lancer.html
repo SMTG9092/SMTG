@@ -111,10 +111,10 @@
                     <button onclick="switchMode('tournee')" id="tabModeTournee" class="px-3 py-1.5 rounded-lg font-bold text-xs transition bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer">
                         <i class="fas fa-route mr-1.5"></i> Par Tournée (Itinéraire)
                     </button>
-                    <!-- ZIR DYAL ANNULEE -->
-                    <button onclick="switchMode('annulee')" id="tabModeAnnulee" class="px-3 py-1.5 rounded-lg font-bold text-xs transition bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer border border-rose-500/30">
-                        <i class="fas fa-ban mr-1.5 text-rose-400"></i> Commandes Annulées
-                    </button>
+                    <!-- ZIR DYAL ANNULEE KAT-DIDI L ANNULEE_LANCER.HTML -->
+                    <a href="annulee_lancer.html" id="tabModeAnnulee" class="px-3 py-1.5 rounded-lg font-bold text-xs transition bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer border border-rose-500/30 flex items-center gap-1.5">
+                        <i class="fas fa-ban text-rose-400"></i> Commandes Annulées
+                    </a>
                 </div>
                 <span id="tableCountBadge" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-lg font-mono text-[11px]">0 éléments</span>
             </div>
@@ -195,7 +195,7 @@
     <script type="module">
         import supabase from '../assets/js/core/supabase.js';
 
-        let currentMode = 'commande'; // 'commande', 'tournee', ou 'annulee'
+        let currentMode = 'commande'; // 'commande' ou 'tournee'
 
         function getLocalDateString(dateObj) {
             const year = dateObj.getFullYear();
@@ -216,12 +216,10 @@
             const tabCmd = document.getElementById('containerTableCommande');
             const btnTrn = document.getElementById('tabModeTournee');
             const tabTrn = document.getElementById('containerTableTournee');
-            const btnAnl = document.getElementById('tabModeAnnulee');
 
             // Reset styles
             btnCmd.className = "px-3 py-1.5 rounded-lg font-bold text-xs transition bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer";
             btnTrn.className = "px-3 py-1.5 rounded-lg font-bold text-xs transition bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer";
-            btnAnl.className = "px-3 py-1.5 rounded-lg font-bold text-xs transition bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer border border-rose-500/30";
             tabCmd.classList.remove('hidden');
             tabTrn.classList.add('hidden');
 
@@ -231,8 +229,6 @@
                 btnTrn.className = "px-3 py-1.5 rounded-lg font-bold text-xs transition bg-emerald-600 text-white shadow cursor-pointer";
                 tabTrn.classList.remove('hidden');
                 tabCmd.classList.add('hidden');
-            } else if (mode === 'annulee') {
-                btnAnl.className = "px-3 py-1.5 rounded-lg font-bold text-xs transition bg-rose-600 text-white shadow cursor-pointer border border-rose-500";
             }
             loadSuiviCommandes();
         };
@@ -259,8 +255,6 @@
 
             if (currentMode === 'commande') {
                 await loadTableCommandes(dateDebut, dateFin, 'IMPORTEE');
-            } else if (currentMode === 'annulee') {
-                await loadTableCommandes(dateDebut, dateFin, 'ANNULEE');
             } else {
                 await loadTableTournees(dateDebut, dateFin);
             }
@@ -292,21 +286,16 @@
                 const totalKg = details ? details.reduce((a, c) => a + Number(c.quantite_commandee || 0), 0) : 0;
                 const totalPieces = details ? details.reduce((a, c) => a + Number(c.nombre_pieces || 0), 0) : 0;
 
-                const badgeColor = targetStatut === 'ANNULEE' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+                const badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
                 
                 let actionButtons = `
                     <button onclick="openDetailsCommande('${item.document_vente}')" class="bg-slate-800 hover:bg-slate-700 text-sky-400 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow">
                         <i class="fas fa-eye"></i> Articles
                     </button>
+                    <button onclick="lancerCommande('${item.document_vente}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow">
+                        <i class="fas fa-play"></i> Lancer
+                    </button>
                 `;
-
-                if (targetStatut === 'IMPORTEE') {
-                    actionButtons += `
-                        <button onclick="lancerCommande('${item.document_vente}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow">
-                            <i class="fas fa-play"></i> Lancer
-                        </button>
-                    `;
-                }
 
                 html += `
                     <tr class="hover:bg-slate-800/30 transition">

@@ -44,7 +44,7 @@
     <!-- MAIN WRAPPER -->
     <main class="flex-1 p-6 overflow-hidden flex flex-col gap-5">
         
-        <!-- SEARCH BAR INPUT FOR COMMAND NUMBER -->
+        <!-- SEARCH BAR & ACTION BUTTONS -->
         <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-lg">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
@@ -56,14 +56,27 @@
                 </div>
             </div>
             
-            <div class="flex items-center gap-2 flex-1 max-w-md">
-                <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl flex-1">
+            <div class="flex items-center gap-3 flex-wrap flex-1 justify-end">
+                <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl max-w-xs flex-1">
                     <i class="fas fa-magnifying-glass text-slate-400 text-xs"></i>
-                    <input type="text" id="inputNumCommande" placeholder="N° de commande (ex: CMD-...)" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono w-full uppercase">
+                    <input type="text" id="inputNumCommande" placeholder="N° de commande..." class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono w-full uppercase">
                 </div>
-                <button onclick="chargerCommandePicking()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer shrink-0">
-                    <i class="fas fa-arrow-right"></i> Valider
-                </button>
+                
+                <!-- GROUP OF 4 BUTTONS (Valider, Modifier, Enregistrer, Valider Global) -->
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button onclick="chargerCommandePicking()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
+                        <i class="fas fa-arrow-right"></i> Valider
+                    </button>
+                    <button onclick="actionModifier()" class="bg-amber-600/20 hover:bg-amber-600 text-amber-400 hover:text-white border border-amber-500/30 px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow cursor-pointer" title="Modifier">
+                        <i class="fas fa-pen-to-square"></i> Modifier
+                    </button>
+                    <button onclick="actionEnregistrer()" class="bg-sky-600/20 hover:bg-sky-600 text-sky-400 hover:text-white border border-sky-500/30 px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow cursor-pointer" title="Enregistrer">
+                        <i class="fas fa-floppy-disk"></i> Enregistrer
+                    </button>
+                    <button onclick="actionValiderGlobal()" class="bg-indigo-600/20 hover:bg-indigo-600 text-indigo-400 hover:text-white border border-indigo-500/30 px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow cursor-pointer" title="Validation Finale">
+                        <i class="fas fa-check-double"></i> Valider Global
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -269,10 +282,8 @@
                 dropdown.classList.add('hidden');
             }
 
-            // N-sajlo la quantité dispo f had l-lot siratiquement walakin ma n-biniwhach f l-wajiha
             window.selectedLotsData[uniqueId] = Number(stockDisp);
 
-            // N-khwiw text dyal l-info ila tbdal l-lot
             const infoDiv = document.getElementById(`info_disp_${uniqueId}`);
             if (infoDiv) {
                 infoDiv.innerHTML = "";
@@ -290,12 +301,11 @@
             const saisieVal = Number(qteInp.value || 0);
             const stockDisp = window.selectedLotsData[uniqueId];
 
-            // Ila fatet la quantité dispo 3ad katban l-quantité mtwajda f dak l-lot
             if (stockDisp !== undefined && saisieVal > stockDisp) {
                 infoDiv.innerHTML = `<span class="text-rose-400 font-bold animate-pulse">Max dispo : ${stockDisp.toFixed(3)}</span>`;
                 qteInp.classList.add('border-rose-500', 'text-rose-400');
             } else {
-                infoDiv.innerHTML = ""; // Katbqa mkhbya ila kan dakchi 3adi wla sghir 3la dispo
+                infoDiv.innerHTML = "";
                 qteInp.classList.remove('border-rose-500', 'text-rose-400');
             }
 
@@ -395,6 +405,19 @@
                 })
                 .eq('document_vente', documentVente)
                 .eq('Poste', poste);
+        };
+
+        // Fonctions dyal les 3 azrar jdoud (Radi tswrhom liya)
+        window.actionModifier = function() {
+            console.log("Action Modifier cliquée");
+        };
+
+        window.actionEnregistrer = function() {
+            console.log("Action Enregistrer cliquée");
+        };
+
+        window.actionValiderGlobal = function() {
+            console.log("Action Valider Global cliquée");
         };
 
         function resetInfos() {

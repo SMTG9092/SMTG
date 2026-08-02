@@ -193,7 +193,7 @@
                 const qtePrepActuelle = row.quantite_preparee !== null ? Number(row.quantite_preparee) : 0;
                 
                 html += `
-                    <tr class="hover:bg-slate-800/30 transition" id="row_${row.Poste}">
+                    <tr class="hover:bg-slate-800/30 transition row-poste" data-poste="${row.Poste}">
                         <td class="p-3.5 text-amber-400 font-bold">${row.Poste}</td>
                         <td class="p-3.5 text-sky-400">${row.article}</td>
                         <td class="p-3.5 text-slate-200">${row.designation_article}</td>
@@ -203,7 +203,7 @@
                             <input type="text" maxlength="20" placeholder="" class="bg-slate-950 border border-slate-700 text-slate-200 text-center px-2 py-1 rounded-lg text-xs w-36 focus:outline-none focus:border-emerald-500 uppercase">
                         </td>
                         <td class="p-3.5 text-center">
-                            <input type="number" step="0.001" placeholder="" oninput="mettreAJourQtePrep('${numCmd}', ${row.Poste}, this.value)" class="bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500">
+                            <input type="number" step="0.001" placeholder="" oninput="recalculerTotalPoste('${numCmd}', ${row.Poste})" class="qte-saisie-input bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500" value="${qtePrepActuelle > 0 ? qtePrepActuelle : ''}">
                         </td>
                         <td class="p-3.5 text-center">
                             <button onclick="ajouterLigneSup(${row.Poste}, '${row.article}', '${numCmd}')" class="w-7 h-7 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded-lg transition flex items-center justify-center mx-auto cursor-pointer" title="Ajouter un lot">+</button>
@@ -215,12 +215,12 @@
         };
 
         window.ajouterLigneSup = function(poste, article, numCmd) {
-            const tbody = document.getElementById("pickingTableBody");
-            const trOriginal = document.getElementById(`row_${poste}`);
+            const trOriginal = document.querySelector(`tr.row-poste[data-poste="${poste}"]`);
             if (!trOriginal) return;
 
             const trSup = document.createElement('tr');
-            trSup.className = "hover:bg-slate-800/30 transition border-t border-slate-800/30 bg-slate-900/40";
+            trSup.className = "hover:bg-slate-800/30 transition border-t border-slate-800/30 bg-slate-900/45 row-sup";
+            trSup.setAttribute('data-poste', poste);
             trSup.innerHTML = `
                 <td class="p-3.5 text-amber-400/50 font-bold">${poste} <span class="text-[9px] text-emerald-400">(Lot+)</span></td>
                 <td class="p-3.5 text-sky-400/50">${article}</td>
@@ -231,24 +231,51 @@
                     <input type="text" maxlength="20" placeholder="" class="bg-slate-950 border border-slate-700 text-slate-200 text-center px-2 py-1 rounded-lg text-xs w-36 focus:outline-none focus:border-emerald-500 uppercase">
                 </td>
                 <td class="p-3.5 text-center">
-                    <input type="number" step="0.001" placeholder="" class="bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500">
+                    <input type="number" step="0.001" placeholder="" oninput="recalculerTotalPoste('${numCmd}', ${poste})" class="qte-saisie-input bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500">
                 </td>
                 <td class="p-3.5 text-center">
-                    <button onclick="this.closest('tr').remove()" class="w-7 h-7 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg transition flex items-center justify-center mx-auto cursor-pointer" title="Supprimer">-</button>
+                    <button onclick="supprimerLigneSup(this, '${numCmd}', ${poste})" class="w-7 h-7 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg transition flex items-center justify-center mx-auto cursor-pointer" title="Supprimer">-</button>
                 </td>
             `;
-            trOriginal.after(trSup);
+            
+            // Ntzmo l-blassa fin katban l-ligne jdida (katsala m3a l-groupe dyal dak l-poste)
+            let lastRow = trOriginal;
+            let next = trOriginal.nextElementSibling;
+            while(next && next.classList.contains('row-sup') && next.getAttribute('data-poste') == poste) {
+                lastRow = next;
+                next = next.nextElementSibling;
+            }
+            lastRow.after(trSup);
         };
 
-        window.mettreAJourQtePrep = async function(documentVente, poste, valeur) {
-            const spanAffichage = document.getElementById(`qte_aff_${poste}`);
-            const nouvelleQte = valeur === "" ? 0 : Number(valeur);
-            
-            spanAffichage.textContent = nouvelleQte.toFixed(3);
+        window.supprimerLigneSup = function(btn, numCmd, poste) {
+            const tr = btn.closest('tr');
+            tr.remove();
+            recalculerTotalPoste(numCmd, poste);
+        };
 
+        window.recalculerTotalPoste = async function(documentVente, poste) {
+            // Njmo3o ga3 les inputs (li f asli w li zado b +) dyal had l-poste bdit
+            const inputs = document.querySelectorAll(`tr[data-poste="${poste}"] .qte-saisie-input`);
+            let total = 0;
+
+            inputs.forEach(inp => {
+                const val = Number(inp.value);
+                if (!isNaN(val) && inp.value !== "") {
+                    total += val;
+                }
+            });
+
+            // Affichage dyal total fQuantité Préparée
+            const spanAffichage = document.getElementById(`qte_aff_${poste}`);
+            if(spanAffichage) {
+                spanAffichage.textContent = total.toFixed(3);
+            }
+
+            // Enregistrement f Base de données otmatik
             await supabase.from('commandes_excel')
                 .update({ 
-                    quantite_preparee: nouvelleQte,
+                    quantite_preparee: total,
                     updated_at: new Date().toISOString()
                 })
                 .eq('document_vente', documentVente)

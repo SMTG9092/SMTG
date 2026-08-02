@@ -40,7 +40,7 @@
             <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl">
                 <i class="fas fa-search text-xs text-rose-400"></i>
                 <input type="text" id="searchCommandeInput" placeholder="N° Commande (Ex: C-123)..." class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono w-40">
-                <button onclick="verifierEtAnnulerParInput()" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer">Vérifier</button>
+                <button onclick="verifierEtInitierAnnulation()" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer">Vérifier</button>
             </div>
 
             <a href="lancer.html" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
@@ -151,9 +151,38 @@
         </div>
     </div>
 
+    <!-- MODAL MOTIF D'ANNULATION -->
+    <div id="motifModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-all duration-300">
+        <div class="bg-slate-900 border border-slate-800 w-[450px] rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <h3 class="text-sm font-bold text-rose-400 flex items-center gap-2">
+                    <i class="fas fa-triangle-exclamation"></i> Motif d'Annulation : <span id="modalMotifDoc" class="text-slate-100"></span>
+                </h3>
+                <button onclick="closeMotifModal()" class="text-slate-400 hover:text-white cursor-pointer"><i class="fas fa-xmark text-lg"></i></button>
+            </div>
+            <div class="flex flex-col gap-3">
+                <label class="text-xs text-slate-300">Khtari wla kteb motif d'annulation:</label>
+                <select id="selectMotif" class="bg-slate-950 border border-slate-800 text-xs text-slate-200 p-2.5 rounded-xl focus:outline-none cursor-pointer">
+                    <option value="Client absent / Fermé">Client absent / Fermé</option>
+                    <option value="Erreur de saisie / Doublon">Erreur de saisie / Doublon</option>
+                    <option value="Article non disponible en stock">Article non disponible en stock</option>
+                    <option value="Refusé par le client">Refusé par le client</option>
+                    <option value="Autre motif">Autre motif</option>
+                </select>
+                <textarea id="inputAutreMotif" placeholder="Wla kteb motif hna (optionnel)..." class="bg-slate-950 border border-slate-800 text-xs text-slate-200 p-2.5 rounded-xl focus:outline-none h-20 resize-none"></textarea>
+            </div>
+            <div class="pt-3 border-t border-slate-800 flex justify-end gap-2">
+                <button onclick="closeMotifModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer">Annuler</button>
+                <button onclick="validerAnnulationAvecMotif()" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow cursor-pointer">Confirmer l'Annulation</id>
+            </div>
+        </div>
+    </div>
+
     <!-- APP SCRIPT -->
     <script type="module">
         import supabase from '../assets/js/core/supabase.js';
+
+        let selectedDocForAnnulation = null;
 
         function getLocalDateString(dateObj) {
             const year = dateObj.getFullYear();
@@ -227,15 +256,14 @@
             tbody.innerHTML = html;
         };
 
-        // FONCTION DE VERIFICATION PAR INPUT (RECHERCHE N° COMMANDE)
-        window.verifierEtAnnulerParInput = async function() {
+        // VERIFICATION DE LA COMMANDE PAR INPUT
+        window.verifierEtInitierAnnulation = async function() {
             const inputVal = document.getElementById('searchCommandeInput').value.trim();
             if (!inputVal) {
                 alert("Kteb N° dyal la commande 3afak!");
                 return;
             }
 
-            // 1. قلب واش كاينرة ف la base
             const { data, error } = await supabase
                 .from('commandes_excel')
                 .select('document_vente, statut')
@@ -252,13 +280,70 @@
                 alert(`La commande "${inputVal}" hiya أصلاً ANNULEE!`);
                 loadCommandesAnnulees();
             } else {
-                // Ila kant f statut khor, swl user wach y-rddha ANNULEE
-                const confirmAnnuler = confirm(`La commande "${inputVal}" 3ndha statut [${currentStatut}]. Wesh bghiti t-rddha ANNULEE دابا؟`);
-                if (confirmAnnuler) {
-                    await changerStatutCommande(inputVal, 'ANNULEE');
-                    document.getElementById('searchCommandeInput').value = '';
-                }
+                // Ouvre modal dyal l-motif d'annulation
+                selectedDocForAnnulation = inputVal;
+                document.getElementById('modalMotifDoc').textContent = inputVal;
+                document.getElementById('motifModal').classList.remove('hidden');
+                setTimeout(() => document.getElementById('motifModal').classList.remove('opacity-0'), 10);
             }
+        };
+
+        window.closeMotifModal = function() {
+            const modal = document.getElementById('motifModal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+            selectedDocForAnnulation = null;
+        };
+
+        // VALIDER L'ANNULATION AVEC MOTIF W T-SJL F SUIVI_COMMANDES_LANCER
+        window.validerAnnulationAvecMotif = async function() {
+            if (!selectedDocForAnnulation) return;
+
+            const selectVal = document.getElementById('selectMotif').value;
+            const textVal = document.getElementById('inputAutreMotif').value.trim();
+            const motifFinal = textVal ? `${selectVal} - ${textVal}` : selectVal;
+
+            const { data: { user } } = await supabase.auth.getUser();
+            const userId = user ? user.id : null;
+            const nowIso = new Date().toISOString();
+
+            // 1. Update commandes_excel
+            const { error: err1 } = await supabase
+                .from('commandes_excel')
+                .update({ 
+                    statut: 'ANNULEE', 
+                    updated_at: nowIso,
+                    derniere_modification: nowIso,
+                    est_modifie: true
+                })
+                .eq('document_vente', selectedDocForAnnulation);
+
+            if (err1) {
+                alert("Erreur f commandes_excel: " + err1.message);
+                return;
+            }
+
+            // 2. Update suivi_commandes_lancer b l-m3lomat dyal l'annulation
+            const { error: err2 } = await supabase
+                .from('suivi_commandes_lancer')
+                .update({
+                    statut: 'ANNULEE',
+                    annule_par: userId,
+                    date_annulation: nowIso,
+                    motif_annulation: motifFinal,
+                    updated_at: nowIso
+                })
+                .eq('document_vente', selectedDocForAnnulation);
+
+            if (err2) {
+                alert("Erreur f suivi_commandes_lancer: " + err2.message);
+                return;
+            }
+
+            alert(`La commande "${selectedDocForAnnulation}" t-annulat b naja7 w tsjlat l-m3lomat dyalha!`);
+            closeMotifModal();
+            document.getElementById('searchCommandeInput').value = '';
+            loadCommandesAnnulees();
         };
 
         window.openDetails = async function(docVente) {
@@ -285,9 +370,10 @@
         };
 
         window.changerStatutCommande = async function(docVente, nouveauStatut) {
+            if (!confirm(`Wesh bghiti t-rdd la commande ${docVente} l statut [${nouveauStatut}] ?`)) return;
+
             const nowIso = new Date().toISOString();
 
-            // 1. Update f commandes_excel
             const { error: errUpdate } = await supabase
                 .from('commandes_excel')
                 .update({ 
@@ -303,11 +389,14 @@
                 return;
             }
 
-            // 2. Update f suivi_commandes_lancer
+            // Ila rddnaha IMPORTEE, n-ms7o l-m3lomat dyal l'annulation f suivi_commandes_lancer ila bghiti ola nkhalwliw
             await supabase
                 .from('suivi_commandes_lancer')
                 .update({ 
                     statut: nouveauStatut, 
+                    annule_par: null,
+                    date_annulation: null,
+                    motif_annulation: null,
                     updated_at: nowIso 
                 })
                 .eq('document_vente', docVente);

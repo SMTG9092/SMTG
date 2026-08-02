@@ -23,7 +23,7 @@
         @media print { 
             @page { 
                 size: A4 landscape; 
-                margin: 5mm; 
+                margin: 0mm; /* Ilghi ga3 les marges dyal l-printer bach l-warqa t-ched b koumlatha */
             } 
             body { 
                 background: white !important; 
@@ -31,20 +31,25 @@
                 -webkit-print-color-adjust: exact; 
                 margin: 0 !important;
                 padding: 0 !important;
+                overflow: hidden !important;
             } 
             .no-print { display: none !important; }
+            
             #bon-content { 
-                width: 275mm !important; 
-                height: 190mm !important; 
+                width: 100vw !important; 
+                height: 100vh !important; 
                 max-width: none !important;
                 max-height: none !important;
-                border: 1px solid #000 !important; 
+                border: none !important; 
                 box-shadow: none !important; 
                 background: white !important; 
                 color: black !important; 
-                margin: 0 auto !important;
-                padding: 5mm 8mm !important;
+                margin: 0 !important;
+                padding: 6mm 10mm !important;
                 box-sizing: border-box;
+                position: absolute;
+                top: 0;
+                left: 0;
             }
         }
         
@@ -65,13 +70,13 @@
             box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.5); 
         }
         
-        .header-box { border: 2px solid black; padding: 6px 12px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+        .header-box { border: 2px solid black; padding: 5px 10px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
         
         /* Table Layout Optimisé */
         .table-container { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; margin: 2px 0; border: 1px solid black; }
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        th { background-color: #e5e7eb !important; color: black !important; font-weight: bold; font-size: 10px; padding: 4px; border: 1px solid black; text-align: center; }
-        td { border: 1px solid black; padding: 4px 2px; text-align: center; font-size: 11px; color: black; }
+        th { background-color: #e5e7eb !important; color: black !important; font-weight: bold; font-size: 10px; padding: 3px; border: 1px solid black; text-align: center; }
+        td { border: 1px solid black; padding: 3px 2px; text-align: center; font-size: 11px; color: black; }
         
         .col-poste { width: 7%; }
         .col-article { width: 38%; } 

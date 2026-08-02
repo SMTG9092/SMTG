@@ -192,24 +192,20 @@
                 const qteCmd = Number(row.quantite_commandee || 0);
                 const qtePrepActuelle = row.quantite_preparee !== null ? Number(row.quantite_preparee) : 0;
                 
-                // Njbdou les lots mn la table stock b code d'article
-                const lotsData = await chargerLotsArticle(row.article);
-                const datalistId = `lots_list_${row.Poste}_${Math.random().toString(36).substr(2, 9)}`;
-
-                let optionsHtml = lotsData.map(item => `<option value="${item.lot}">Dispo: ${Number(item.stock_disponible).toFixed(3)}</option>`).join('');
+                const uniqueId = `${row.Poste}_${Math.random().toString(36).substr(2, 5)}`;
 
                 html += `
-                    <tr class="hover:bg-slate-800/30 transition row-poste" data-poste="${row.Poste}" data-qte-cmd="${qteCmd}">
+                    <tr class="hover:bg-slate-800/30 transition row-poste" data-poste="${row.Poste}" data-qte-cmd="${qteCmd}" data-article="${row.article}">
                         <td class="p-3.5 text-amber-400 font-bold">${row.Poste}</td>
                         <td class="p-3.5 text-sky-400">${row.article}</td>
                         <td class="p-3.5 text-slate-200">${row.designation_article}</td>
                         <td class="p-3.5 text-right font-bold text-slate-100" id="qte_cmd_${row.Poste}">${qteCmd.toFixed(3)}</td>
                         <td class="p-3.5 text-right font-bold text-emerald-400" id="qte_aff_${row.Poste}">${qtePrepActuelle.toFixed(3)}</td>
-                        <td class="p-3.5 text-center">
-                            <input type="text" list="${datalistId}" placeholder="Taper lot..." class="bg-slate-950 border border-slate-700 text-slate-200 text-center px-2 py-1 rounded-lg text-xs w-40 focus:outline-none focus:border-emerald-500 uppercase">
-                            <datalist id="${datalistId}">
-                                ${optionsHtml}
-                            </datalist>
+                        <td class="p-3.5 text-center relative">
+                            <div class="relative w-44 mx-auto">
+                                <input type="text" id="input_lot_${uniqueId}" placeholder="Taper lot..." oninput="filtrerLots('${row.article}', this.value, '${uniqueId}')" class="bg-slate-950 border border-slate-700 text-slate-200 text-center px-2 py-1 rounded-lg text-xs w-full focus:outline-none focus:border-emerald-500 uppercase">
+                                <div id="dropdown_lot_${uniqueId}" class="absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl max-h-48 overflow-y-auto hidden z-50 divide-y divide-slate-800 text-left"></div>
+                            </div>
                         </td>
                         <td class="p-3.5 text-center">
                             <input type="number" step="0.001" placeholder="" oninput="recalculerTotalPoste('${numCmd}', ${row.Poste})" class="qte-saisie-input bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500" value="${qtePrepActuelle > 0 ? qtePrepActuelle : ''}">
@@ -223,17 +219,55 @@
             tbody.innerHTML = html;
         };
 
-        // Fonction bch tjbd les lots mn la table stock f Supabase b code article
-        async function chargerLotsArticle(articleCode) {
+        // Fonction dyal t-filtri w t-affichi l-liste ila kan dakchi mktoub
+        window.filtrerLots = async function(articleCode, terme, uniqueId) {
+            const dropdown = document.getElementById(`dropdown_lot_${uniqueId}`);
+            
+            if (!terme || terme.trim() === "") {
+                dropdown.innerHTML = "";
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            // Njbdou les lots mn la table stock li fihom dak l-7orof (ILIKE) w stock_disponible > 0
             const { data, error } = await supabase
                 .from('stock')
                 .select('lot, stock_disponible')
                 .eq('article', articleCode)
-                .gt('stock_disponible', 0);
+                .ilike('lot', `%${terme}%`)
+                .gt('stock_disponible', 0)
+                .limit(10);
 
-            if (error || !data) return [];
-            return data;
-        }
+            if (error || !data || data.length === 0) {
+                dropdown.innerHTML = `<div class="p-2.5 text-slate-500 text-center text-[11px] italic">Aucun lot trouvé</div>`;
+                dropdown.classList.remove('hidden');
+                return;
+            }
+
+            let html = "";
+            data.forEach(item => {
+                html += `
+                    <div onclick="selectionnerLot('${uniqueId}', '${item.lot}')" class="p-2 hover:bg-emerald-500/10 hover:text-emerald-400 cursor-pointer transition flex items-center justify-between text-[11px]">
+                        <span class="font-bold text-slate-200">${item.lot}</span>
+                        <span class="text-emerald-400 font-mono">Disp: ${Number(item.stock_disponible).toFixed(3)}</span>
+                    </div>
+                `;
+            });
+
+            dropdown.innerHTML = html;
+            dropdown.classList.remove('hidden');
+        };
+
+        window.selectionnerLot = function(uniqueId, lotValue) {
+            const input = document.getElementById(`input_lot_${uniqueId}`);
+            if (input) {
+                input.value = lotValue;
+            }
+            const dropdown = document.getElementById(`dropdown_lot_${uniqueId}`);
+            if (dropdown) {
+                dropdown.classList.add('hidden');
+            }
+        };
 
         window.ajouterLigneSup = async function(poste, article, numCmd) {
             const trOriginal = document.querySelector(`tr.row-poste[data-poste="${poste}"]`);
@@ -248,9 +282,7 @@
                 return;
             }
 
-            const lotsData = await chargerLotsArticle(article);
-            const datalistId = `lots_list_sup_${poste}_${Math.random().toString(36).substr(2, 9)}`;
-            let optionsHtml = lotsData.map(item => `<option value="${item.lot}">Dispo: ${Number(item.stock_disponible).toFixed(3)}</option>`).join('');
+            const uniqueId = `sup_${poste}_${Math.random().toString(36).substr(2, 5)}`;
 
             const trSup = document.createElement('tr');
             trSup.className = "hover:bg-slate-800/30 transition border-t border-slate-800/30 bg-slate-900/45 row-sup";
@@ -261,11 +293,11 @@
                 <td class="p-3.5 text-slate-400 italic">Lot additionnel</td>
                 <td class="p-3.5 text-right text-slate-500">-</td>
                 <td class="p-3.5 text-right text-slate-500">-</td>
-                <td class="p-3.5 text-center">
-                    <input type="text" list="${datalistId}" placeholder="Taper lot..." class="bg-slate-950 border border-slate-700 text-slate-200 text-center px-2 py-1 rounded-lg text-xs w-40 focus:outline-none focus:border-emerald-500 uppercase">
-                    <datalist id="${datalistId}">
-                        ${optionsHtml}
-                    </datalist>
+                <td class="p-3.5 text-center relative">
+                    <div class="relative w-44 mx-auto">
+                        <input type="text" id="input_lot_${uniqueId}" placeholder="Taper lot..." oninput="filtrerLots('${article}', this.value, '${uniqueId}')" class="bg-slate-950 border border-slate-700 text-slate-200 text-center px-2 py-1 rounded-lg text-xs w-full focus:outline-none focus:border-emerald-500 uppercase">
+                        <div id="dropdown_lot_${uniqueId}" class="absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl max-h-48 overflow-y-auto hidden z-50 divide-y divide-slate-800 text-left"></div>
+                    </div>
                 </td>
                 <td class="p-3.5 text-center">
                     <input type="number" step="0.001" placeholder="" oninput="recalculerTotalPoste('${numCmd}', ${poste})" class="qte-saisie-input bg-slate-950 border border-slate-700 text-emerald-400 font-bold text-center px-2 py-1 rounded-lg text-xs w-28 focus:outline-none focus:border-emerald-500">

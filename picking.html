@@ -1,607 +1,553 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Préparation Picking - SoufStock</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <title>Lancement & Suivi des Commandes - SoufStock WMS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: { 950: '#020617', 900: '#0f172a', 800: '#1e293b', 700: '#334155' },
+                        emerald: { 600: '#059669', 500: '#10b981', 400: '#34d399' }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body>
-    <div class="app-container">
-        <!-- SIDEBAR -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2>SoufStock</h2>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased h-screen flex flex-col overflow-hidden">
+
+    <!-- HEADER -->
+    <header class="h-16 bg-slate-900/60 border-b border-slate-800 px-6 flex items-center justify-between shrink-0">
+        <a href="../commandes.html" class="flex items-center gap-3 group">
+            <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500/20 transition">
+                <i class="fas fa-snowflake"></i>
             </div>
-            <nav id="sidebarNav" class="sidebar-nav">
-                <!-- Dynamic Navigation -->
-            </nav>
-            <div class="sidebar-footer">
-                <button id="logoutBtn" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Déconnexion</button>
+            <div>
+                <span class="font-bold text-sm block">SoufStock <span class="text-emerald-400">WMS</span></span>
+                <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Module de Lancement des Commandes</span>
             </div>
-        </aside>
+        </a>
+        <div class="flex items-center gap-3">
+            <!-- ZIR DYAL COMMANDES ANNULEES (F L-FOQ HDA RELANCE) -->
+            <a href="annulee_lancer.html" class="bg-slate-800 hover:bg-slate-700 text-rose-400 border border-rose-500/30 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
+                <i class="fas fa-ban"></i> Commandes Annulées
+            </a>
+            <!-- ZIR DYAL RELANCE.HTML -->
+            <a href="relance.html" class="bg-slate-800 hover:bg-slate-700 text-sky-400 border border-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
+                <i class="fas fa-magnifying-glass"></i> Recherche & Relance
+            </a>
+            <div class="flex items-center gap-4 bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl font-mono text-xs">
+                <span id="liveClock" class="text-emerald-400">--:--:--</span>
+            </div>
+        </div>
+    </header>
 
-        <!-- MAIN CONTENT -->
-        <main class="main-content">
-            <header class="top-header">
-                <h1>Préparation Picking</h1>
-                <div class="user-info">
-                    <span id="currentDate">--</span>
-                </div>
-            </header>
-
-            <div class="content-body">
-                <!-- SEARCH & ACTIONS BAR -->
-                <div class="card search-card">
-                    <div class="search-group">
-                        <label for="documentInput">N° Document de Vente :</label>
-                        <input type="text" id="documentInput" placeholder="Ex: 4000795424" class="form-control">
-                        <button id="searchDocBtn" class="btn btn-primary"><i class="fas fa-search"></i> Charger</button>
-                        <button id="enableModifyBtn" onclick="enableModification()" disabled class="btn btn-secondary opacity-50 cursor-not-allowed"><i class="fas fa-edit"></i> Modifier</button>
+    <!-- MAIN WRAPPER -->
+    <main class="flex-1 p-6 overflow-hidden flex flex-col gap-5">
+        
+        <!-- BARRE DE FILTRE ET 4 STATISTIQUES -->
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
+            
+            <!-- FILTRE DATES (7 COLUMNS) -->
+            <div class="xl:col-span-7 bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-lg">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                        <i class="fas fa-calendar-days"></i>
                     </div>
-                    <div class="action-group">
-                        <button onclick="savePicking('EN_COURS')" class="btn btn-success"><i class="fas fa-save"></i> Enregistrer</button>
-                        <button onclick="validatePicking('PICKING')" class="btn btn-warning"><i class="fas fa-check-circle"></i> Valider</button>
-                    </div>
-                </div>
-
-                <!-- INFO CARDS -->
-                <div class="info-grid">
-                    <div class="info-card">
-                        <span>Client</span>
-                        <h3 id="infoClient">-</h3>
-                    </div>
-                    <div class="info-card">
-                        <span>Date Création</span>
-                        <h3 id="infoCreation">-</h3>
-                    </div>
-                    <div class="info-card">
-                        <span>Date Livraison</span>
-                        <h3 id="infoLivraison">-</h3>
-                    </div>
-                    <div class="info-card">
-                        <span>Tournée / Itinéraire</span>
-                        <h3 id="infoTournee">-</h3>
-                        <span id="infoStatut" class="badge">EN ATTENTE</span>
+                    <div>
+                        <h2 class="text-xs font-bold text-slate-100 uppercase tracking-wider">Filtrer par Période</h2>
+                        <p class="text-[11px] text-slate-400">Gestion et Lancement des Commandes</p>
                     </div>
                 </div>
-
-                <!-- TABLE -->
-                <div class="card table-card">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Article & Désignation</th>
-                                <th>Qté Commandée</th>
-                                <th>Qté Préparée</th>
-                                <th>Lot (Saisie)</th>
-                                <th>Qté Lot</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="pickingTableBody">
-                            <tr>
-                                <td colspan="6" class="text-center">Veuillez charger un document de vente pour afficher les articles à préparer.[cite: 2]</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                
+                <div class="flex flex-wrap items-center gap-2">
+                    <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl">
+                        <span class="text-[10px] text-slate-400 uppercase">Du:</span>
+                        <input type="date" id="dateDebut" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono cursor-pointer">
+                    </div>
+                    <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl">
+                        <span class="text-[10px] text-slate-400 uppercase">Au:</span>
+                        <input type="date" id="dateFin" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono cursor-pointer">
+                    </div>
+                    <button onclick="loadSuiviCommandes()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
+                        <i class="fas fa-search"></i> Afficher
+                    </button>
                 </div>
             </div>
-        </main>
+
+            <!-- LES 4 STATISTIQUES / TOTAUX (5 COLUMNS) -->
+            <div class="xl:col-span-5 grid grid-cols-4 gap-2 bg-slate-900 border border-slate-800 p-3 rounded-xl shadow-lg items-center">
+                <div class="text-center border-r border-slate-800 pr-1">
+                    <span class="text-[9px] text-slate-400 uppercase block tracking-wider">Total</span>
+                    <span id="statTotal" class="text-base font-bold font-mono text-slate-100">0</span>
+                </div>
+                <div class="text-center border-r border-slate-800 pr-1">
+                    <span class="text-[9px] text-slate-400 uppercase block tracking-wider">Importée</span>
+                    <span id="statImportee" class="text-base font-bold font-mono text-amber-400">0</span>
+                </div>
+                <div class="text-center border-r border-slate-800 pr-1">
+                    <span class="text-[9px] text-slate-400 uppercase block tracking-wider">Lancée</span>
+                    <span id="statLancee" class="text-base font-bold font-mono text-emerald-400">0</span>
+                </div>
+                <div class="text-center">
+                    <span class="text-[9px] text-slate-400 uppercase block tracking-wider">Picking</span>
+                    <span id="statPicking" class="text-base font-bold font-mono text-sky-400">0</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- TABLE CONTAINER WITH MODE SWITCHER TABS -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl flex-1 flex flex-col">
+            <div class="p-3 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs flex-wrap gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="font-bold text-slate-300 mr-2"><i class="fas fa-list-check text-emerald-400 mr-2"></i> Affichage :</span>
+                    <button onclick="switchMode('commande')" id="tabModeCommande" class="px-3 py-1.5 rounded-lg font-bold text-xs transition bg-emerald-600 text-white shadow cursor-pointer">
+                        <i class="fas fa-file-lines mr-1.5"></i> Par Commande
+                    </button>
+                    <button onclick="switchMode('tournee')" id="tabModeTournee" class="px-3 py-1.5 rounded-lg font-bold text-xs transition bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer">
+                        <i class="fas fa-route mr-1.5"></i> Par Tournée (Itinéraire)
+                    </button>
+                </div>
+                <span id="tableCountBadge" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-lg font-mono text-[11px]">0 éléments</span>
+            </div>
+
+            <!-- TABLE COMMANDE -->
+            <div id="containerTableCommande" class="overflow-x-auto flex-1">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="sticky top-0 bg-slate-950 text-slate-400 uppercase text-[10px] z-10 border-b border-slate-800">
+                        <tr>
+                            <th class="p-3.5">N° Commande</th>
+                            <th class="p-3.5">Client / Réceptionnaire</th>
+                            <th class="p-3.5">Date Livraison</th>
+                            <th class="p-3.5 text-center">Nb Postes</th>
+                            <th class="p-3.5 text-right">Total KG</th>
+                            <th class="p-3.5 text-right text-emerald-400">Total Pièces</th>
+                            <th class="p-3.5">Itinéraire / Tournée</th>
+                            <th class="p-3.5">Statut</th>
+                            <th class="p-3.5 text-center">Actions & Lancement</th>
+                        </tr>
+                    </thead>
+                    <tbody id="suiviTableBody" class="divide-y divide-slate-800/50 font-mono">
+                        <tr><td colspan="9" class="p-8 text-center text-slate-500">Chargement...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TABLE TOURNEE -->
+            <div id="containerTableTournee" class="overflow-x-auto flex-1 hidden">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="sticky top-0 bg-slate-950 text-slate-400 uppercase text-[10px] z-10 border-b border-slate-800">
+                        <tr>
+                            <th class="p-3.5">Itinéraire / Tournée</th>
+                            <th class="p-3.5 text-center">Nb Commandes</th>
+                            <th class="p-3.5 text-center">Total Postes</th>
+                            <th class="p-3.5 text-right">Total KG</th>
+                            <th class="p-3.5 text-right text-emerald-400">Total Pièces</th>
+                            <th class="p-3.5 text-center">Actions & Lancement</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tourneeTableBody" class="divide-y divide-slate-800/50 font-mono">
+                        <tr><td colspan="6" class="p-8 text-center text-slate-500">Chargement...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL DETAILS -->
+    <div id="detailModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-all duration-300">
+        <div class="bg-slate-900 border border-slate-800 w-[750px] max-h-[85vh] rounded-2xl p-6 shadow-2xl flex flex-col">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fas fa-boxes-stacked text-emerald-400"></i> Détails : <span id="modalDocTitle" class="text-emerald-400"></span>
+                </h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white cursor-pointer"><i class="fas fa-xmark text-lg"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto py-4">
+                <table class="w-full text-left text-xs font-mono">
+                    <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] border-b border-slate-800" id="modalTableHead">
+                        <tr>
+                            <th class="p-2.5">Poste</th>
+                            <th class="p-2.5">Article</th>
+                            <th class="p-2.5">Désignation</th>
+                            <th class="p-2.5 text-right">Quantité KG</th>
+                            <th class="p-2.5 text-right text-emerald-400">Pièces</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalDetailsBody" class="divide-y divide-slate-800/40"></tbody>
+                </table>
+            </div>
+            <div class="pt-4 border-t border-slate-800 flex justify-end">
+                <button onclick="closeModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer">Fermer</button>
+            </div>
+        </div>
     </div>
 
-    <!-- SCRIPTS -->
+    <!-- APP SCRIPT -->
     <script type="module">
-        import Navigation from '../assets/js/core/navigation.js';
         import supabase from '../assets/js/core/supabase.js';
 
-        let currentOrderLines = [];
-        let currentDocNumber = "";
-        let currentSuiviId = null;
-        let currentUserProfileId = null;
-        let isEditableMode = false;
+        let currentMode = 'commande'; // 'commande' ou 'tournee'
 
-        document.addEventListener("DOMContentLoaded", async () => {
-            if (typeof Navigation !== 'undefined' && Navigation.init) {
-                await Navigation.init();
+        function getLocalDateString(dateObj) {
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        const today = new Date();
+        document.getElementById('dateDebut').value = getLocalDateString(today);
+        const demain = new Date(today);
+        demain.setDate(demain.getDate() + 1);
+        document.getElementById('dateFin').value = getLocalDateString(demain);
+
+        window.switchMode = function(mode) {
+            currentMode = mode;
+            const btnCmd = document.getElementById('tabModeCommande');
+            const tabCmd = document.getElementById('containerTableCommande');
+            const btnTrn = document.getElementById('tabModeTournee');
+            const tabTrn = document.getElementById('containerTableTournee');
+
+            // Reset styles
+            btnCmd.className = "px-3 py-1.5 rounded-lg font-bold text-xs transition bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer";
+            btnTrn.className = "px-3 py-1.5 rounded-lg font-bold text-xs transition bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer";
+            tabCmd.classList.remove('hidden');
+            tabTrn.classList.add('hidden');
+
+            if (mode === 'commande') {
+                btnCmd.className = "px-3 py-1.5 rounded-lg font-bold text-xs transition bg-emerald-600 text-white shadow cursor-pointer";
+            } else if (mode === 'tournee') {
+                btnTrn.className = "px-3 py-1.5 rounded-lg font-bold text-xs transition bg-emerald-600 text-white shadow cursor-pointer";
+                tabTrn.classList.remove('hidden');
+                tabCmd.classList.add('hidden');
+            }
+            loadSuiviCommandes();
+        };
+
+        window.loadSuiviCommandes = async function() {
+            const dateDebut = document.getElementById('dateDebut').value;
+            const dateFin = document.getElementById('dateFin').value;
+            
+            // 1. Charger Stats Globales
+            let queryStats = supabase.from('commandes_excel').select('document_vente, statut, date_livraison');
+            if (dateDebut) queryStats = queryStats.gte('date_livraison', dateDebut);
+            if (dateFin) queryStats = queryStats.lte('date_livraison', dateFin);
+            const { data: rawStats } = await queryStats;
+
+            if (rawStats) {
+                const commandesMap = {};
+                rawStats.forEach(r => { if (!commandesMap[r.document_vente]) commandesMap[r.document_vente] = r.statut; });
+                const statuts = Object.values(commandesMap);
+                document.getElementById('statTotal').textContent = statuts.length;
+                document.getElementById('statImportee').textContent = statuts.filter(s => s === 'IMPORTEE').length;
+                document.getElementById('statLancee').textContent = statuts.filter(s => s === 'LANCEE').length;
+                document.getElementById('statPicking').textContent = statuts.filter(s => s === 'EN_PICKING').length;
             }
 
-            const updateClock = () => {
-                const now = new Date();
-                const dateEl = document.getElementById("currentDate");
-                if (dateEl) dateEl.textContent = now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            };
-            updateClock();
-
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (user) {
-                    const { data: profile } = await supabase.from('user_profiles').select('id').eq('auth_user_id', user.id).single();
-                    if (profile) currentUserProfileId = profile.id;
-                }
-            } catch (e) {
-                console.error("Erreur session:", e);
+            if (currentMode === 'commande') {
+                await loadTableCommandes(dateDebut, dateFin, 'IMPORTEE');
+            } else {
+                await loadTableTournees(dateDebut, dateFin);
             }
+        };
 
-            const searchBtn = document.getElementById("searchDocBtn");
-            const docInput = document.getElementById("documentInput");
+        async function loadTableCommandes(dateDebut, dateFin, targetStatut) {
+            const tbody = document.getElementById("suiviTableBody");
+            tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Chargement...</td></tr>`;
 
-            if (searchBtn) searchBtn.addEventListener("click", loadOrderForPicking);
-            if (docInput) {
-                docInput.addEventListener("keydown", (e) => {
-                    if (e.key === "Enter") {
-                        e.preventDefault();
-                        loadOrderForPicking();
-                    }
-                });
-            }
+            let query = supabase.from('commandes_excel').select('document_vente, nom_receptionnaire, date_livraison, itineraire, statut').eq('statut', targetStatut);
+            if (dateDebut) query = query.gte('date_livraison', dateDebut);
+            if (dateFin) query = query.lte('date_livraison', dateFin);
+            const { data: tableRows } = await query;
 
-            const logoutBtn = document.getElementById("logoutBtn");
-            if (logoutBtn) {
-                logoutBtn.addEventListener("click", async () => {
-                    await supabase.auth.signOut();
-                    window.location.href = "login.html";
-                });
-            }
-        });
+            const uniqueMap = {};
+            if (tableRows) tableRows.forEach(r => { if (!uniqueMap[r.document_vente]) uniqueMap[r.document_vente] = r; });
+            const list = Object.values(uniqueMap);
+            document.getElementById('tableCountBadge').textContent = `${list.length} commandes`;
 
-        async function loadOrderForPicking() {
-            const docInput = document.getElementById("documentInput");
-            if (!docInput) return;
-            const docNum = docInput.value.trim();
-            const tbody = document.getElementById("pickingTableBody");
-            const modifyBtn = document.getElementById("enableModifyBtn");
-
-            isEditableMode = false;
-            if (modifyBtn) {
-                modifyBtn.disabled = true;
-                modifyBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            }
-
-            if (!docNum) {
-                alert("Veuillez saisir un numéro de document de vente.");
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-500">Aucune commande trouvée avec le statut [${targetStatut}].</td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center">Recherche de la commande...</td></tr>`;
-
-            try {
-                const { data: suiviData, error: suiviErr } = await supabase
-                    .from('suivi_commandes_lancer')
-                    .select('*')
-                    .ilike('document_vente', `%${docNum}%`)
-                    .limit(1)
-                    .single();
-
-                if (suiviErr || !suiviData) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-error">Aucun suivi trouvé pour le document "${docNum}".</td></tr>`;
-                    clearHeaderInfo();
-                    return;
-                }
-
-                currentSuiviId = suiviData.id;
-                const currentStatut = (suiviData.statut || "").toUpperCase();
-
-                if (currentStatut === "IMPORTEE") {
-                    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-warning">Commande ${docNum} non lancée</td></tr>`;
-                    clearHeaderInfo();
-                    return;
-                }
-
-                const { data, error } = await supabase
-                    .from('commandes_excel')
-                    .select('*')
-                    .ilike('document_vente', `%${docNum}%`)
-                    .order('ligne_commande', { ascending: true });
-
-                if (error || !data || data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-error">Aucune ligne d'article trouvée pour le document "${docNum}".</td></tr>`;
-                    clearHeaderInfo();
-                    return;
-                }
-
-                currentDocNumber = docNum;
-                currentOrderLines = data;
-                updateHeaderInfo(suiviData);
-
-                const { data: existingPicking } = await supabase
-                    .from('picking')
-                    .select('*')
-                    .eq('document_vente', docNum)
-                    .single();
-
-                let existingDetails = [];
-                if (existingPicking) {
-                    const statutEl = document.getElementById("infoStatut");
-                    if (statutEl) statutEl.textContent = existingPicking.statut;
-                    if (existingPicking.statut !== 'EN_COURS' && modifyBtn) {
-                        modifyBtn.disabled = false;
-                        modifyBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                    }
-                    
-                    const { data: detailsData } = await supabase
-                        .from('picking_details')
-                        .select('*')
-                        .eq('picking_id', existingPicking.id);
-                    
-                    if (detailsData) existingDetails = detailsData;
-                } else {
-                    const statutEl = document.getElementById("infoStatut");
-                    if (statutEl) statutEl.textContent = suiviData.statut || "LANCEE";
-                }
-
-                const canEdit = (currentStatut === "LANCEE" && !existingPicking) || (existingPicking && existingPicking.statut === 'EN_COURS') || (currentStatut === "EN_PICKING");
-                renderPickingTable(data, existingDetails, canEdit);
-
-            } catch (err) {
-                console.error("Erreur technique:", err);
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-error">Erreur de connexion lors du chargement.</td></tr>`;
-            }
-        }
-
-        window.enableModification = function() {
-            if (!currentDocNumber) return;
-            isEditableMode = true;
-            
-            document.querySelectorAll('.lot-input, .qty-input').forEach(input => {
-                input.removeAttribute('disabled');
-                input.classList.remove('opacity-60', 'cursor-not-allowed');
-            });
-            document.querySelectorAll('#pickingTableBody button').forEach(btn => {
-                btn.removeAttribute('disabled');
-                btn.classList.remove('opacity-60', 'cursor-not-allowed');
-            });
-
-            alert(`Mode modification activé pour la commande ${currentDocNumber}.`);
-        }
-
-        function updateHeaderInfo(suiviData) {
-            document.getElementById("infoClient").textContent = suiviData.client || '-';
-            document.getElementById("infoCreation").textContent = suiviData.date_creation || '-';
-            document.getElementById("infoLivraison").textContent = suiviData.date_livraison || '-';
-            document.getElementById("infoTournee").textContent = suiviData.itineraire || '-';
-        }
-
-        function clearHeaderInfo() {
-            currentDocNumber = "";
-            currentSuiviId = null;
-            currentOrderLines = [];
-            isEditableMode = false;
-            document.getElementById("infoClient").textContent = '-';
-            document.getElementById("infoCreation").textContent = '-';
-            document.getElementById("infoLivraison").textContent = '-';
-            document.getElementById("infoTournee").textContent = '-';
-            document.getElementById("infoStatut").textContent = "EN ATTENTE";
-            
-            const modifyBtn = document.getElementById("enableModifyBtn");
-            if (modifyBtn) {
-                modifyBtn.disabled = true;
-                modifyBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            }
-        }
-
-        function renderPickingTable(lines, savedDetails, isInitialEditable) {
-            const tbody = document.getElementById("pickingTableBody");
             let html = "";
-            
-            const isDisabledAttr = (!isInitialEditable && !isEditableMode) ? 'disabled' : '';
-            const disabledClass = (!isInitialEditable && !isEditableMode) ? 'opacity-60 cursor-not-allowed' : '';
+            for (let item of list) {
+                const { data: details } = await supabase.from('commandes_excel').select('quantite_commandee, nombre_pieces, "Poste"').eq('document_vente', item.document_vente);
+                const nbPostes = details ? details.length : 0;
+                const totalKg = details ? details.reduce((a, c) => a + Number(c.quantite_commandee || 0), 0) : 0;
+                const totalPieces = details ? details.reduce((a, c) => a + Number(c.nombre_pieces || 0), 0) : 0;
 
-            lines.forEach((item, index) => {
-                const qteCmd = Number(item.quantite_commandee || 0);
-                const itemDetails = savedDetails.filter(d => d.article === item.article && d.ligne_commande === item.ligne_commande);
+                const badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
                 
-                if (itemDetails.length > 0) {
-                    itemDetails.forEach((detail, subIdx) => {
-                        const isFirst = subIdx === 0;
-                        const rowClass = isFirst ? `main-row` : `sub-row-${index}`;
-                        
-                        html += `
-                            <tr class="${rowClass}" data-index="${index}" data-stock-id="${detail.stock_id || ''}" data-magasin="${detail.magasin || ''}" data-detail-id="${detail.id || ''}">
-                                <td>
-                                    <strong>${item.article || '-'}</strong><br>
-                                    <small>${item.designation_article || '-'}</small>
-                                </td>
-                                <td class="text-center">${isFirst ? qteCmd.toLocaleString() : '-'}</td>
-                                <td class="text-center total-prep" id="total_prep_${index}">0.00</td>
-                                <td class="text-center relative">
-                                    <input type="text" placeholder="Lot..." value="${detail.lot || ''}" oninput="searchLots(this, '${item.article}', ${index})" ${isDisabledAttr} class="form-control lot-input ${disabledClass}">
-                                    <div class="lot-suggestions hidden"></div>
-                                </td>
-                                <td class="text-center relative">
-                                    <input type="number" step="0.001" placeholder="0.00" value="${detail.quantite_preparee || ''}" oninput="calculatePrepared(${index})" data-max-stock="999999" ${isDisabledAttr} class="form-control qty-input ${disabledClass}">
-                                    <span class="error-msg hidden"></span>
-                                </td>
-                                <td class="text-center">
-                                    ${isFirst ? `
-                                    <button type="button" onclick="addLotRow(${index})" ${isDisabledAttr} class="btn btn-sm btn-success ${disabledClass}"><i class="fas fa-plus"></i></button>` : `
-                                    <button type="button" onclick="removeLotRow(this, ${index})" ${isDisabledAttr} class="btn btn-sm btn-danger ${disabledClass}"><i class="fas fa-trash"></i></button>`}
-                                </td>
-                            </tr>
-                        `;
-                    });
-                } else {
-                    html += `
-                        <tr class="main-row" data-index="${index}">
-                            <td>
-                                <strong>${item.article || '-'}</strong><br>
-                                <small>${item.designation_article || '-'}</small>
-                            </td>
-                            <td class="text-center">${qteCmd.toLocaleString()}</td>
-                            <td class="text-center total-prep" id="total_prep_${index}">0.00</td>
-                            <td class="text-center relative">
-                                <input type="text" placeholder="Lot..." oninput="searchLots(this, '${item.article}', ${index})" ${isDisabledAttr} class="form-control lot-input ${disabledClass}">
-                                <div class="lot-suggestions hidden"></div>
-                            </td>
-                            <td class="text-center relative">
-                                <input type="number" step="0.001" placeholder="0.00" oninput="calculatePrepared(${index})" data-max-stock="0" ${isDisabledAttr} class="form-control qty-input ${disabledClass}">
-                                <span class="error-msg hidden"></span>
-                            </td>
-                            <td class="text-center">
-                                <button type="button" onclick="addLotRow(${index})" ${isDisabledAttr} class="btn btn-sm btn-success ${disabledClass}"><i class="fas fa-plus"></i></button>
-                            </td>
-                        </tr>
-                    `;
+                let actionButtons = `
+                    <button onclick="openDetailsCommande('${item.document_vente}')" class="bg-slate-800 hover:bg-slate-700 text-sky-400 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow">
+                        <i class="fas fa-eye"></i> Articles
+                    </button>
+                    <button onclick="lancerCommande('${item.document_vente}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow">
+                        <i class="fas fa-play"></i> Lancer
+                    </button>
+                `;
+
+                html += `
+                    <tr class="hover:bg-slate-800/30 transition">
+                        <td class="p-3.5 font-bold text-emerald-400">${item.document_vente}</td>
+                        <td class="p-3.5 text-slate-200">${item.nom_receptionnaire || 'Client Divers'}</td>
+                        <td class="p-3.5 text-sky-300 font-mono">${item.date_livraison || '-'}</td>
+                        <td class="p-3.5 text-center font-bold text-sky-400">${nbPostes} Postes</td>
+                        <td class="p-3.5 text-right font-bold text-slate-100">${totalKg.toFixed(2)} KG</td>
+                        <td class="p-3.5 text-right font-bold text-emerald-400">${totalPieces} Pcs</td>
+                        <td class="p-3.5 text-slate-300"><span class="bg-slate-950 px-2 py-1 rounded border border-slate-800 text-[11px]">${item.itineraire || 'Non assigné'}</span></td>
+                        <td class="p-3.5"><span class="border px-2.5 py-1 rounded-full text-[10px] font-bold ${badgeColor}">${item.statut}</span></td>
+                        <td class="p-3.5 text-center flex items-center justify-center gap-2">
+                            ${actionButtons}
+                        </td>
+                    </tr>
+                `;
+            }
+            tbody.innerHTML = html;
+        }
+
+        async function loadTableTournees(dateDebut, dateFin) {
+            const tbody = document.getElementById("tourneeTableBody");
+            tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Chargement...</td></tr>`;
+
+            let query = supabase.from('commandes_excel').select('document_vente, itineraire, quantite_commandee, nombre_pieces, "Poste"').eq('statut', 'IMPORTEE');
+            if (dateDebut) query = query.gte('date_livraison', dateDebut);
+            if (dateFin) query = query.lte('date_livraison', dateFin);
+            const { data: rows } = await query;
+
+            if (!rows || rows.length === 0) {
+                document.getElementById('tableCountBadge').textContent = `0 tournées`;
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500">Aucune tournée avec commandes IMPORTEE.</td></tr>`;
+                return;
+            }
+
+            const tourneesMap = {};
+            rows.forEach(r => {
+                const tourneeName = r.itineraire || 'Non assigné';
+                if (!tourneesMap[tourneeName]) {
+                    tourneesMap[tourneeName] = { name: tourneeName, docs: new Set(), totalPostes: 0, totalKg: 0, totalPieces: 0 };
                 }
+                tourneesMap[tourneeName].docs.add(r.document_vente);
+                tourneesMap[tourneeName].totalPostes += 1;
+                tourneesMap[tourneeName].totalKg += Number(r.quantite_commandee || 0);
+                tourneesMap[tourneeName].totalPieces += Number(r.nombre_pieces || 0);
             });
 
+            const tourneesList = Object.values(tourneesMap);
+            document.getElementById('tableCountBadge').textContent = `${tourneesList.length} tournées`;
+
+            let html = "";
+            for (let t of tourneesList) {
+                const nbCommandes = t.docs.size;
+                html += `
+                    <tr class="hover:bg-slate-800/30 transition">
+                        <td class="p-3.5 font-bold text-emerald-400"><i class="fas fa-route mr-2 text-sky-400"></i>${t.name}</td>
+                        <td class="p-3.5 text-center text-sky-300 font-bold">${nbCommandes} Commandes</td>
+                        <td class="p-3.5 text-center text-slate-200">${t.totalPostes} Postes</td>
+                        <td class="p-3.5 text-right font-bold text-slate-100">${t.totalKg.toFixed(2)} KG</td>
+                        <td class="p-3.5 text-right font-bold text-emerald-400">${t.totalPieces} Pcs</td>
+                        <td class="p-3.5 text-center flex items-center justify-center gap-2">
+                            <button onclick="openDetailsTournee('${t.name}')" class="bg-slate-800 hover:bg-slate-700 text-sky-400 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow">
+                                <i class="fas fa-eye"></i> Commandes & Articles
+                            </button>
+                            <button onclick="lancerTournee('${t.name}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow">
+                                <i class="fas fa-play"></i> Lancer Tournée
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }
             tbody.innerHTML = html;
-            lines.forEach((_, index) => calculatePrepared(index));
         }
 
-        window.calculatePrepared = function(index) {
-            const mainRow = document.querySelector(`tr.main-row[data-index="${index}"]`);
-            if (!mainRow) return;
+        window.openDetailsCommande = async function(docVente) {
+            document.getElementById("modalDocTitle").textContent = docVente;
+            document.getElementById("modalTableHead").innerHTML = `
+                <tr>
+                    <th class="p-2.5">Poste</th>
+                    <th class="p-2.5">Article</th>
+                    <th class="p-2.5">Désignation</th>
+                    <th class="p-2.5 text-right">Quantité KG</th>
+                    <th class="p-2.5 text-right text-emerald-400">Pièces</th>
+                </tr>`;
+            const modalBody = document.getElementById("modalDetailsBody");
+            modalBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Chargement...</td></tr>`;
+            document.getElementById("detailModal").classList.remove("hidden");
+            setTimeout(() => document.getElementById("detailModal").classList.remove("opacity-0"), 10);
 
-            let sum = 0;
-            const collectAndCheck = (r) => {
-                const qtyInput = r.querySelector(".qty-input");
-                if (!qtyInput) return 0;
-                return parseFloat(qtyInput.value) || 0;
-            };
-
-            sum += collectAndCheck(mainRow);
-            let nextElement = mainRow.nextElementSibling;
-            while (nextElement && nextElement.classList.contains(`sub-row-${index}`)) {
-                sum += collectAndCheck(nextElement);
-                nextElement = nextElement.nextElementSibling;
-            }
-
-            const totalElem = document.getElementById(`total_prep_${index}`);
-            if (totalElem) totalElem.textContent = sum.toFixed(2);
-        }
-
-        window.addLotRow = function(index) {
-            const mainRow = document.querySelector(`tr.main-row[data-index="${index}"]`);
-            if (!mainRow) return;
-            
-            const articleCode = currentOrderLines[index]?.article || '';
-            const newTr = document.createElement('tr');
-            newTr.className = `sub-row-${index}`;
-            newTr.innerHTML = `
-                <td><small><i class="fas fa-level-up-alt fa-rotate-90"></i> Lot supp.</small></td>
-                <td class="text-center">-</td>
-                <td class="text-center">-</td>
-                <td class="text-center relative">
-                    <input type="text" placeholder="Lot..." oninput="searchLots(this, '${articleCode}', ${index})" class="form-control lot-input">
-                    <div class="lot-suggestions hidden"></div>
-                </td>
-                <td class="text-center relative">
-                    <input type="number" step="0.001" placeholder="0.00" oninput="calculatePrepared(${index})" data-max-stock="0" class="form-control qty-input">
-                    <span class="error-msg hidden"></span>
-                </td>
-                <td class="text-center">
-                    <button type="button" onclick="removeLotRow(this, ${index})" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
-                </td>
-            `;
-
-            let lastGroupRow = mainRow;
-            let next = mainRow.nextElementSibling;
-            while (next && next.classList.contains(`sub-row-${index}`)) {
-                lastGroupRow = next;
-                next = next.nextElementSibling;
-            }
-            lastGroupRow.after(newTr);
-        }
-
-        window.removeLotRow = function(buttonElem, index) {
-            const tr = buttonElem.closest('tr');
-            if (tr) {
-                tr.remove();
-                calculatePrepared(index);
-            }
-        }
-
-        window.searchLots = async function(inputElem, articleCode, index) {
-            const queryVal = inputElem.value.trim();
-            const suggestionsBox = inputElem.nextElementSibling;
-            if (!suggestionsBox) return;
-
-            if (queryVal.length < 1) {
-                suggestionsBox.classList.add('hidden');
-                return;
-            }
-
-            try {
-                const { data, error } = await supabase
-                    .from('stock')
-                    .select('id, lot, magasin, emplacement, stock_disponible, unite')
-                    .eq('article', articleCode)
-                    .ilike('lot', `%${queryVal}%`);
-
-                if (error || !data || data.length === 0) {
-                    suggestionsBox.innerHTML = `<div class="suggestion-item">Aucun lot trouvé</div>`;
-                    suggestionsBox.classList.remove('hidden');
-                    return;
-                }
-
-                let html = "";
-                data.forEach(item => {
-                    const dispo = item.stock_disponible !== undefined ? item.stock_disponible : 0;
-                    html += `<div onclick='selectLot(this, ${JSON.stringify(item)}, ${index})' class="suggestion-item">
-                        <span><strong>${item.lot}</strong> (Mag: ${item.magasin})</span>
-                        <span>Dispo: ${parseFloat(dispo).toFixed(2)}</span>
-                    </div>`;
+            const { data } = await supabase.from('commandes_excel').select('"Poste", article, designation_article, quantite_commandee, nombre_pieces').eq('document_vente', docVente).order('"Poste"', { ascending: true });
+            let html = "";
+            if (data) {
+                data.forEach(row => {
+                    html += `<tr class="hover:bg-slate-800/40"><td class="p-2.5 text-amber-400 font-bold">${row.Poste}</td><td class="p-2.5 text-sky-400">${row.article}</td><td class="p-2.5 text-slate-200">${row.designation_article}</td><td class="p-2.5 text-right font-bold text-slate-100">${row.quantite_commandee} KG</td><td class="p-2.5 text-right font-bold text-emerald-400">${row.nombre_pieces} Pcs</td></tr>`;
                 });
-
-                suggestionsBox.innerHTML = html;
-                suggestionsBox.classList.remove('hidden');
-            } catch (err) {
-                console.error("Erreur lots:", err);
             }
-        }
+            modalBody.innerHTML = html;
+        };
 
-        window.selectLot = function(element, stockItem, index) {
-            const suggestionDiv = element.parentElement;
-            const input = suggestionDiv.previousElementSibling;
-            input.value = stockItem.lot;
-            
-            const row = input.closest('tr');
-            row.dataset.stockId = stockItem.id;
-            row.dataset.magasin = stockItem.magasin || 'PRINCIPAL';
+        window.openDetailsTournee = async function(tourneeName) {
+            document.getElementById("modalDocTitle").textContent = `Tournée : ${tourneeName}`;
+            document.getElementById("modalTableHead").innerHTML = `
+                <tr>
+                    <th class="p-2.5">N° Commande</th>
+                    <th class="p-2.5">Client</th>
+                    <th class="p-2.5 text-center">Postes</th>
+                    <th class="p-2.5 text-right">KG</th>
+                    <th class="p-2.5 text-right text-emerald-400">Pièces</th>
+                </tr>`;
+            const modalBody = document.getElementById("modalDetailsBody");
+            modalBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Chargement...</td></tr>`;
+            document.getElementById("detailModal").classList.remove("hidden");
+            setTimeout(() => document.getElementById("detailModal").classList.remove("opacity-0"), 10);
 
-            const dispo = stockItem.stock_disponible !== undefined ? stockItem.stock_disponible : 0;
-            const qtyInput = row.querySelector('.qty-input');
-            if (qtyInput) qtyInput.dataset.maxStock = dispo;
+            const dateDebut = document.getElementById('dateDebut').value;
+            const dateFin = document.getElementById('dateFin').value;
+            let query = supabase.from('commandes_excel').select('document_vente, nom_receptionnaire, quantite_commandee, nombre_pieces, "Poste"').eq('statut', 'IMPORTEE').eq('itineraire', tourneeName);
+            if (dateDebut) query = query.gte('date_livraison', dateDebut);
+            if (dateFin) query = query.lte('date_livraison', dateFin);
+            const { data } = await query;
 
-            suggestionDiv.classList.add('hidden');
-            calculatePrepared(index);
-        }
-
-        async function saveOrValidatePicking(targetStatut) {
-            if (!currentDocNumber || currentOrderLines.length === 0) {
-                alert("Aucun document chargé.");
-                return;
-            }
-
-            try {
-                let activeSuiviId = currentSuiviId;
-                if (!activeSuiviId) {
-                    const { data: checkRow } = await supabase
-                        .from('suivi_commandes_lancer')
-                        .select('id')
-                        .ilike('document_vente', currentDocNumber)
-                        .limit(1)
-                        .single();
-                    if (checkRow) activeSuiviId = checkRow.id;
-                }
-
-                if (!activeSuiviId) {
-                    alert("Erreur: Identifiant de suivi introuvable.");
-                    return;
-                }
-
-                let totalArticlesCount = currentOrderLines.length;
-                let totalLotsCount = 0;
-                let totalQuantiteCmd = 0;
-                let totalPrepareVal = 0;
-
-                currentOrderLines.forEach(item => {
-                    totalQuantiteCmd += Number(item.quantite_commandee || 0);
-                });
-
-                const pickingHeader = {
-                    suivi_id: activeSuiviId,
-                    document_vente: currentDocNumber,
-                    client: currentOrderLines[0].client || 'CLIENT',
-                    preparateur: currentUserProfileId,
-                    statut: targetStatut === 'PICKING' ? 'VALIDE' : 'EN_COURS',
-                    total_articles: totalArticlesCount,
-                    total_lots: totalLotsCount,
-                    total_quantite: totalQuantiteCmd,
-                    total_prepare: totalPrepareVal,
-                    est_valide: targetStatut === 'PICKING',
-                    updated_at: new Date().toISOString()
-                };
-
-                const { data: existingPicking } = await supabase
-                    .from('picking')
-                    .select('id')
-                    .eq('document_vente', currentDocNumber)
-                    .single();
-
-                let pickingId;
-                if (existingPicking) {
-                    pickingId = existingPicking.id;
-                    await supabase.from('reservations_stock').delete().eq('picking_id', pickingId);
-                    await supabase.from('picking_details').delete().eq('picking_id', pickingId);
-                    await supabase.from('picking').update(pickingHeader).eq('id', pickingId);
-                } else {
-                    const { data: newPick, error: pickErr } = await supabase
-                        .from('picking')
-                        .insert([pickingHeader])
-                        .select('id')
-                        .single();
-                    if (pickErr) throw pickErr;
-                    pickingId = newPick.id;
-                }
-
-                const detailsPayload = [];
-                currentOrderLines.forEach((item, index) => {
-                    const mainRow = document.querySelector(`tr.main-row[data-index="${index}"]`);
-                    if (!mainRow) return;
-
-                    const collectRowData = (r) => {
-                        const lotInput = r.querySelector('.lot-input');
-                        const qtyInput = r.querySelector('.qty-input');
-                        const lotVal = lotInput ? lotInput.value.trim() : '';
-                        const qtePrep = parseFloat(qtyInput ? qtyInput.value : 0) || 0;
-                        const stockId = r.dataset.stockId ? parseInt(r.dataset.stockId) : null;
-
-                        if (lotVal || qtePrep > 0) {
-                            totalLotsCount++;
-                            totalPrepareVal += qtePrep;
-                            detailsPayload.push({
-                                picking_id: pickingId,
-                                suivi_id: activeSuiviId,
-                                document_vente: currentDocNumber,
-                                stock_id: stockId,
-                                ligne_commande: item.ligne_commande || (index + 1),
-                                article: item.article,
-                                designation_article: item.designation_article || '',
-                                lot: lotVal || 'STANDARD',
-                                magasin: r.dataset.magasin || 'PRINCIPAL',
-                                quantite_commandee: Number(item.quantite_commandee || 0),
-                                quantite_preparee: qtePrep,
-                                unite: 'KG',
-                                preparateur: currentUserProfileId,
-                                statut: targetStatut === 'PICKING' ? 'VALIDE' : 'EN_COURS'
-                            });
-                        }
-                    };
-
-                    collectRowData(mainRow);
-                    let next = mainRow.nextElementSibling;
-                    while (next && next.classList.contains(`sub-row-${index}`)) {
-                        collectRowData(next);
-                        next = next.nextElementSibling;
+            const mapCmds = {};
+            if (data) {
+                data.forEach(r => {
+                    if (!mapCmds[r.document_vente]) {
+                        mapCmds[r.document_vente] = { client: r.nom_receptionnaire, postes: 0, kg: 0, pcs: 0 };
                     }
+                    mapCmds[r.document_vente].postes += 1;
+                    mapCmds[r.document_vente].kg += Number(r.quantite_commandee || 0);
+                    mapCmds[r.document_vente].pcs += Number(r.nombre_pieces || 0);
                 });
-
-                if (detailsPayload.length > 0) {
-                    await supabase.from('picking_details').insert(detailsPayload);
-                }
-
-                await supabase
-                    .from('suivi_commandes_lancer')
-                    .update({ 
-                        statut: targetStatut === 'PICKING' ? 'PICKING_TERMINE' : 'EN_PICKING',
-                        picking_par: currentUserProfileId
-                    })
-                    .eq('id', activeSuiviId);
-
-                alert(targetStatut === 'PICKING' ? "Préparation validée avec succès !" : "Préparation enregistrée avec succès !");
-                window.location.reload();
-
-            } catch (err) {
-                console.error("Erreur enregistrement:", err);
-                alert("Erreur lors de l'enregistrement: " + err.message);
             }
+
+            let html = "";
+            Object.entries(mapCmds).forEach(([doc, info]) => {
+                html += `<tr class="hover:bg-slate-800/40"><td class="p-2.5 text-emerald-400 font-bold">${doc}</td><td class="p-2.5 text-slate-200">${info.client || '-'}</td><td class="p-2.5 text-center text-sky-400">${info.postes} Postes</td><td class="p-2.5 text-right font-bold text-slate-100">${info.kg.toFixed(2)} KG</td><td class="p-2.5 text-right font-bold text-emerald-400">${info.pcs} Pcs</td></tr>`;
+            });
+            modalBody.innerHTML = html;
+        };
+
+        window.closeModal = function() {
+            const modal = document.getElementById("detailModal");
+            modal.classList.add("opacity-0");
+            setTimeout(() => modal.classList.add("hidden"), 300);
+        };
+
+        async function genererNumLancement(prefix) {
+            const now = new Date();
+            const jj = String(now.getDate()).padStart(2, '0');
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const yy = String(now.getFullYear()).slice(-2);
+            const datePrefix = `${prefix}-${jj}${mm}${yy}-`;
+
+            const { data } = await supabase
+                .from('suivi_commandes_lancer')
+                .select('num_lancement')
+                .like('num_lancement', `${datePrefix}%`);
+
+            let nextSeq = 1;
+            if (data && data.length > 0) {
+                const seqs = data.map(item => {
+                    if (!item.num_lancement) return 0;
+                    const parts = item.num_lancement.split('-');
+                    return parseInt(parts[parts.length - 1], 10) || 0;
+                });
+                nextSeq = Math.max(...seqs, 0) + 1;
+            }
+            return `${datePrefix}${String(nextSeq).padStart(3, '0')}`;
         }
 
-        window.savePicking = () => saveOrValidatePicking('EN_COURS');
-        window.validatePicking = () => saveOrValidatePicking('PICKING');
+        window.lancerCommande = async function(docVente) {
+            if (!confirm(`Voulez-vous lancer la commande ${docVente} ?`)) return;
+            
+            const { data: { user } } = await supabase.auth.getUser();
+            const userId = user ? user.id : null;
+            const numLancement = await genererNumLancement('C');
+            const nowIso = new Date().toISOString();
+
+            const { error: err1 } = await supabase
+                .from('commandes_excel')
+                .update({ statut: 'LANCEE', updated_at: nowIso })
+                .eq('document_vente', docVente);
+                
+            if (err1) { alert("Erreur commandes_excel: " + err1.message); return; }
+
+            const { error: err2 } = await supabase
+                .from('suivi_commandes_lancer')
+                .update({
+                    statut: 'LANCEE',
+                    num_lancement: numLancement,
+                    lance_par: userId,
+                    date_lancement: nowIso,
+                    updated_at: nowIso
+                })
+                .eq('document_vente', docVente);
+
+            if (err2) { alert("Erreur suivi_commandes_lancer: " + err2.message); return; }
+            
+            window.open(`bon_preparation.html?cmd=${docVente}`, '_blank');
+            loadSuiviCommandes();
+        };
+
+        window.lancerTournee = async function(tourneeName) {
+            if (!confirm(`Voulez-vous vraiment lancer toute la tournée "${tourneeName}" ?`)) return;
+            
+            const dateDebut = document.getElementById('dateDebut').value;
+            const dateFin = document.getElementById('dateFin').value;
+
+            const { data: { user } } = await supabase.auth.getUser();
+            const userId = user ? user.id : null;
+            const nowIso = new Date().toISOString();
+
+            let queryDocs = supabase.from('commandes_excel').select('document_vente').eq('statut', 'IMPORTEE').eq('itineraire', tourneeName);
+            if (dateDebut) queryDocs = queryDocs.gte('date_livraison', dateDebut);
+            if (dateFin) queryDocs = queryDocs.lte('date_livraison', dateFin);
+            const { data: docsRows } = await queryDocs;
+
+            if (!docsRows || docsRows.length === 0) {
+                alert("Aucune commande trouvée pour cette tournée.");
+                return;
+            }
+
+            const uniqueDocs = [...new Set(docsRows.map(r => r.document_vente))];
+
+            for (let docVente of uniqueDocs) {
+                const numLancement = await genererNumLancement('T');
+
+                await supabase.from('commandes_excel')
+                    .update({ statut: 'LANCEE', updated_at: nowIso })
+                    .eq('document_vente', docVente);
+
+                await supabase.from('suivi_commandes_lancer')
+                    .update({
+                        statut: 'LANCEE',
+                        num_lancement: numLancement,
+                        lance_par: userId,
+                        date_lancement: nowIso,
+                        updated_at: nowIso
+                    })
+                    .eq('document_vente', docVente);
+            }
+
+            alert(`La tournée "${tourneeName}" a été lancée avec succès (${uniqueDocs.length} commandes) !`);
+            window.open(`bon_preparation_tournee.html?tournee=${encodeURIComponent(tourneeName)}`, '_blank');
+            loadSuiviCommandes();
+        };
+
+        setInterval(() => {
+            document.getElementById("liveClock").innerText = new Date().toLocaleTimeString('fr-FR');
+        }, 1000);
+
+        loadSuiviCommandes();
     </script>
 </body>
 </html>

@@ -35,6 +35,10 @@
             </div>
         </div>
         <div class="flex items-center gap-3">
+            <!-- Bouton de retour vers commandes.html -->
+            <a href="commandes.html" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 border border-slate-700 cursor-pointer">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
             <div class="flex items-center gap-4 bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl font-mono text-xs">
                 <span id="liveClock" class="text-emerald-400">--:--:--</span>
             </div>
@@ -141,8 +145,8 @@
         const inputSearch = document.getElementById('inputSearch');
         const inputDateFilter = document.getElementById('inputDateFilter');
 
-        // Initialiser la date d'aujourd'hui par défaut f l'input ila bghiti, wla khaliha khwaia
-        // inputDateFilter.value = new Date().toISOString().split('T')[0];
+        // Initialiser la date d'aujourd'hui par défaut f l'input automatiquement
+        inputDateFilter.value = new Date().toISOString().split('T')[0];
 
         window.changerOnglet = function(onglet) {
             ongletActif = onglet;

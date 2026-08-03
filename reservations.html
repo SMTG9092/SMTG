@@ -371,7 +371,7 @@
             document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
         }
 
-        // Fonction Traiter (AB10) sans utiliser la colonne 'utilisateur' (qui n'existe pas dans reservations_stock) et avec insertion valide
+        // Fonction Traiter (AB10) adaptée avec magasin_source et magasin_destination (mouvements_stock)
         window.processSelectedPickingDetails = async function() {
             try {
                 const selectedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
@@ -380,7 +380,6 @@
                     return;
                 }
 
-                // Récupération de l'utilisateur connecté pour mouvements_stock si nécessaire
                 const { data: { user } } = await supabase.auth.getUser();
                 const userId = user ? user.id : null;
 
@@ -440,7 +439,6 @@
                         if (existingRes) {
                             reservationId = existingRes.id;
                         } else {
-                            // Insertion sans la colonne 'utilisateur' pour éviter l'erreur de schema cache
                             const { data: newRes, error: errInsert } = await supabase
                                 .from('reservations_stock')
                                 .insert({
@@ -456,7 +454,7 @@
                                     stock_id: item.stock_id || null,
                                     picking_id: item.picking_id || null,
                                     suivi_id: suiviObj.id || null,
-                                    statut: 'RESERVE' // Respecte la contrainte chk_reservation_statut
+                                    statut: 'RESERVE'
                                 })
                                 .select('id')
                                 .single();
@@ -473,16 +471,16 @@
 
                     validTargetRows.push(item);
 
-                    // A. Enregistrement f mouvements_stock avec utilisateur
+                    // A. Enregistrement f mouvements_stock b type 'TRANSFERT' w magasin_source / magasin_destination (AB10)
                     mouvementsPayloads.push({
                         stock_id: item.stock_id || null,
                         document_vente: item.document_vente,
-                        type_mouvement: 'AB10',
+                        type_mouvement: 'TRANSFERT',
                         article: item.article,
                         designation_article: item.designation_article,
                         lot: item.lot,
-                        magasin: item.magasin,
-                        emplacement: item.emplacement,
+                        magasin_source: item.magasin,
+                        magasin_destination: 'AB10',
                         quantite: item.quantite_preparee,
                         unite: item.unite || 'KG',
                         utilisateur: userId,
@@ -573,7 +571,8 @@
                         aggregatedMap.set(key, {
                             "Article": item.article || '',
                             "Quantité": qty,
-                            "Mag.": item.magasin || '',
+                            "Mag. Source": item.magasin || '',
+                            "Mag. Destination": "AB10",
                             "Lot": item.lot || '',
                             "Désignation": item.designation_article || ''
                         });

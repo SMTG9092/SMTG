@@ -398,7 +398,7 @@
                 if (errSuivi) throw errSuivi;
                 const suiviMap = new Map((suivisData || []).map(s => [s.document_vente, s]));
 
-                // 2. Récupérer reservations_stock
+                // 2. Récupérer reservations_stock existantes
                 const { data: reservationsData } = await supabase
                     .from('reservations_stock')
                     .select('id, document_vente, article, lot, picking_detail_id')
@@ -412,7 +412,7 @@
                     });
                 }
 
-                // 3. Préparer les charges utiles pour ab10_stock et mouvements_stock
+                // 3. Préparer les charges utiles pour mouvements_stock, ab10_stock et réservations auto-fallback
                 const ab10Payloads = [];
                 const mouvementsPayloads = [];
                 const validTargetRows = [];
@@ -425,17 +425,51 @@
                     }
 
                     let reservationId = reservationMap.get(item.id) || reservationMap.get(`${item.document_vente}_${item.article}_${item.lot}`);
-                    if (!reservationId && reservationsData && reservationsData.length > 0) {
-                        const fallbackRes = reservationsData.find(r => r.document_vente === item.document_vente);
-                        if (fallbackRes) reservationId = fallbackRes.id;
-                    }
-
+                    
+                    // Fallback intelligent : Si la réservation n'existe pas, on la crée automatiquement pour éviter tout blocage NOT NULL
                     if (!reservationId) {
-                        alert(`Erreur : Impossible de trouver une réservation valide pour l'article ${item.article} (Doc: ${item.document_vente}).`);
-                        return;
+                        const { data: newRes, error: errNewRes } = await supabase
+                            .from('reservations_stock')
+                            .insert({
+                                document_vente: item.document_vente,
+                                article: item.article,
+                                designation_article: item.designation_article,
+                                lot: item.lot,
+                                magasin: item.magasin,
+                                quantite: item.quantite_preparee,
+                                unite: item.unite || 'KG',
+                                picking_detail_id: item.id,
+                                statut: 'EN_AB10'
+                            })
+                            .select('id')
+                            .single();
+
+                        if (!errNewRes && newRes) {
+                            reservationId = newRes.id;
+                            reservationMap.set(item.id, reservationId);
+                        } else {
+                            console.error("Erreur création réservation auto:", errNewRes);
+                            alert(`Erreur : Impossible de créer ou trouver une réservation pour l'article ${item.article} (Doc: ${item.document_vente}).`);
+                            return;
+                        }
                     }
 
                     validTargetRows.push(item);
+
+                    // Traçabilité obligatoire en premier (mouvements_stock)
+                    mouvementsPayloads.push({
+                        stock_id: item.stock_id || null,
+                        document_vente: item.document_vente,
+                        type_mouvement: 'AB10',
+                        article: item.article,
+                        designation_article: item.designation_article,
+                        lot: item.lot,
+                        magasin: item.magasin,
+                        emplacement: item.emplacement,
+                        quantite: item.quantite_preparee,
+                        unite: item.unite || 'KG',
+                        commentaire: `Transfert vers AB10 depuis Picking`
+                    });
 
                     // Payload AB10
                     ab10Payloads.push({
@@ -455,32 +489,17 @@
                         unite: item.unite || 'KG',
                         statut: 'EN_AB10'
                     });
-
-                    // Payload Mouvement Stock (Traçabilité obligatoire avant les changements de statuts)
-                    mouvementsPayloads.push({
-                        stock_id: item.stock_id || null,
-                        document_vente: item.document_vente,
-                        type_mouvement: 'AB10',
-                        article: item.article,
-                        designation_article: item.designation_article,
-                        lot: item.lot,
-                        magasin: item.magasin,
-                        emplacement: item.emplacement,
-                        quantite: item.quantite_preparee,
-                        unite: item.unite || 'KG',
-                        commentaire: `Transfert vers AB10 depuis Picking`
-                    });
                 }
 
                 if (ab10Payloads.length === 0) return;
 
                 const validValidIds = validTargetRows.map(i => i.id);
 
-                // 4. Enregistrer d'abord dans mouvements_stock pour la traçabilité
+                // 4. Étape 1 : Enregistrement obligatoire dans mouvements_stock
                 const { error: errMv } = await supabase.from('mouvements_stock').insert(mouvementsPayloads);
                 if (errMv) throw errMv;
 
-                // 5. Mettre à jour le statut des picking_details en TRANSFERE_AB10
+                // 5. Étape 2 : Mettre à jour le statut des picking_details en TRANSFERE_AB10
                 const { error: errRes } = await supabase
                     .from('picking_details')
                     .update({ statut: 'TRANSFERE_AB10' })
@@ -488,7 +507,7 @@
 
                 if (errRes) throw errRes;
 
-                // 6. Mettre à jour le statut du picking global à TERMINE
+                // 6. Étape 3 : Mettre à jour le statut du picking global à TERMINE
                 const pickingIds = [...new Set(validTargetRows.map(i => i.picking_id).filter(Boolean))];
                 if (pickingIds.length > 0) {
                     const { error: errPick } = await supabase
@@ -498,7 +517,7 @@
                     if (errPick) throw errPick;
                 }
 
-                // 7. Mettre à jour le statut des réservations stock associées à 'EN_AB10'
+                // 7. Étape 4 : Mettre à jour le statut des réservations stock associées à 'EN_AB10'
                 if (validValidIds.length > 0) {
                     await supabase
                         .from('reservations_stock')
@@ -506,11 +525,11 @@
                         .in('picking_detail_id', validValidIds);
                 }
 
-                // 8. Insertion dans ab10_stock
+                // 8. Étape 5 : Insertion dans ab10_stock
                 const { error: errAb10 } = await supabase.from('ab10_stock').insert(ab10Payloads);
                 if (errAb10) throw errAb10;
 
-                // 9. Mettre à jour le statut de la table commandes_excel et suivi_commandes_lancer à 'EN_AB10'
+                // 9. Étape 6 : Mettre à jour le statut des commandes et du suivi global à 'EN_AB10'
                 if (documentVentes.length > 0) {
                     await supabase
                         .from('commandes_excel')
@@ -523,7 +542,7 @@
                         .in('document_vente', documentVentes);
                 }
 
-                // 10. Générer l'export Excel récapitulatif pour AB10
+                // 10. Génération de l'export Excel récapitulatif pour AB10
                 const aggregatedMap = new Map();
                 validTargetRows.forEach(item => {
                     const key = `${item.article}_${item.lot}_${item.magasin}`;

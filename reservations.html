@@ -371,7 +371,7 @@
             document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
         }
 
-        // Fonction Traiter (AB10) avec gestion robuste et insertion complète (quantite, quantite_reservee, stock_id, picking_id, suivi_id)
+        // Fonction Traiter (AB10) avec gestion robuste et insertion correcte (statut: 'RESERVE' initialement pour respecter la contrainte)
         window.processSelectedPickingDetails = async function() {
             try {
                 const selectedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
@@ -437,7 +437,7 @@
                         if (existingRes) {
                             reservationId = existingRes.id;
                         } else {
-                            // Insertion sécurisée avec quantite_reservee et les autres champs requis
+                            // Insertion avec statut 'RESERVE' pour respecter chk_reservation_statut, puis mise à jour vers 'EN_AB10'
                             const { data: newRes, error: errInsert } = await supabase
                                 .from('reservations_stock')
                                 .insert({
@@ -447,13 +447,13 @@
                                     lot: item.lot,
                                     magasin: item.magasin,
                                     quantite: item.quantite_preparee,
-                                    quantite_reservee: item.quantite_preparee || 0, // Zidna had la colonne bach n-tjanbo not-null constraint
+                                    quantite_reservee: item.quantite_preparee || 0,
                                     unite: item.unite || 'KG',
                                     picking_detail_id: item.id,
                                     stock_id: item.stock_id || null,
                                     picking_id: item.picking_id || null,
                                     suivi_id: suiviObj.id || null,
-                                    statut: 'EN_AB10'
+                                    statut: 'RESERVE' // Respecte la contrainte check check_reservation_statut
                                 })
                                 .select('id')
                                 .single();
@@ -531,7 +531,7 @@
                     if (errPick) throw errPick;
                 }
 
-                // 6. Étape 4 : Mettre à jour reservations_stock ila 'EN_AB10'
+                // 6. Étape 4 : Mettre à jour reservations_stock ila 'EN_AB10' daba mn ba3d l'insertion
                 if (validValidIds.length > 0) {
                     await supabase
                         .from('reservations_stock')

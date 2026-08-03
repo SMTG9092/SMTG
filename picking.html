@@ -145,6 +145,37 @@
             const tbody = document.getElementById("pickingTableBody");
             tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Vérification et chargement...</td></tr>`;
 
+            // 1. Njibo statut mn table 'suivi_commandes_lancer'
+            const { data: suiviData, error: errSuivi } = await supabase
+                .from('suivi_commandes_lancer')
+                .select('*')
+                .eq('document_vente', numCmd)
+                .maybeSingle();
+
+            if (errSuivi || !suiviData) {
+                alert("Aucune commande lancée trouvée avec le numéro : " + numCmd);
+                tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-rose-400">Commande introuvable dans le suivi des lancements.</td></tr>`;
+                resetInfos();
+                return;
+            }
+
+            const statutSuivi = suiviData.statut;
+
+            if (statutSuivi === 'IMPORTEE') {
+                alert(`Erreur : La commande [${numCmd}] n'a pas encore été lancée !`);
+                tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-amber-400">Cette commande doit être lancée d'abord.</td></tr>`;
+                resetInfos();
+                return;
+            }
+
+            if (statutSuivi === 'EXPEDIEE' || statutSuivi === 'ANNULEE') {
+                alert(`Attention : Cette commande est déjà ${statutSuivi}.`);
+                tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-rose-400">Cette commande est fermée (${statutSuivi}).</td></tr>`;
+                resetInfos();
+                return;
+            }
+
+            // 2. Njibo data d commandes_excel
             const { data: dataCmd, error: errCmd } = await supabase
                 .from('commandes_excel')
                 .select('*')
@@ -152,24 +183,8 @@
                 .order('"Poste"', { ascending: true });
 
             if (errCmd || !dataCmd || dataCmd.length === 0) {
-                alert("Aucune commande trouvée avec le numéro : " + numCmd);
-                tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-rose-400">Commande introuvable.</td></tr>`;
-                resetInfos();
-                return;
-            }
-
-            const statutActuel = dataCmd[0].statut;
-
-            if (statutActuel === 'IMPORTEE') {
-                alert(`Erreur : La commande [${numCmd}] n'a pas encore été lancée !`);
-                tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-amber-400">Cette commande doit être lancée d'abord.</td></tr>`;
-                resetInfos();
-                return;
-            }
-
-            if (statutActuel === 'EXPEDIEE' || statutActuel === 'ANNULEE') {
-                alert(`Attention : Cette commande est déjà ${statutActuel}.`);
-                tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-rose-400">Cette commande est fermée (${statutActuel}).</td></tr>`;
+                alert("Aucun article trouvé pour cette commande.");
+                tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-rose-400">Articles introuvables.</td></tr>`;
                 resetInfos();
                 return;
             }
@@ -180,11 +195,9 @@
                 .eq('document_vente', numCmd)
                 .maybeSingle();
 
-            isOrderLocked = existingPicking ? Boolean(existingPicking.est_valide) : false;
-            
-            // Kan-choufo wach statut f table picking howa VALIDE (wla TERMINE ila kant qdima)
-            const pStatut = existingPicking ? existingPicking.statut : '';
-            isOrderTerminated = (pStatut === 'VALIDE' || pStatut === 'TERMINE' || existingPicking?.est_valide === true) || statutActuel === 'PREPAREE';
+            // 3. HNA FIN KAN-T-VÉRIFIW: Ila statut f suivi howa PICKING_TERMINE -> Bloquiha définitivement!
+            isOrderTerminated = (statutSuivi === 'PICKING_TERMINE');
+            isOrderLocked = isOrderTerminated || (existingPicking ? Boolean(existingPicking.est_valide) : false);
 
             let existingDetailsMap = {};
             if (existingPicking) {
@@ -203,7 +216,8 @@
                 }
             }
 
-            if (statutActuel === 'LANCEE' && !isOrderLocked && !isOrderTerminated) {
+            // Ila kanet LANCEE w mazal matbdawsh, rddoha EN_PICKING
+            if (statutSuivi === 'LANCEE' && !isOrderLocked && !isOrderTerminated) {
                 const { data: authData } = await supabase.auth.getUser();
                 const userId = authData?.user?.id || null;
                 const nowIso = new Date().toISOString();
@@ -221,13 +235,13 @@
                     })
                     .eq('document_vente', numCmd);
 
-                dataCmd.forEach(row => row.statut = 'EN_PICKING');
+                suiviData.statut = 'EN_PICKING';
             }
 
             const premiereLigne = dataCmd[0];
-            document.getElementById('infoClient').textContent = premiereLigne.nom_receptionnaire || 'Client Divers';
-            document.getElementById('infoItineraire').textContent = premiereLigne.itineraire || 'Non assigné';
-            document.getElementById('infoStatut').textContent = isOrderTerminated ? (pStatut || 'VALIDE') : (isOrderLocked ? 'VALIDE' : (premiereLigne.statut || '-'));
+            document.getElementById('infoClient').textContent = suiviData.client || premiereLigne.nom_receptionnaire || 'Client Divers';
+            document.getElementById('infoItineraire').textContent = suiviData.itineraire || premiereLigne.itineraire || 'Non assigné';
+            document.getElementById('infoStatut').textContent = statutSuivi;
             document.getElementById('tableCountBadge').textContent = `${dataCmd.length} postes`;
 
             window.selectedLotsData = {};
@@ -312,8 +326,8 @@
             }
             tbody.innerHTML = html;
 
-            // Ila kanet VALIDE wla TERMINE, kan-bloqiw kolchi
-            if (isOrderLocked || isOrderTerminated) {
+            // Ila kant PICKING_TERMINE, n-bloqiwha b L-Kamil
+            if (isOrderTerminated) {
                 verrouillerInterfaceInterface();
             }
         };
@@ -321,7 +335,7 @@
         window.selectedLotsData = {};
 
         window.filtrerLots = async function(articleCode, terme, uniqueId) {
-            if (isOrderLocked || isOrderTerminated) return;
+            if (isOrderTerminated) return;
             const dropdown = document.getElementById(`dropdown_lot_${uniqueId}`);
             
             if (!terme || terme.trim() === "") {
@@ -359,7 +373,7 @@
         };
 
         window.selectionnerLot = function(uniqueId, lotValue, stockDisp, stockId, magasin, emplacement) {
-            if (isOrderLocked || isOrderTerminated) return;
+            if (isOrderTerminated) return;
             const input = document.getElementById(`input_lot_${uniqueId}`);
             if (input) input.value = lotValue;
             
@@ -379,7 +393,7 @@
         };
 
         window.verifierEtRecalculer = async function(documentVente, poste, uniqueId) {
-            if (isOrderLocked || isOrderTerminated) return;
+            if (isOrderTerminated) return;
             const qteInp = document.getElementById(`input_qte_${uniqueId}`);
             const infoDiv = document.getElementById(`info_disp_${uniqueId}`);
             const saisieVal = Number(qteInp.value || 0);
@@ -398,7 +412,7 @@
         };
 
         window.ajouterLigneSup = async function(poste, article, numCmd) {
-            if (isOrderLocked || isOrderTerminated) return;
+            if (isOrderTerminated) return;
             const trOriginal = document.querySelector(`tr.row-poste[data-poste="${poste}"]`);
             if (!trOriginal) return;
 
@@ -447,14 +461,14 @@
         };
 
         window.supprimerLigneSup = function(btn, numCmd, poste) {
-            if (isOrderLocked || isOrderTerminated) return;
+            if (isOrderTerminated) return;
             const tr = btn.closest('tr');
             tr.remove();
             recalculerTotalPoste(numCmd, poste);
         };
 
         window.recalculerTotalPoste = async function(documentVente, poste) {
-            if (isOrderLocked || isOrderTerminated) return;
+            if (isOrderTerminated) return;
             const trOriginal = document.querySelector(`tr.row-poste[data-poste="${poste}"]`);
             const qteCmd = trOriginal ? Number(trOriginal.getAttribute('data-qte-cmd') || 0) : 0;
 
@@ -488,7 +502,7 @@
 
         async function executerSauvegardeDonnees(numCmd) {
             if (isOrderTerminated) {
-                alert("Action interdite : Cette commande est VALIDEE / TERMINEE et ne peut plus être modifiée.");
+                alert("Action interdite : Cette commande a le statut PICKING_TERMINE et ne peut plus être modifiée.");
                 return false;
             }
 
@@ -640,11 +654,7 @@
 
         window.actionEnregistrer = async function() {
             if (isOrderTerminated) {
-                alert("Impossible d'enregistrer : Cette commande est VALIDEE et verrouillée.");
-                return;
-            }
-            if (isOrderLocked) {
-                alert("Impossible d'enregistrer : Cette commande est validée et verrouillée. Cliquez sur 'Modifier' pour déverrouiller.");
+                alert("Impossible d'enregistrer : Cette commande a le statut PICKING_TERMINE.");
                 return;
             }
             const numCmd = inputNumCommande.value.trim();
@@ -659,13 +669,13 @@
 
         window.actionValiderGlobal = async function() {
             if (isOrderTerminated) {
-                alert("Cette commande est déjà VALIDEE.");
+                alert("Cette commande est déjà avec le statut PICKING_TERMINE.");
                 return;
             }
             const numCmd = inputNumCommande.value.trim();
             if (!numCmd) { alert("Veuillez d'abord charger une commande."); return; }
 
-            if (!confirm("Voulez-vous vraiment valider définitivement cette commande ? Cela va basculer le statut à VALIDE et enregistrer les données.")) {
+            if (!confirm("Voulez-vous vraiment valider définitivement cette commande ? Le statut passera à PICKING_TERMINE.")) {
                 return;
             }
 
@@ -673,11 +683,10 @@
             if (!saved) return;
 
             const nowIso = new Date().toISOString();
-            
             const { data: authData } = await supabase.auth.getUser();
             const userId = authData?.user?.id || null;
 
-            // 1. Mise à jour f table picking b STATUT: 'VALIDE' (Kif m-talbti a sahbi)
+            // 1. Mise à jour f table picking
             await supabase.from('picking')
                 .update({ 
                     est_valide: true, 
@@ -688,7 +697,7 @@
                 })
                 .eq('document_vente', numCmd);
 
-            // 2. Mise à jour f commandes_excel (PREPAREE)
+            // 2. Mise à jour f commandes_excel
             await supabase.from('commandes_excel')
                 .update({ 
                     statut: 'PREPAREE', 
@@ -696,7 +705,7 @@
                 })
                 .eq('document_vente', numCmd);
 
-            // 3. Mise à jour f suivi_commandes_lancer (PICKING_TERMINE)
+            // 3. Mise à jour f suivi_commandes_lancer b PICKING_TERMINE
             await supabase.from('suivi_commandes_lancer')
                 .update({ 
                     statut: 'PICKING_TERMINE', 
@@ -707,21 +716,19 @@
                 })
                 .eq('document_vente', numCmd);
 
-            alert("Commande validée globalement et verrouillée avec succès !");
+            alert("Commande validée globalement (PICKING_TERMINE) avec succès !");
             location.reload();
         };
 
         window.actionModifier = async function() {
-            // Hna fin m-no3 3la l-modifi ila kant VALIDE wla TERMINE
             if (isOrderTerminated) {
-                alert("Modification impossible : Cette commande a le statut VALIDE et est définitivement verrouillée.");
+                alert("Modification impossible : Cette commande a le statut PICKING_TERMINE.");
                 return;
             }
 
             const numCmd = inputNumCommande.value.trim();
             if (!numCmd) { alert("Veuillez charger une commande d'abord."); return; }
 
-            isOrderLocked = false;
             document.querySelectorAll('#pickingTableBody input').forEach(inp => {
                 inp.disabled = false;
                 inp.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -761,7 +768,6 @@
                 btn.classList.add('opacity-40', 'cursor-not-allowed');
             });
             
-            // Désactiver les boutons d'action (Modifier, Enregistrer, Valider Global)
             const btnMod = document.getElementById('btnModifier');
             if (btnMod) {
                 btnMod.disabled = true;
@@ -779,7 +785,7 @@
             }
 
             const infoSt = document.getElementById('infoStatut');
-            infoSt.textContent = 'VALIDE';
+            infoSt.textContent = 'PICKING_TERMINE';
             infoSt.className = 'font-bold text-emerald-400 text-sm';
         }
 

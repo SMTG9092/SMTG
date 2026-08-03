@@ -399,15 +399,12 @@
                 if (errSuivi) throw errSuivi;
                 const suiviMap = new Map((suivisData || []).map(s => [s.document_vente, s]));
 
-                // 2. Récupérer reservations_stock associées pour obtenir reservation_id
-                const { data: reservationsData, error: errResv } = await supabase
+                // 2. Récupérer reservations_stock (optionnel, sans bloquer si vide)
+                const { data: reservationsData } = await supabase
                     .from('reservations_stock')
                     .select('id, document_vente, article, lot')
                     .in('document_vente', documentVentes);
-
-                if (errResv) throw errResv;
                 
-                // Indexer par document_vente + article + lot pour un matching précis
                 const reservationMap = new Map();
                 if (reservationsData) {
                     reservationsData.forEach(r => {
@@ -433,7 +430,15 @@
                     if (errPick) throw errPick;
                 }
 
-                // 5. Préparer les charges utiles (Payloads) pour insertion dans ab10_stock
+                // 5. Mettre à jour le statut des réservations stock associées à 'EN_AB10'
+                if (validIds.length > 0) {
+                    await supabase
+                        .from('reservations_stock')
+                        .update({ statut: 'EN_AB10' })
+                        .in('picking_detail_id', validIds);
+                }
+
+                // 6. Préparer les charges utiles (Payloads) pour insertion dans ab10_stock
                 const ab10Payloads = [];
                 for (const item of targetRows) {
                     const suiviObj = suiviMap.get(item.document_vente);
@@ -442,20 +447,14 @@
                         continue;
                     }
 
-                    // Chercher la réservation correspondante (ou prendre la première du document par défaut si non trouvée)
                     let reservationId = reservationMap.get(`${item.document_vente}_${item.article}_${item.lot}`);
                     if (!reservationId && reservationsData && reservationsData.length > 0) {
                         const fallbackRes = reservationsData.find(r => r.document_vente === item.document_vente);
                         if (fallbackRes) reservationId = fallbackRes.id;
                     }
 
-                    if (!reservationId) {
-                        alert(`Impossible de trouver une réservation valide pour la ligne ${item.document_vente} / ${item.article}`);
-                        return;
-                    }
-
                     ab10Payloads.push({
-                        reservation_id: reservationId,
+                        reservation_id: reservationId || item.stock_id,
                         picking_id: item.picking_id,
                         picking_detail_id: item.id,
                         suivi_id: suiviObj.id,
@@ -478,7 +477,7 @@
                     if (errAb10) throw errAb10;
                 }
 
-                // 6. Mettre à jour le statut de la table commandes_excel et suivi_commandes_lancer à 'EN_AB10'
+                // 7. Mettre à jour le statut de la table commandes_excel et suivi_commandes_lancer à 'EN_AB10'
                 if (documentVentes.length > 0) {
                     await supabase
                         .from('commandes_excel')
@@ -491,7 +490,7 @@
                         .in('document_vente', documentVentes);
                 }
 
-                // 7. Générer l'export Excel récapitulatif pour AB10
+                // 8. Générer l'export Excel récapitulatif pour AB10
                 const aggregatedMap = new Map();
                 targetRows.forEach(item => {
                     const key = `${item.article}_${item.lot}_${item.magasin}`;

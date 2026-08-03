@@ -371,7 +371,7 @@
             document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
         }
 
-        // Fonction Traiter (AB10) avec upsert sécurisé pour reservations_stock
+        // Fonction Traiter (AB10) avec gestion robuste et vérification explicite pour reservations_stock
         window.processSelectedPickingDetails = async function() {
             try {
                 const selectedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
@@ -426,42 +426,42 @@
 
                     let reservationId = reservationMap.get(item.id) || reservationMap.get(`${item.document_vente}_${item.article}_${item.lot}`);
                     
-                    // Upsert sécurisé pour éviter les conflits de duplication
                     if (!reservationId) {
-                        const { data: upsertRes, error: errUpsert } = await supabase
+                        // Vérification préalable par picking_detail_id
+                        const { data: existingRes } = await supabase
                             .from('reservations_stock')
-                            .upsert({
-                                document_vente: item.document_vente,
-                                article: item.article,
-                                designation_article: item.designation_article,
-                                lot: item.lot,
-                                magasin: item.magasin,
-                                quantite: item.quantite_preparee,
-                                unite: item.unite || 'KG',
-                                picking_detail_id: item.id,
-                                statut: 'EN_AB10'
-                            }, { onConflict: 'picking_detail_id' })
                             .select('id')
-                            .single();
+                            .eq('picking_detail_id', item.id)
+                            .maybeSingle();
 
-                        if (!errUpsert && upsertRes) {
-                            reservationId = upsertRes.id;
-                            reservationMap.set(item.id, reservationId);
+                        if (existingRes) {
+                            reservationId = existingRes.id;
                         } else {
-                            const { data: existingRes } = await supabase
+                            // Insertion sécurisée si elle n'existe pas encore
+                            const { data: newRes, error: errInsert } = await supabase
                                 .from('reservations_stock')
+                                .insert({
+                                    document_vente: item.document_vente,
+                                    article: item.article,
+                                    designation_article: item.designation_article,
+                                    lot: item.lot,
+                                    magasin: item.magasin,
+                                    quantite: item.quantite_preparee,
+                                    unite: item.unite || 'KG',
+                                    picking_detail_id: item.id,
+                                    statut: 'EN_AB10'
+                                })
                                 .select('id')
-                                .eq('picking_detail_id', item.id)
-                                .maybeSingle();
+                                .single();
 
-                            if (existingRes) {
-                                reservationId = existingRes.id;
-                            } else {
-                                console.error("Erreur upsert réservation:", errUpsert);
-                                alert(`Erreur : Impossible de créer ou trouver une réservation pour l'article ${item.article} (Doc: ${item.document_vente}).`);
+                            if (errInsert) {
+                                console.error("Erreur Insert Réservation:", errInsert);
+                                alert(`Erreur base de données (Réservation) : ${errInsert.message} (Article: ${item.article})`);
                                 return;
                             }
+                            reservationId = newRes.id;
                         }
+                        reservationMap.set(item.id, reservationId);
                     }
 
                     validTargetRows.push(item);

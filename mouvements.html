@@ -75,23 +75,16 @@
                     </div>
                     <div>
                         <h2 class="text-xs font-bold text-slate-100 uppercase tracking-wider">Filtres Mouvements</h2>
-                        <p class="text-[11px] text-slate-400">Filtrer par date et type</p>
+                        <p class="text-[11px] text-slate-400">Filtrer par type (Entrée, Consommation, Transfert)</p>
                     </div>
                 </div>
                 
                 <div class="flex flex-wrap items-center gap-2">
                     <select id="filterTypeSelect" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer font-mono">
                         <option value="">Tous les types</option>
-                        <option value="IMPORT">IMPORT</option>
-                        <option value="AJOUT">AJOUT</option>
-                        <option value="SORTIE">SORTIE</option>
-                        <option value="PICKING">PICKING</option>
-                        <option value="RESERVATION">RESERVATION</option>
-                        <option value="AB10">AB10</option>
-                        <option value="EXPEDITION">EXPEDITION</option>
-                        <option value="RETOUR">RETOUR</option>
-                        <option value="AJUSTEMENT">AJUSTEMENT</option>
-                        <option value="INVENTAIRE">INVENTAIRE</option>
+                        <option value="ENTREE">ENTRÉE</option>
+                        <option value="CONSOMMATION">CONSOMMATION</option>
+                        <option value="TRANSFERT">TRANSFERT</option>
                     </select>
 
                     <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl">
@@ -135,11 +128,11 @@
                     <thead class="sticky top-0 bg-slate-950 text-slate-400 uppercase text-[10px] z-10 border-b border-slate-800">
                         <tr>
                             <th class="p-3.5">Date / Heure</th>
-                            <th class="p-3.5">Type Mouvement</th>
-                            <th class="p-3.5">Document Vente</th>
+                            <th class="p-3.5">Type</th>
+                            <th class="p-3.5">Document / Réf</th>
                             <th class="p-3.5">Article / Désignation</th>
                             <th class="p-3.5">Lot</th>
-                            <th class="p-3.5">Magasin</th>
+                            <th class="p-3.5">Flux Magasins (Source ➔ Destination)</th>
                             <th class="p-3.5 text-right">Quantité</th>
                             <th class="p-3.5">Utilisateur</th>
                             <th class="p-3.5">Commentaire</th>
@@ -250,7 +243,8 @@
                         article,
                         designation_article,
                         lot,
-                        magasin,
+                        magasin_source,
+                        magasin_destination,
                         quantite,
                         unite,
                         utilisateur,
@@ -287,7 +281,7 @@
 
         async function fetchGlobalStats() {
             try {
-                let q = supabase.from('mouvements_stock').select('id, type_mouvement, document_vente, article, lot, magasin, quantite, date_mouvement');
+                let q = supabase.from('mouvements_stock').select('id, type_mouvement, document_vente, article, lot, magasin_source, magasin_destination, quantite, date_mouvement');
                 q = applyFilters(q);
                 const { data, error } = await q.limit(10000);
                 if (error || !data) return;
@@ -318,10 +312,18 @@
             data.forEach(item => {
                 let badgeTypeColor = 'bg-slate-500/10 text-slate-400 border-slate-500/20';
                 const type = item.type_mouvement;
-                if (type === 'IMPORT' || type === 'AJOUT') badgeTypeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-                if (type === 'SORTIE' || type === 'EXPEDITION') badgeTypeColor = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-                if (type === 'PICKING' || type === 'RESERVATION' || type === 'AB10') badgeTypeColor = 'bg-sky-500/10 text-sky-400 border-sky-500/20';
-                if (type === 'AJUSTEMENT' || type === 'INVENTAIRE') badgeTypeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+                if (type === 'ENTREE') badgeTypeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                if (type === 'CONSOMMATION') badgeTypeColor = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+                if (type === 'TRANSFERT') badgeTypeColor = 'bg-sky-500/10 text-sky-400 border-sky-500/20';
+
+                let magasinDisplay = '-';
+                if (type === 'ENTREE') {
+                    magasinDisplay = `<span class="text-emerald-400"><i class="fas fa-arrow-down mr-1"></i> Entrée vers: <b>${item.magasin_destination || '-'}</b></span>`;
+                } else if (type === 'CONSOMMATION') {
+                    magasinDisplay = `<span class="text-rose-400"><i class="fas fa-fire mr-1"></i> Consommé depuis: <b>${item.magasin_source || '-'}</b></span>`;
+                } else if (type === 'TRANSFERT') {
+                    magasinDisplay = `<span class="text-sky-400"><b>${item.magasin_source || '-'}</b> <i class="fas fa-long-arrow-alt-right mx-1"></i> <b>${item.magasin_destination || '-'}</b></span>`;
+                }
 
                 let userName = '-';
                 if (item.user_profiles) {
@@ -344,7 +346,7 @@
                             <span class="text-slate-400 block text-[10px] font-sans">${item.designation_article || ''}</span>
                         </td>
                         <td class="p-3.5 text-slate-300">${item.lot || '-'}</td>
-                        <td class="p-3.5 text-slate-300">${item.magasin || '-'}</td>
+                        <td class="p-3.5 text-xs">${magasinDisplay}</td>
                         <td class="p-3.5 text-right font-bold text-sky-400">
                             ${Number(item.quantite || 0).toFixed(3)} <span class="text-[10px] text-slate-400">${item.unite || 'KG'}</span>
                         </td>
@@ -380,7 +382,8 @@
                 "Article": item.article,
                 "Désignation": item.designation_article,
                 "Lot": item.lot,
-                "Magasin": item.magasin,
+                "Magasin Source": item.magasin_source,
+                "Magasin Destination": item.magasin_destination,
                 "Quantité": item.quantite,
                 "Commentaire": item.commentaire
             }));
@@ -403,14 +406,15 @@
             doc.setFontSize(10);
             doc.text(`Date d'export : ${new Date().toLocaleDateString('fr-FR')}`, 14, 22);
 
-            const columns = ["Date", "Type", "Doc Vente", "Article", "Lot", "Magasin", "Quantité", "Commentaire"];
+            const columns = ["Date", "Type", "Doc Vente", "Article", "Lot", "Magasin Source", "Magasin Destination", "Quantité", "Commentaire"];
             const rows = allExportData.map(item => [
                 item.date_mouvement ? new Date(item.date_mouvement).toLocaleString('fr-FR') : '',
                 item.type_mouvement || '',
                 item.document_vente || '',
                 item.article || '',
                 item.lot || '',
-                item.magasin || '',
+                item.magasin_source || '',
+                item.magasin_destination || '',
                 Number(item.quantite || 0).toFixed(3),
                 item.commentaire || ''
             ]);

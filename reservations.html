@@ -371,7 +371,7 @@
             document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
         }
 
-        // Fonction Traiter (AB10) avec ordre logique validé (mouvements_stock d'abord)
+        // Fonction Traiter (AB10) avec upsert sécurisé pour reservations_stock
         window.processSelectedPickingDetails = async function() {
             try {
                 const selectedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
@@ -426,11 +426,11 @@
 
                     let reservationId = reservationMap.get(item.id) || reservationMap.get(`${item.document_vente}_${item.article}_${item.lot}`);
                     
-                    // Fallback automatique si la réservation n'existe pas
+                    // Upsert sécurisé pour éviter les conflits de duplication
                     if (!reservationId) {
-                        const { data: newRes, error: errNewRes } = await supabase
+                        const { data: upsertRes, error: errUpsert } = await supabase
                             .from('reservations_stock')
-                            .insert({
+                            .upsert({
                                 document_vente: item.document_vente,
                                 article: item.article,
                                 designation_article: item.designation_article,
@@ -440,17 +440,27 @@
                                 unite: item.unite || 'KG',
                                 picking_detail_id: item.id,
                                 statut: 'EN_AB10'
-                            })
+                            }, { onConflict: 'picking_detail_id' })
                             .select('id')
                             .single();
 
-                        if (!errNewRes && newRes) {
-                            reservationId = newRes.id;
+                        if (!errUpsert && upsertRes) {
+                            reservationId = upsertRes.id;
                             reservationMap.set(item.id, reservationId);
                         } else {
-                            console.error("Erreur création réservation auto:", errNewRes);
-                            alert(`Erreur : Impossible de créer ou trouver une réservation pour l'article ${item.article} (Doc: ${item.document_vente}).`);
-                            return;
+                            const { data: existingRes } = await supabase
+                                .from('reservations_stock')
+                                .select('id')
+                                .eq('picking_detail_id', item.id)
+                                .maybeSingle();
+
+                            if (existingRes) {
+                                reservationId = existingRes.id;
+                            } else {
+                                console.error("Erreur upsert réservation:", errUpsert);
+                                alert(`Erreur : Impossible de créer ou trouver une réservation pour l'article ${item.article} (Doc: ${item.document_vente}).`);
+                                return;
+                            }
                         }
                     }
 

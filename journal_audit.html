@@ -59,7 +59,7 @@
             </div>
             
             <div class="flex items-center gap-3 flex-wrap flex-1 justify-end">
-                <!-- FILTRE PAR DATE -->
+                <!-- FILTRE PAR DATE (Défaut: Date d'aujourd'hui) -->
                 <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl">
                     <span class="text-[11px] text-slate-400 uppercase font-bold"><i class="fas fa-calendar mr-1"></i> Date :</span>
                     <input type="date" id="inputDateFilter" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono">
@@ -141,8 +141,8 @@
         const inputSearch = document.getElementById('inputSearch');
         const inputDateFilter = document.getElementById('inputDateFilter');
 
-        // Initialiser la date d'aujourd'hui par défaut f l'input ila bghiti, wla khaliha khwaia
-        // inputDateFilter.value = new Date().toISOString().split('T')[0];
+        // Initialiser la date d'aujourd'hui par défaut f l'input automatiquement
+        inputDateFilter.value = new Date().toISOString().split('T')[0];
 
         window.changerOnglet = function(onglet) {
             ongletActif = onglet;
@@ -193,7 +193,7 @@
                     query = query.or(`document_vente.ilike.%${searchTerm}%,article.ilike.%${searchTerm}%`);
                 }
 
-                // Filtrer b la date dyal t-trakia (date_action) ila t-sélectionna
+                // Filtrer b la date dyal t-trakia (date_action)
                 if (selectedDate) {
                     const startOfDay = `${selectedDate} 00:00:00`;
                     const endOfDay = `${selectedDate} 23:59:59`;
@@ -202,7 +202,7 @@
 
                 const { data, error } = await query;
                 if (error || !data || data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="p-12 text-center text-slate-500">Aucune modification trouvée pour cette sélection.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-12 text-center text-slate-500">Aucune modification trouvée pour cette date.</td></tr>`;
                     return;
                 }
 
@@ -212,12 +212,11 @@
                     const dateLivraisonRaw = cmdData?.date_livraison;
                     const dateLivraisonStr = dateLivraisonRaw ? new Date(dateLivraisonRaw).toLocaleDateString('fr-FR') : '-';
                     
-                    // Wach la date de livraison fatet w t-retarda (f l-passé w 9dim 3la l-yawm)
                     let isLate = false;
                     if (dateLivraisonRaw) {
                         const dLiv = dateLivraisonRaw.split('T')[0];
                         if (dLiv < aujourdHui) {
-                            isLate = true; // Fatet la date w t-colora f l-7mar
+                            isLate = true; // Fatet la date ➔ Rouge
                         }
                     }
 
@@ -248,7 +247,7 @@
                     query = query.or(`document_vente.ilike.%${searchTerm}%,article.ilike.%${searchTerm}%`);
                 }
 
-                // Filtrer b la date dyal t-suppression ila t-sélectionna
+                // Filtrer b la date dyal t-suppression
                 if (selectedDate) {
                     const startOfDay = `${selectedDate} 00:00:00`;
                     const endOfDay = `${selectedDate} 23:59:59`;
@@ -257,7 +256,7 @@
 
                 const { data, error } = await query;
                 if (error || !data || data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="p-12 text-center text-slate-500">Aucune suppression trouvée pour cette sélection.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-12 text-center text-slate-500">Aucune suppression trouvée pour cette date.</td></tr>`;
                     return;
                 }
 

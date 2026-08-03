@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historique & Modifications - SoufStock WMS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: { 950: '#020617', 900: '#0f172a', 800: '#1e293b', 700: '#334155' },
+                        emerald: { 600: '#059669', 500: '#10b981', 400: '#34d399' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased h-screen flex flex-col overflow-hidden">
+
+    <!-- HEADER -->
+    <header class="h-16 bg-slate-900/60 border-b border-slate-800 px-6 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                <i class="fas fa-history"></i>
+            </div>
+            <div>
+                <span class="font-bold text-sm block">SoufStock <span class="text-emerald-400">WMS</span></span>
+                <span class="text-[10px] text-slate-400 tracking-wider uppercase block">Journal des Modifications &Suppressions</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-4 bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl font-mono text-xs">
+                <span id="liveClock" class="text-emerald-400">--:--:--</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN WRAPPER -->
+    <main class="flex-1 p-6 overflow-hidden flex flex-col gap-5">
+        
+        <!-- FILTERS BAR -->
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-lg">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                    <i class="fas fa-filter"></i>
+                </div>
+                <div>
+                    <h2 class="text-xs font-bold text-slate-100 uppercase tracking-wider">Filtres & Recherche</h2>
+                    <p class="text-[11px] text-slate-400">Consultez l'historique combiné</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3 flex-wrap flex-1 justify-end">
+                <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl max-w-xs flex-1">
+                    <i class="fas fa-magnifying-glass text-slate-400 text-xs"></i>
+                    <input type="text" id="inputSearch" placeholder="N° de commande ou article..." class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono w-full uppercase">
+                </div>
+
+                <select id="selectSource" class="bg-slate-950 border border-slate-800 text-xs text-slate-200 px-3 py-2 rounded-xl focus:outline-none focus:border-emerald-500">
+                    <option value="TOUT">Toutes les sources</option>
+                    <option value="MODIFICATIONS">Modifications</option>
+                    <option value="SUPPRESSIONS">Suppressions</option>
+                </select>
+                
+                <button onclick="chargerHistoriqueGlobal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow cursor-pointer">
+                    <i class="fas fa-rotate"></i> Actualiser
+                </button>
+            </div>
+        </div>
+
+        <!-- TABLE CONTAINER -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl flex-1 flex flex-col">
+            <div class="p-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs">
+                <span class="text-slate-400 uppercase tracking-wider font-bold">Flux Global des Événements</span>
+                <span id="tableCountBadge" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-lg font-mono text-xs">0 entrées</span>
+            </div>
+
+            <div class="overflow-x-auto flex-1">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="sticky top-0 bg-slate-950 text-slate-400 uppercase text-[10px] z-10 border-b border-slate-800">
+                        <tr>
+                            <th class="p-3.5">Type / Source</th>
+                            <th class="p-3.5">N° Commande</th>
+                            <th class="p-3.5">Article / Ligne</th>
+                            <th class="p-3.5">Action / Motif</th>
+                            <th class="p-3.5">Détails (Ancienne / Nouvelle Valeur)</th>
+                            <th class="p-3.5">Utilisateur</th>
+                            <th class="p-3.5 text-right">Date & Heure</th>
+                        </tr>
+                    </thead>
+                    <tbody id="globalTableBody" class="divide-y divide-slate-800/50 font-mono">
+                        <tr><td colspan="7" class="p-12 text-center text-slate-500">Chargement des données...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- SCRIPT -->
+    <script type="module">
+        import supabase from '../assets/js/core/supabase.js';
+
+        const inputSearch = document.getElementById('inputSearch');
+        const selectSource = document.getElementById('selectSource');
+
+        inputSearch.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') chargerHistoriqueGlobal();
+        });
+        selectSource.addEventListener('change', () => chargerHistoriqueGlobal());
+
+        window.chargerHistoriqueGlobal = async function() {
+            const tbody = document.getElementById('globalTableBody');
+            tbody.innerHTML = `<tr><td colspan="7" class="p-12 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> Chargement...</td></tr>`;
+
+            const searchTerm = inputSearch.value.trim().toUpperCase();
+            const sourceType = selectSource.value;
+
+            let modifications = [];
+            let suppressions = [];
+
+            // 1. Fetch Modifications
+            if (sourceType === 'TOUT' || sourceType === 'MODIFICATIONS') {
+                let queryMod = supabase.from('modifications_commandes').select('*, user_profiles(email)').order('date_action', { ascending: false }).limit(50);
+                if (searchTerm) {
+                    queryMod = queryMod.or(`document_vente.ilike.%${searchTerm}%,article.ilike.%${searchTerm}%`);
+                }
+                const { data: modData } = await queryMod;
+                if (modData) {
+                    modifications = modData.map(m => ({
+                        source: 'MODIFICATION',
+                        id: `mod_${m.id}`,
+                        document_vente: m.document_vente,
+                        article: m.article || '-',
+                        ligne: m.ligne_commande || '-',
+                        libelle: m.type_action,
+                        detail: m.champ_modifie ? `${m.champ_modifie}: [${m.ancienne_valeur || 'vide'} ➔ ${m.nouvelle_valeur || 'vide'}]` : m.commentaire || '-',
+                        utilisateur: m.user_profiles?.email || 'Système',
+                        date: m.date_action || m.created_at
+                    }));
+                }
+            }
+
+            // 2. Fetch Suppressions
+            if (sourceType === 'TOUT' || sourceType === 'SUPPRESSIONS') {
+                let querySup = supabase.from('commandes_supprimees').select('*, user_profiles!fk_cmdsup_user(email)').order('date_suppression', { ascending: false }).limit(50);
+                if (searchTerm) {
+                    querySup = querySup.or(`document_vente.ilike.%${searchTerm}%,article.ilike.%${searchTerm}%`);
+                }
+                const { data: supData } = await querySup;
+                if (supData) {
+                    suppressions = supData.map(s => ({
+                        source: 'SUPPRESSION',
+                        id: `sup_${s.id}`,
+                        document_vente: s.document_vente,
+                        article: s.article || '-',
+                        ligne: s.ligne_commande || '-',
+                        libelle: s.motif_suppression,
+                        detail: s.commentaire || `Origine: ${s.origine_suppression} | Statut: ${s.statut}`,
+                        utilisateur: s.user_profiles?.email || 'Système',
+                        date: s.date_suppression || s.created_at
+                    }));
+                }
+            }
+
+            // Combine and sort by date desc
+            let combined = [...modifications, ...suppressions].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            document.getElementById('tableCountBadge').textContent = `${combined.length} entrées`;
+
+            if (combined.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-12 text-center text-slate-500">Aucun historique trouvé.</td></tr>`;
+                return;
+            }
+
+            let html = "";
+            combined.forEach(item => {
+                const isMod = item.source === 'MODIFICATION';
+                const badgeClass = isMod 
+                    ? 'bg-sky-500/10 text-sky-400 border-sky-500/20' 
+                    : 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+
+                html += `
+                    <tr class="hover:bg-slate-800/30 transition">
+                        <td class="p-3.5">
+                            <span class="px-2.5 py-1 rounded-md text-[10px] font-bold border ${badgeClass}">${item.source}</span>
+                        </td>
+                        <td class="p-3.5 font-bold text-amber-400">${item.document_vente}</td>
+                        <td class="p-3.5 text-sky-400">${item.article} <span class="text-[10px] text-slate-500">(L.${item.ligne})</span></td>
+                        <td class="p-3.5 text-slate-200 font-bold">${item.libelle}</td>
+                        <td class="p-3.5 text-slate-300 text-[11px] truncate max-w-xs" title="${item.detail}">${item.detail}</td>
+                        <td class="p-3.5 text-slate-400 text-[11px]">${item.utilisateur}</td>
+                        <td class="p-3.5 text-right text-slate-400 font-mono text-[11px]">${item.date ? new Date(item.date).toLocaleString('fr-FR') : '-'}</td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        };
+
+        // Load on start
+        chargerHistoriqueGlobal();
+
+        setInterval(() => {
+            document.getElementById("liveClock").innerText = new Date().toLocaleTimeString('fr-FR');
+        }, 1000);
+    </script>
+</body>
+</html>

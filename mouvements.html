@@ -178,8 +178,13 @@
         }
 
         document.addEventListener("DOMContentLoaded", async () => {
+            // Initialisation dyal t-tarikh dyal lyom par défaut
+            const todayStr = new Date().toISOString().split('T')[0];
             const dateInput = document.getElementById("filterDateInput");
             if (dateInput) {
+                dateInput.value = todayStr;
+                currentDateFilter = todayStr;
+
                 dateInput.addEventListener("change", async (e) => {
                     currentDateFilter = e.target.value;
                     currentPage = 1;

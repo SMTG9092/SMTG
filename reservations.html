@@ -371,7 +371,7 @@
             document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
         }
 
-        // Fonction Traiter (AB10) avec gestion robuste et insertion correcte (statut: 'RESERVE' initialement pour respecter la contrainte)
+        // Fonction Traiter (AB10) avec récupération dyal l'utilisateur lli dar rzrvtin w statuts m-wafaqin m3a la base
         window.processSelectedPickingDetails = async function() {
             try {
                 const selectedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
@@ -379,6 +379,10 @@
                     alert("Veuillez sélectionner au moins une ligne valide à traiter.");
                     return;
                 }
+
+                // Récupération dyal l'utilisateur connecté 
+                const { data: { user } } = await supabase.auth.getUser();
+                const userId = user ? user.id : null;
 
                 const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.getAttribute('data-id'));
                 const targetRows = currentTableData.filter(item => selectedIds.includes(item.id));
@@ -427,7 +431,6 @@
                     let reservationId = reservationMap.get(item.id) || reservationMap.get(`${item.document_vente}_${item.article}_${item.lot}`);
                     
                     if (!reservationId) {
-                        // Vérification préalable par picking_detail_id
                         const { data: existingRes } = await supabase
                             .from('reservations_stock')
                             .select('id')
@@ -437,7 +440,7 @@
                         if (existingRes) {
                             reservationId = existingRes.id;
                         } else {
-                            // Insertion avec statut 'RESERVE' pour respecter chk_reservation_statut, puis mise à jour vers 'EN_AB10'
+                            // Insertion b statut 'RESERVE' (li makat-dirch violation l chk_reservation_statut) w utilisateur uuid
                             const { data: newRes, error: errInsert } = await supabase
                                 .from('reservations_stock')
                                 .insert({
@@ -453,7 +456,8 @@
                                     stock_id: item.stock_id || null,
                                     picking_id: item.picking_id || null,
                                     suivi_id: suiviObj.id || null,
-                                    statut: 'RESERVE' // Respecte la contrainte check check_reservation_statut
+                                    utilisateur: userId, // Smayt l-user lli dar rzrvtin
+                                    statut: 'RESERVE' // Katchamel qima m-qbola f chk_reservation_statut
                                 })
                                 .select('id')
                                 .single();
@@ -470,7 +474,7 @@
 
                     validTargetRows.push(item);
 
-                    // A. Enregistrement obligatoire f jaddawil mouvements_stock (1ère étape)
+                    // A. Enregistrement f mouvements_stock b utilisateur
                     mouvementsPayloads.push({
                         stock_id: item.stock_id || null,
                         document_vente: item.document_vente,
@@ -482,6 +486,7 @@
                         emplacement: item.emplacement,
                         quantite: item.quantite_preparee,
                         unite: item.unite || 'KG',
+                        utilisateur: userId,
                         commentaire: `Transfert vers AB10 depuis Picking`
                     });
 
@@ -513,7 +518,7 @@
                 const { error: errMv } = await supabase.from('mouvements_stock').insert(mouvementsPayloads);
                 if (errMv) throw errMv;
 
-                // 4. Étape 2 : Mettre à jour le statut f picking_details ila TRANSFERE_AB10
+                // 4. Étape 2 : Mettre à jour le statut f picking_details
                 const { error: errRes } = await supabase
                     .from('picking_details')
                     .update({ statut: 'TRANSFERE_AB10' })
@@ -521,7 +526,7 @@
 
                 if (errRes) throw errRes;
 
-                // 5. Étape 3 : Mettre à jour le statut du picking global (table picking) ila TERMINE
+                // 5. Étape 3 : Mettre à jour le statut du picking global
                 const pickingIds = [...new Set(validTargetRows.map(i => i.picking_id).filter(Boolean))];
                 if (pickingIds.length > 0) {
                     const { error: errPick } = await supabase
@@ -531,11 +536,11 @@
                     if (errPick) throw errPick;
                 }
 
-                // 6. Étape 4 : Mettre à jour reservations_stock ila 'EN_AB10' daba mn ba3d l'insertion
+                // 6. Étape 4 : Mettre à jour reservations_stock (ila bġiti t-kheliha b statut o5r wla tbaddlo ila kants table kat-qblo, f 7al la contrainte kat-dir mochkil f update nqdro n-kheliwha RESERVE wla VALIDE)
                 if (validValidIds.length > 0) {
                     await supabase
                         .from('reservations_stock')
-                        .update({ statut: 'EN_AB10' })
+                        .update({ statut: 'VALIDE' }) // Kansta3mlo VALIDE bach mat-w9a3ch mochkil tani m3a chk_reservation_statut
                         .in('picking_detail_id', validValidIds);
                 }
 
@@ -543,7 +548,7 @@
                 const { error: errAb10 } = await supabase.from('ab10_stock').insert(ab10Payloads);
                 if (errAb10) throw errAb10;
 
-                // 8. Étape 6 : Mettre à jour commandes_excel w suivi_commandes_lancer ila 'EN_AB10'
+                // 8. Étape 6 : Mettre à jour commandes_excel w suivi_commandes_lancer
                 if (documentVentes.length > 0) {
                     await supabase
                         .from('commandes_excel')

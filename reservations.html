@@ -371,7 +371,7 @@
             document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
         }
 
-        // Fonction Traiter (AB10) avec récupération dyal l'utilisateur lli dar rzrvtin w statuts m-wafaqin m3a la base
+        // Fonction Traiter (AB10) sans utiliser la colonne 'utilisateur' (qui n'existe pas dans reservations_stock) et avec insertion valide
         window.processSelectedPickingDetails = async function() {
             try {
                 const selectedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
@@ -380,7 +380,7 @@
                     return;
                 }
 
-                // Récupération dyal l'utilisateur connecté 
+                // Récupération de l'utilisateur connecté pour mouvements_stock si nécessaire
                 const { data: { user } } = await supabase.auth.getUser();
                 const userId = user ? user.id : null;
 
@@ -440,7 +440,7 @@
                         if (existingRes) {
                             reservationId = existingRes.id;
                         } else {
-                            // Insertion b statut 'RESERVE' (li makat-dirch violation l chk_reservation_statut) w utilisateur uuid
+                            // Insertion sans la colonne 'utilisateur' pour éviter l'erreur de schema cache
                             const { data: newRes, error: errInsert } = await supabase
                                 .from('reservations_stock')
                                 .insert({
@@ -456,8 +456,7 @@
                                     stock_id: item.stock_id || null,
                                     picking_id: item.picking_id || null,
                                     suivi_id: suiviObj.id || null,
-                                    utilisateur: userId, // Smayt l-user lli dar rzrvtin
-                                    statut: 'RESERVE' // Katchamel qima m-qbola f chk_reservation_statut
+                                    statut: 'RESERVE' // Respecte la contrainte chk_reservation_statut
                                 })
                                 .select('id')
                                 .single();
@@ -474,7 +473,7 @@
 
                     validTargetRows.push(item);
 
-                    // A. Enregistrement f mouvements_stock b utilisateur
+                    // A. Enregistrement f mouvements_stock avec utilisateur
                     mouvementsPayloads.push({
                         stock_id: item.stock_id || null,
                         document_vente: item.document_vente,
@@ -536,11 +535,11 @@
                     if (errPick) throw errPick;
                 }
 
-                // 6. Étape 4 : Mettre à jour reservations_stock (ila bġiti t-kheliha b statut o5r wla tbaddlo ila kants table kat-qblo, f 7al la contrainte kat-dir mochkil f update nqdro n-kheliwha RESERVE wla VALIDE)
+                // 6. Étape 4 : Mettre à jour reservations_stock vers 'VALIDE'
                 if (validValidIds.length > 0) {
                     await supabase
                         .from('reservations_stock')
-                        .update({ statut: 'VALIDE' }) // Kansta3mlo VALIDE bach mat-w9a3ch mochkil tani m3a chk_reservation_statut
+                        .update({ statut: 'VALIDE' })
                         .in('picking_detail_id', validValidIds);
                 }
 

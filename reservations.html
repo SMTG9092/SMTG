@@ -454,7 +454,7 @@
                     }
 
                     ab10Payloads.push({
-                        reservation_id: reservationId || item.stock_id,
+                        reservation_id: reservationId || null, // Corrigé pour éviter d'insérer un bigint dans un champ UUID
                         picking_id: item.picking_id,
                         picking_detail_id: item.id,
                         suivi_id: suiviObj.id,

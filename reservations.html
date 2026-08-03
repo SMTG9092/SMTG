@@ -371,6 +371,7 @@
             document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
         }
 
+        // Fonction Traiter (AB10) avec ordre logique validé (mouvements_stock d'abord)
         window.processSelectedPickingDetails = async function() {
             try {
                 const selectedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
@@ -412,7 +413,6 @@
                     });
                 }
 
-                // 3. Préparer les charges utiles pour mouvements_stock, ab10_stock et réservations auto-fallback
                 const ab10Payloads = [];
                 const mouvementsPayloads = [];
                 const validTargetRows = [];
@@ -426,7 +426,7 @@
 
                     let reservationId = reservationMap.get(item.id) || reservationMap.get(`${item.document_vente}_${item.article}_${item.lot}`);
                     
-                    // Fallback intelligent : Si la réservation n'existe pas, on la crée automatiquement pour éviter tout blocage NOT NULL
+                    // Fallback automatique si la réservation n'existe pas
                     if (!reservationId) {
                         const { data: newRes, error: errNewRes } = await supabase
                             .from('reservations_stock')
@@ -456,7 +456,7 @@
 
                     validTargetRows.push(item);
 
-                    // Traçabilité obligatoire en premier (mouvements_stock)
+                    // A. Enregistrement obligatoire f jaddawil mouvements_stock (1ère étape)
                     mouvementsPayloads.push({
                         stock_id: item.stock_id || null,
                         document_vente: item.document_vente,
@@ -471,7 +471,7 @@
                         commentaire: `Transfert vers AB10 depuis Picking`
                     });
 
-                    // Payload AB10
+                    // B. Payload AB10 stock
                     ab10Payloads.push({
                         reservation_id: reservationId,
                         picking_id: item.picking_id,
@@ -495,11 +495,11 @@
 
                 const validValidIds = validTargetRows.map(i => i.id);
 
-                // 4. Étape 1 : Enregistrement obligatoire dans mouvements_stock
+                // 3. Étape 1 : Enregistrement f mouvements_stock
                 const { error: errMv } = await supabase.from('mouvements_stock').insert(mouvementsPayloads);
                 if (errMv) throw errMv;
 
-                // 5. Étape 2 : Mettre à jour le statut des picking_details en TRANSFERE_AB10
+                // 4. Étape 2 : Mettre à jour le statut f picking_details ila TRANSFERE_AB10
                 const { error: errRes } = await supabase
                     .from('picking_details')
                     .update({ statut: 'TRANSFERE_AB10' })
@@ -507,7 +507,7 @@
 
                 if (errRes) throw errRes;
 
-                // 6. Étape 3 : Mettre à jour le statut du picking global à TERMINE
+                // 5. Étape 3 : Mettre à jour le statut du picking global (table picking) ila TERMINE
                 const pickingIds = [...new Set(validTargetRows.map(i => i.picking_id).filter(Boolean))];
                 if (pickingIds.length > 0) {
                     const { error: errPick } = await supabase
@@ -517,7 +517,7 @@
                     if (errPick) throw errPick;
                 }
 
-                // 7. Étape 4 : Mettre à jour le statut des réservations stock associées à 'EN_AB10'
+                // 6. Étape 4 : Mettre à jour reservations_stock ila 'EN_AB10'
                 if (validValidIds.length > 0) {
                     await supabase
                         .from('reservations_stock')
@@ -525,11 +525,11 @@
                         .in('picking_detail_id', validValidIds);
                 }
 
-                // 8. Étape 5 : Insertion dans ab10_stock
+                // 7. Étape 5 : Insertion f ab10_stock
                 const { error: errAb10 } = await supabase.from('ab10_stock').insert(ab10Payloads);
                 if (errAb10) throw errAb10;
 
-                // 9. Étape 6 : Mettre à jour le statut des commandes et du suivi global à 'EN_AB10'
+                // 8. Étape 6 : Mettre à jour commandes_excel w suivi_commandes_lancer ila 'EN_AB10'
                 if (documentVentes.length > 0) {
                     await supabase
                         .from('commandes_excel')
@@ -542,7 +542,7 @@
                         .in('document_vente', documentVentes);
                 }
 
-                // 10. Génération de l'export Excel récapitulatif pour AB10
+                // 9. Génération dyal Excel récapitulatif
                 const aggregatedMap = new Map();
                 validTargetRows.forEach(item => {
                     const key = `${item.article}_${item.lot}_${item.magasin}`;

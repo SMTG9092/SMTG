@@ -371,7 +371,7 @@
             document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
         }
 
-        // Fonction Traiter (AB10) avec gestion robuste et vérification explicite pour reservations_stock
+        // Fonction Traiter (AB10) avec gestion robuste et insertion complète (quantite, stock_id, picking_id)
         window.processSelectedPickingDetails = async function() {
             try {
                 const selectedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
@@ -437,7 +437,7 @@
                         if (existingRes) {
                             reservationId = existingRes.id;
                         } else {
-                            // Insertion sécurisée si elle n'existe pas encore
+                            // Insertion sécurisée avec tous les champs requis (quantite, stock_id, picking_id)
                             const { data: newRes, error: errInsert } = await supabase
                                 .from('reservations_stock')
                                 .insert({
@@ -449,6 +449,8 @@
                                     quantite: item.quantite_preparee,
                                     unite: item.unite || 'KG',
                                     picking_detail_id: item.id,
+                                    stock_id: item.stock_id || null,
+                                    picking_id: item.picking_id || null,
                                     statut: 'EN_AB10'
                                 })
                                 .select('id')

@@ -260,6 +260,13 @@
             border: 1px solid var(--card-border);
             padding: 4px 10px 4px 4px;
             border-radius: 8px;
+            cursor: pointer;
+            position: relative;
+            transition: border-color 0.2s;
+        }
+
+        .user-profile-pill:hover {
+            border-color: var(--primary-glow);
         }
 
         .user-avatar-box {
@@ -420,13 +427,14 @@
                         </div>
                     </div>
 
-                    <!-- USER PROFILE DYNAMIC -->
-                    <div class="user-profile-pill">
+                    <!-- USER PROFILE DYNAMIC WITH DROPDOWN ID -->
+                    <div class="user-profile-pill" id="userProfileBtn">
                         <div class="user-avatar-box" id="userAvatarInitials">--</div>
                         <div class="user-info-text">
                             <h4 id="userFullName">Chargement...</h4>
                             <span id="userRoleName">--</span>
                         </div>
+                        <i class="fas fa-chevron-down" style="font-size: 10px; color: var(--text-muted); margin-left: 4px;"></i>
                     </div>
                 </div>
             </header>
@@ -546,7 +554,6 @@
                 if (fullNameEl) fullNameEl.textContent = displayName;
                 if (roleEl) roleEl.textContent = displayRole;
 
-                // Stockage global du rôle pour le routeur SPA
                 window.currentUserRoleCode = roleCode;
 
                 if (avatarEl) {
@@ -560,10 +567,7 @@
                     avatarEl.textContent = initials || 'SM';
                 }
 
-                // 🔒 Appel de la fonction centralisée du fichier permissions.js pour la Sidebar
                 applySidebarPermissions(roleCode);
-
-                // 🔒 Application des permissions de suppression
                 applyDeletePermissionsUI(roleCode);
 
             } catch (err) {
@@ -584,7 +588,6 @@
         async function loadPage(pageFile, linkElement) {
             if (!pageFile) return;
 
-            // Double sécurité : Vérification via le fichier permissions.js avant de charger
             const currentRole = window.currentUserRoleCode || '';
             if (currentRole && !canAccessPage(currentRole, pageFile)) {
                 mainScreen.innerHTML = '<div style="color: var(--danger-glow); text-align: center; padding: 50px; font-size: 12px;">Accès refusé : Vous n\'avez pas les permissions requises pour consulter cette page.</div>';
@@ -618,7 +621,6 @@
                     document.body.appendChild(newScript);
                 });
 
-                // Appliquer les permissions d'interface (ex: boutons de suppression) sur le contenu chargé
                 applyDeletePermissionsUI(currentRole);
 
                 if (pageFile.includes('dashboard')) {
@@ -639,7 +641,6 @@
             });
         });
 
-        // Auto-select Default Dashboard Based on User Role
         setTimeout(async () => {
             let defaultPage = 'dashboard/dashboard-stock.html';
 

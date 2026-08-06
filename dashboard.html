@@ -173,6 +173,8 @@
             padding: 10px 18px;
             border-radius: 12px;
             flex-shrink: 0;
+            position: relative;
+            z-index: 50;
         }
 
         .search-bar-box {
@@ -252,6 +254,11 @@
             display: none;
         }
 
+        /* --- USER PROFILE CONTAINER & DROPDOWN --- */
+        .user-profile-wrapper {
+            position: relative; /* Ktehli l-mjal bash l-menu y-kon absolute ghir 3la l-container dyalo */
+        }
+
         .user-profile-pill {
             display: flex;
             align-items: center;
@@ -261,7 +268,6 @@
             padding: 4px 10px 4px 4px;
             border-radius: 8px;
             cursor: pointer;
-            position: relative;
             transition: border-color 0.2s;
         }
 
@@ -290,6 +296,43 @@
         .user-info-text span {
             font-size: 9px;
             color: var(--text-muted);
+        }
+
+        /* DROPDOWN MENU DIRECTEMENT TAHT L-PILL */
+        .user-dropdown-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: calc(100% + 8px);
+            width: 180px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .user-dropdown-menu a {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 11px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            transition: background 0.2s;
+        }
+
+        .user-dropdown-menu a:hover {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--primary-glow);
+        }
+
+        .user-dropdown-menu a:last-child {
+            border-bottom: none;
+            color: var(--danger-glow);
         }
 
         /* --- FOOTER STATUS BAR --- */
@@ -427,14 +470,23 @@
                         </div>
                     </div>
 
-                    <!-- USER PROFILE DYNAMIC WITH DROPDOWN ID -->
-                    <div class="user-profile-pill" id="userProfileBtn">
-                        <div class="user-avatar-box" id="userAvatarInitials">--</div>
-                        <div class="user-info-text">
-                            <h4 id="userFullName">Chargement...</h4>
-                            <span id="userRoleName">--</span>
+                    <!-- USER PROFILE WRAPPER WITH DROPDOWN -->
+                    <div class="user-profile-wrapper">
+                        <div class="user-profile-pill" id="userProfileBtn">
+                            <div class="user-avatar-box" id="userAvatarInitials">--</div>
+                            <div class="user-info-text">
+                                <h4 id="userFullName">Chargement...</h4>
+                                <span id="userRoleName">--</span>
+                            </div>
+                            <i class="fas fa-chevron-down" style="font-size: 10px; color: var(--text-muted); margin-left: 4px;"></i>
                         </div>
-                        <i class="fas fa-chevron-down" style="font-size: 10px; color: var(--text-muted); margin-left: 4px;"></i>
+
+                        <!-- DROPDOWN MENU TAHT L-PILL DIRECTEMENT -->
+                        <div class="user-dropdown-menu" id="userDropdownMenu">
+                            <a href="#profile"><i class="fas fa-user"></i> Mon Profil</a>
+                            <a href="#settings"><i class="fas fa-cog"></i> Paramètres</a>
+                            <a href="#logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -479,6 +531,28 @@
         setInterval(update, 1000);
     }
     document.addEventListener('DOMContentLoaded', initHeaderClock);
+</script>
+
+<!-- DROPDOWN TOGGLE SCRIPT -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const profileBtn = document.getElementById('userProfileBtn');
+        const dropdownMenu = document.getElementById('userDropdownMenu');
+
+        if (profileBtn && dropdownMenu) {
+            profileBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isVisible = dropdownMenu.style.display === 'block';
+                dropdownMenu.style.display = isVisible ? 'none' : 'block';
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!profileBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                    dropdownMenu.style.display = 'none';
+                }
+            });
+        }
+    });
 </script>
 
 <!-- CHART.JS -->

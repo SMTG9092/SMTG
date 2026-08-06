@@ -1,11 +1,12 @@
 /**
- * Module de gestion des notifications (Supabase Realtime + UI + Modal Détails)
+ * Module de gestion des notifications (Supabase Realtime + UI + Modal Détails + Auto-Refresh 3s)
  * SMTG - Système de Management et de Traçabilité Globale
  */
 
 import supabase from './supabase.js';
 
 let notificationsChannel = null;
+let autoRefreshInterval = null;
 
 export async function initNotifications() {
     const notifBtn = document.getElementById('notifBtn');
@@ -40,6 +41,13 @@ export async function initNotifications() {
 
     // 3. Configurer l'écouteur Realtime Supabase
     setupRealtimeNotifications();
+
+    // 4. 🔥 Auto-refresh kol 3 thwani (3000 ms) en plus dyal Realtime
+    if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+    autoRefreshInterval = setInterval(() => {
+        // On actualise seulement si le menu n'est pas ouvert pour éviter de perturber l'utilisateur, ou bien en arrière-plan
+        fetchAndRenderNotifications();
+    }, 3000);
 }
 
 /**
@@ -81,6 +89,8 @@ async function fetchAndRenderNotifications() {
     const notifListContainer = document.getElementById('notifListContainer');
     const notifCountBadge = document.querySelector('.notification-badge-dot');
     const notifCountText = document.getElementById('notifCountText');
+
+    if (!notifListContainer) return;
 
     try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -151,10 +161,10 @@ async function fetchAndRenderNotifications() {
     } catch (err) {
         console.error("Erreur chargement notifications:", err);
     }
-}
+};
 
 /**
- * Ouvre le Modal, affiche le message complet et marque DIRECTEMENT comme lu dans Supabase
+ * Ouvre le Modal, affiche le message complet et marque DIRECTEMENT comme lu
  */
 window.openNotificationDetail = async function(encodedNotif) {
     try {
@@ -177,14 +187,11 @@ window.openNotificationDetail = async function(encodedNotif) {
             iconEl.style.color = '#10b981';
         }
 
-        // Afficher le Modal
         document.getElementById('smtgNotifModal').style.display = 'flex';
 
-        // Masquer le menu déroulant
         const notifDropdown = document.getElementById('notifDropdown');
         if (notifDropdown) notifDropdown.style.display = 'none';
 
-        // 🔥 Marquer immédiatement comme lue dans la base de données si elle ne l'était pas
         if (!notif.is_read) {
             const { error } = await supabase
                 .from('notifications')
@@ -192,7 +199,6 @@ window.openNotificationDetail = async function(encodedNotif) {
                 .eq('id', notif.id);
 
             if (!error) {
-                // Mettre à jour l'interface instantanément (supprimer le point rouge du badge de la cloche)
                 await fetchAndRenderNotifications();
             }
         }
@@ -210,7 +216,7 @@ window.closeNotificationModal = function() {
 };
 
 /**
- * Configuration Realtime
+ * Configuration Realtime Supabase
  */
 function setupRealtimeNotifications() {
     if (notificationsChannel) return;

@@ -1,5 +1,5 @@
 /**
- * Module de gestion des notifications (Supabase Realtime + UI)
+ * Module de gestion des notifications (Supabase Realtime + UI + Modal Détails)
  * SMTG - Système de Management et de Traçabilité Globale
  */
 
@@ -16,13 +16,15 @@ export async function initNotifications() {
 
     if (!notifBtn || !notifDropdown || !notifListContainer) return;
 
+    // Créer la structure Modal dans le DOM si elle n'existe pas encore
+    createNotificationModalDOM();
+
     // 1. Gestion de l'affichage du menu déroulant au clic sur la cloche
     notifBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const isVisible = notifDropdown.style.display === 'block';
         notifDropdown.style.display = isVisible ? 'none' : 'block';
         
-        // Si on ouvre le panneau, on peut marquer comme lues si besoin ou juste consulter
         if (!isVisible) {
             fetchAndRenderNotifications();
         }
@@ -38,8 +40,40 @@ export async function initNotifications() {
     // 2. Charger les notifications initiales
     await fetchAndRenderNotifications();
 
-    // 3. Configurer l'écouteur Realtime Supabase pour les nouvelles notifications
+    // 3. Configurer l'écouteur Realtime Supabase
     setupRealtimeNotifications();
+}
+
+/**
+ * Créer dynamiquement la boîte de dialogue Modal pour afficher le message complet
+ */
+function createNotificationModalDOM() {
+    if (document.getElementById('smtgNotifModal')) return;
+
+    const modalHTML = `
+        <div id="smtgNotifModal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center;">
+            <div style="background: var(--card-bg, #111b24); border: 1px solid var(--card-border, rgba(16, 185, 129, 0.2)); width: 450px; max-width: 90%; border-radius: 14px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); overflow: hidden; animation: smtgModalScale 0.2s ease;">
+                <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div id="modalNotifIconBox" style="font-size: 16px; color: var(--primary-glow);"><i id="modalNotifIcon" class="fas fa-info-circle"></i></div>
+                        <h3 id="modalNotifTitle" style="font-size: 13px; font-weight: 700; color: #fff;">Titre de la notification</h3>
+                    </div>
+                    <button onclick="closeNotificationModal()" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px;"><i class="fas fa-times"></i></button>
+                </div>
+                <div style="padding: 20px;">
+                    <div id="modalNotifMessage" style="font-size: 12px; color: #cbd5e1; line-height: 1.6; word-break: break-word; white-space: pre-wrap; background: rgba(0,0,0,0.2); padding: 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.03);"></div>
+                    <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: var(--text-muted);">
+                        <span id="modalNotifDate">--</span>
+                        <span id="modalNotifTypeBadge" style="background: rgba(16,185,129,0.1); color: var(--primary-glow); padding: 2px 8px; border-radius: 4px; font-weight: 600;">--</span>
+                    </div>
+                </div>
+                <div style="padding: 12px 20px; background: rgba(0,0,0,0.3); border-top: 1px solid rgba(255,255,255,0.04); display: flex; justify-content: flex-end;">
+                    <button onclick="closeNotificationModal()" style="background: var(--primary-glow); color: #000; border: none; padding: 6px 16px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;">Fermer</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
 }
 
 /**
@@ -55,7 +89,6 @@ async function fetchAndRenderNotifications() {
         if (!session || !session.user) return;
         const userId = session.user.id;
 
-        // Récupérer les 20 dernières notifications de l'utilisateur (ou globales user_id is null)
         const { data: notifications, error } = await supabase
             .from('notifications')
             .select('*')
@@ -65,11 +98,9 @@ async function fetchAndRenderNotifications() {
 
         if (error) throw error;
 
-        // Compter les non lues
         const unreadList = notifications.filter(n => n.is_read === false);
         const unreadCount = unreadList.length;
 
-        // Mettre à jour le badge visuel
         if (notifCountBadge) {
             if (unreadCount > 0) {
                 notifCountBadge.textContent = unreadCount > 9 ? '9+' : unreadCount;
@@ -83,7 +114,6 @@ async function fetchAndRenderNotifications() {
             notifCountText.textContent = `${unreadCount} non lue${unreadCount > 1 ? 's' : ''}`;
         }
 
-        // Rendu de la liste HTML
         if (!notifications || notifications.length === 0) {
             notifListContainer.innerHTML = '<div style="padding: 15px; text-align: center; color: var(--text-muted); font-size: 11px;">Aucune notification</div>';
             return;
@@ -104,16 +134,19 @@ async function fetchAndRenderNotifications() {
             const timeAgo = formatTimeAgo(notif.created_at);
             const bgStyle = notif.is_read ? 'background: transparent;' : 'background: rgba(16, 185, 129, 0.05);';
 
+            // Sérialisation des données pour les passer proprement dans l'événement click
+            const safeNotif = encodeURIComponent(JSON.stringify(notif));
+
             return `
-                <div class="notif-item" data-id="${notif.id}" style="padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer; transition: background 0.2s; ${bgStyle}" onclick="markNotificationAsRead(${notif.id})">
+                <div class="notif-item" style="padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer; transition: background 0.2s; ${bgStyle}" onclick="openNotificationDetail('${safeNotif}')">
                     <div style="display: flex; gap: 10px; align-items: flex-start;">
                         <div style="color: ${iconColor}; font-size: 13px; margin-top: 2px;"><i class="${iconClass}"></i></div>
-                        <div style="flex: 1;">
-                            <div style="font-size: 11px; font-weight: 600; color: #fff; margin-bottom: 2px;">${escapeHtml(notif.title)}</div>
-                            <div style="font-size: 10px; color: var(--text-muted); line-height: 1.3; margin-bottom: 4px;">${escapeHtml(notif.message)}</div>
+                        <div style="flex: 1; overflow: hidden;">
+                            <div style="font-size: 11px; font-weight: 600; color: #fff; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(notif.title)}</div>
+                            <div style="font-size: 10px; color: var(--text-muted); line-height: 1.3; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${escapeHtml(notif.message)}</div>
                             <div style="font-size: 9px; color: rgba(255,255,255,0.3);">${timeAgo}</div>
                         </div>
-                        ${!notif.is_read ? '<div style="width: 6px; height: 6px; background: var(--primary-glow); border-radius: 50%; margin-top: 4px;"></div>' : ''}
+                        ${!notif.is_read ? '<div style="width: 6px; height: 6px; background: var(--primary-glow); border-radius: 50%; margin-top: 4px; flex-shrink: 0;"></div>' : ''}
                     </div>
                 </div>
             `;
@@ -125,21 +158,58 @@ async function fetchAndRenderNotifications() {
 }
 
 /**
- * Marquer une notification comme lue dans Supabase
+ * Ouvre le Modal avec le message complet et marque automatiquement comme lu
  */
-window.markNotificationAsRead = async function(notificationId) {
+window.openNotificationDetail = async function(encodedNotif) {
     try {
-        const { error } = await supabase
-            .from('notifications')
-            .update({ is_read: true, updated_at: new Date().toISOString() })
-            .eq('id', notificationId);
+        const notif = JSON.parse(decodeURIComponent(encodedNotif));
+        
+        // Remplir les champs du modal
+        document.getElementById('modalNotifTitle').textContent = notif.title;
+        document.getElementById('modalNotifMessage').textContent = notif.message;
+        document.getElementById('modalNotifDate').textContent = `Reçu le : ${new Date(notif.created_at).toLocaleString('fr-FR')}`;
+        document.getElementById('modalNotifTypeBadge').textContent = notif.type.toUpperCase();
 
-        if (!error) {
+        const iconEl = document.getElementById('modalNotifIcon');
+        if (notif.type === 'warning') {
+            iconEl.className = 'fas fa-exclamation-triangle';
+            iconEl.style.color = '#f59e0b';
+        } else if (notif.type === 'danger' || notif.type === 'error') {
+            iconEl.className = 'fas fa-times-circle';
+            iconEl.style.color = '#ef4444';
+        } else {
+            iconEl.className = 'fas fa-info-circle';
+            iconEl.style.color = '#10b981';
+        }
+
+        // Afficher le modal
+        document.getElementById('smtgNotifModal').style.display = 'flex';
+
+        // Masquer le menu déroulant des notifications
+        const notifDropdown = document.getElementById('notifDropdown');
+        if (notifDropdown) notifDropdown.style.display = 'none';
+
+        // Marquer automatiquement comme lu dans Supabase si ce n'est pas encore fait
+        if (!notif.is_read) {
+            await supabase
+                .from('notifications')
+                .update({ is_read: true, updated_at: new Date().toISOString() })
+                .eq('id', notif.id);
+            
+            // Rafraîchir la liste en arrière-plan pour enlever le point vert
             fetchAndRenderNotifications();
         }
     } catch (err) {
-        console.error("Erreur marquage notification lue:", err);
+        console.error("Erreur ouverture modal notification:", err);
     }
+};
+
+/**
+ * Fermer le Modal
+ */
+window.closeNotificationModal = function() {
+    const modal = document.getElementById('smtgNotifModal');
+    if (modal) modal.style.display = 'none';
 };
 
 /**
@@ -156,24 +226,18 @@ function setupRealtimeNotifications() {
             table: 'notifications'
         }, payload => {
             const newNotif = payload.new;
-            // Vérifier si la notification concerne l'utilisateur ou est globale (user_id is null)
             supabase.auth.getSession().then(({ data: { session } }) => {
                 if (!session || !session.user) return;
                 const userId = session.user.id;
 
                 if (!newNotif.user_id || newNotif.user_id === userId) {
                     fetchAndRenderNotifications();
-                    
-                    // Optionnel : Afficher un petit toast ou alert visuel discret si besoin
                 }
             });
         })
         .subscribe();
 }
 
-/**
- * Utilitaire pour formuler le temps écoulé
- */
 function formatTimeAgo(dateString) {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -189,9 +253,6 @@ function formatTimeAgo(dateString) {
     return `Il y a ${diffDays} j`;
 }
 
-/**
- * Sécurisation contre les injections XSS basiques
- */
 function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/&/g, "&amp;")
@@ -201,8 +262,6 @@ function escapeHtml(str) {
               .replace(/'/g, "&#039;");
 }
 
-// Initialisation automatique au chargement du DOM
 document.addEventListener('DOMContentLoaded', () => {
-    // Petit délai pour s'assurer que Supabase session est prête
     setTimeout(initNotifications, 500);
 });

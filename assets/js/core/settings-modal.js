@@ -1,5 +1,5 @@
 /**
- * Module Paramétre Utilisateur (Langue, Thème, Mot de passe)
+ * Module Paramètre Utilisateur (Langue, Thème, Mot de passe)
  * SMTG - Système de Management et de Traçabilité Globale
  */
 
@@ -89,7 +89,12 @@ function createSettingsModalDOM() {
 async function loadUserSettings() {
     try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session || !session.user) return;
+        if (!session || !session.user) {
+            console.warn("Aucune session active détectée.");
+            return;
+        }
+
+        console.log("Utilisateur connecté actuellement (ID):", session.user.id);
 
         const { data, error } = await supabase
             .from('user_profiles')
@@ -107,7 +112,7 @@ async function loadUserSettings() {
             }
         }
     } catch (err) {
-        console.error("Erreur chargement paramètres:", err);
+        console.error("Erreur chargement paramètres utilisateur:", err);
     }
 }
 
@@ -119,21 +124,29 @@ window.saveUserSettings = async function() {
 
     try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session || !session.user) return;
+        if (!session || !session.user) {
+            showAlert("Erreur : Aucun utilisateur connecté.", "error");
+            return;
+        }
 
-        // 1. Mettre à jour user_profiles
-        const { error: profileError } = await supabase
+        const currentUserId = session.user.id;
+        console.log("Mise à jour des paramètres pour l'utilisateur ID:", currentUserId);
+
+        // 1. Mettre à jour uniquement la ligne de l'utilisateur connecté dans user_profiles
+        const { data: updateData, error: profileError } = await supabase
             .from('user_profiles')
             .update({ 
                 langue: lang, 
                 theme: theme, 
                 updated_at: new Date().toISOString() 
             })
-            .eq('id', session.user.id);
+            .eq('id', currentUserId)
+            .select();
 
         if (profileError) throw profileError;
+        console.log("Profil mis à jour avec succès dans la base :", updateData);
 
-        // 2. Appliquer le thème instantanément et le stocker
+        // 2. Appliquer le thème instantanément
         applyTheme(theme);
 
         // 3. Mettre à jour le mot de passe si rempli
@@ -152,6 +165,7 @@ window.saveUserSettings = async function() {
             });
 
             if (pwdError) throw pwdError;
+            console.log("Mot de passe mis à jour avec succès via Supabase Auth.");
         }
 
         showAlert("Paramètres enregistrés avec succès !", "success");
@@ -161,19 +175,15 @@ window.saveUserSettings = async function() {
         }, 1500);
 
     } catch (err) {
-        console.error("Erreur sauvegarde paramètres:", err);
-        showAlert("Erreur lors de l'enregistrement : " + err.message, "error");
+        console.error("Erreur lors de la sauvegarde :", err);
+        showAlert("Erreur : " + err.message, "error");
     }
 };
 
-/**
- * Fonction centrale pour basculer les variables CSS du thème
- */
 function applyTheme(themeName) {
     localStorage.setItem('smtg_theme', themeName);
     document.documentElement.setAttribute('data-theme', themeName);
 
-    // Si tu utilises des variables CSS globales, on peut aussi les basculer directement ici :
     const root = document.documentElement;
     if (themeName === 'light') {
         root.style.setProperty('--card-bg', '#ffffff');
@@ -191,7 +201,7 @@ function applyTheme(themeName) {
         root.style.setProperty('--text-sub', '#cbd5e1');
         root.style.setProperty('--input-bg', 'rgba(0,0,0,0.3)');
         root.style.setProperty('--input-border', 'rgba(255,255,255,0.1)');
-        document.body.style.backgroundColor = ''; // Revient au fond par défaut du dark mode
+        document.body.style.backgroundColor = '';
         document.body.style.color = '';
     }
 }

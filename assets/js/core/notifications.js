@@ -11,8 +11,6 @@ export async function initNotifications() {
     const notifBtn = document.getElementById('notifBtn');
     const notifDropdown = document.getElementById('notifDropdown');
     const notifListContainer = document.getElementById('notifListContainer');
-    const notifCountBadge = document.querySelector('.notification-badge-dot');
-    const notifCountText = document.getElementById('notifCountText');
 
     if (!notifBtn || !notifDropdown || !notifListContainer) return;
 
@@ -52,7 +50,7 @@ function createNotificationModalDOM() {
 
     const modalHTML = `
         <div id="smtgNotifModal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center;">
-            <div style="background: var(--card-bg, #111b24); border: 1px solid var(--card-border, rgba(16, 185, 129, 0.2)); width: 450px; max-width: 90%; border-radius: 14px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); overflow: hidden; animation: smtgModalScale 0.2s ease;">
+            <div style="background: var(--card-bg, #111b24); border: 1px solid var(--card-border, rgba(16, 185, 129, 0.2)); width: 450px; max-width: 90%; border-radius: 14px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); overflow: hidden;">
                 <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <div id="modalNotifIconBox" style="font-size: 16px; color: var(--primary-glow);"><i id="modalNotifIcon" class="fas fa-info-circle"></i></div>
@@ -133,8 +131,6 @@ async function fetchAndRenderNotifications() {
 
             const timeAgo = formatTimeAgo(notif.created_at);
             const bgStyle = notif.is_read ? 'background: transparent;' : 'background: rgba(16, 185, 129, 0.05);';
-
-            // Sérialisation des données pour les passer proprement dans l'événement click
             const safeNotif = encodeURIComponent(JSON.stringify(notif));
 
             return `
@@ -153,18 +149,17 @@ async function fetchAndRenderNotifications() {
         }).join('');
 
     } catch (err) {
-        console.error("Erreur lors du chargement des notifications:", err);
+        console.error("Erreur chargement notifications:", err);
     }
 }
 
 /**
- * Ouvre le Modal avec le message complet et marque automatiquement comme lu
+ * Ouvre le Modal, affiche le message complet et marque DIRECTEMENT comme lu dans Supabase
  */
 window.openNotificationDetail = async function(encodedNotif) {
     try {
         const notif = JSON.parse(decodeURIComponent(encodedNotif));
         
-        // Remplir les champs du modal
         document.getElementById('modalNotifTitle').textContent = notif.title;
         document.getElementById('modalNotifMessage').textContent = notif.message;
         document.getElementById('modalNotifDate').textContent = `Reçu le : ${new Date(notif.created_at).toLocaleString('fr-FR')}`;
@@ -182,25 +177,27 @@ window.openNotificationDetail = async function(encodedNotif) {
             iconEl.style.color = '#10b981';
         }
 
-        // Afficher le modal
+        // Afficher le Modal
         document.getElementById('smtgNotifModal').style.display = 'flex';
 
-        // Masquer le menu déroulant des notifications
+        // Masquer le menu déroulant
         const notifDropdown = document.getElementById('notifDropdown');
         if (notifDropdown) notifDropdown.style.display = 'none';
 
-        // Marquer automatiquement comme lu dans Supabase si ce n'est pas encore fait
+        // 🔥 Marquer immédiatement comme lue dans la base de données si elle ne l'était pas
         if (!notif.is_read) {
-            await supabase
+            const { error } = await supabase
                 .from('notifications')
                 .update({ is_read: true, updated_at: new Date().toISOString() })
                 .eq('id', notif.id);
-            
-            // Rafraîchir la liste en arrière-plan pour enlever le point vert
-            fetchAndRenderNotifications();
+
+            if (!error) {
+                // Mettre à jour l'interface instantanément (supprimer le point rouge du badge de la cloche)
+                await fetchAndRenderNotifications();
+            }
         }
     } catch (err) {
-        console.error("Erreur ouverture modal notification:", err);
+        console.error("Erreur ouverture modal:", err);
     }
 };
 
@@ -213,7 +210,7 @@ window.closeNotificationModal = function() {
 };
 
 /**
- * Configuration Realtime pour écouter les insertions en direct
+ * Configuration Realtime
  */
 function setupRealtimeNotifications() {
     if (notificationsChannel) return;

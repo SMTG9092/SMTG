@@ -25,10 +25,10 @@ export function canAccessPage(pageFile) {
     // استخراج اسم الصفحة من المسار (مثال: dashboard/dashboard-admin.html -> dashboard-admin)[cite: 2]
     const cleanName = pageFile.split('/').pop().replace('.html', '');
     
-    // إذا كانت الصلاحيات لم تح بعد من قاعدة البيانات في اللحظات الأولى، نسمح بالمرور مؤقتًا لتفادي الشاشة الحمراء
+    // حل مشكلة اللحظات الأولى: إذا لم تكن الصلاحيات قد جُلبت بعد أو لم يتم تحديد الدور، نسمح بالمرور مؤقتاً لتفادي الاختفاء الشامل
     const currentPerms = getPermissions();
-    if (!currentPerms || currentPerms.length === 0) {
-        return true;
+    if (!roleCode && (!currentPerms || currentPerms.length === 0)) {
+        return true; 
     }
     
     // التحقق عبر دوال الصلاحيات الأساسية[cite: 2]

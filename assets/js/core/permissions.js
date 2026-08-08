@@ -29,6 +29,7 @@ export async function loadPermissions() {
     if (!profile) {
         permissions = [];
         role = null;
+        window.permissionsLoaded = true; // تعيين العلامة حتى لو لم يتم العثور على بروفایل لتفادي الانتظار اللانهائي
         return [];
     }
 
@@ -131,6 +132,9 @@ export async function loadPermissions() {
 
     } catch (err) {
         console.error("Erreur technique lors du chargement des permissions:", err);
+    } finally {
+        // الإعلان بأن عملية تحميل الصلاحيات قد انتهت رسمياً
+        window.permissionsLoaded = true;
     }
 
     return permissions;

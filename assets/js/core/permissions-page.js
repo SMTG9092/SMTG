@@ -10,7 +10,7 @@
 import { canPage, can, getPermissions } from './permissions.js';
 
 /**
- * التحقق مما إذا كان الدور أو المستخدم يمتلك صلاحية فتح الصفحة الحالية
+ * التحقق مما إذا كان الدور أو المستخدم يمتلك صلاحية فتح الصفحة الحالية بناءً على الجدول حصراً
  * @param {string} pageFile مسار أو كود الصفحة
  * @returns {boolean}
  */
@@ -19,19 +19,21 @@ export function canAccessPage(pageFile) {
     
     const roleCode = (window.currentUserRoleCode || '').trim().toUpperCase();
     
-    // إذا كان الأدمن، فله حق الوصول الكامل مباشرة[cite: 2]
+    // إذا كان الأدمن، فله حق الوصول الكامل مباشرة
     if (roleCode === 'ADMIN') return true;
     
-    // استخراج اسم الصفحة من المسار (مثال: dashboard/dashboard-admin.html -> dashboard-admin)[cite: 2]
+    // استخراج اسم الصفحة من المسار (مثال: dashboard/dashboard-admin.html -> dashboard-admin)
     const cleanName = pageFile.split('/').pop().replace('.html', '');
     
-    // حل مشكلة اللحظات الأولى: إذا لم تكن الصلاحيات قد جُلبت بعد أو لم يتم تحديد الدور، نسمح بالمرور مؤقتاً لتفادي الاختفاء الشامل
+    // جلب الصلاحيات المحملة من جدول role_page_permissions و user_page_actions
     const currentPerms = getPermissions();
-    if (!roleCode && (!currentPerms || currentPerms.length === 0)) {
-        return true; 
+    
+    // إذا لم يتم العثور على أي صلاحيات للدور في الجدول أو كانت القائمة فارغة، تُمنع جميع الصفحات من الظهور فوراً
+    if (!currentPerms || currentPerms.length === 0) {
+        return false;
     }
     
-    // التحقق عبر دوال الصلاحيات الأساسية[cite: 2]
+    // التحقق الصارم: هل الصفحة مسجلة ضمن الصلاحيات المسموحة (can_view = true)؟
     return canPage(cleanName) || can(cleanName);
 }
 
@@ -41,9 +43,9 @@ export function canAccessPage(pageFile) {
  */
 export function applyDeletePermissionsUI(roleCode) {
     const currentRole = (roleCode || window.currentUserRoleCode || '').trim().toUpperCase();
-    if (currentRole === 'ADMIN') return; // الأدمن عنده كل الصلاحيات[cite: 2]
+    if (currentRole === 'ADMIN') return; // الأدمن عنده كل الصلاحيات
 
-    // إخفاء أو تعطيل أزرار الحذف للمستخدمين العاديين إذا لم تكن لديهم صلاحية[cite: 2]
+    // إخفاء أو تعطيل أزرار الحذف للمستخدمين العاديين إذا لم تكن لديهم صلاحية
     const deleteButtons = document.querySelectorAll('.btn-danger, [data-action="delete"], .delete-action-btn');
     deleteButtons.forEach(btn => {
         btn.style.display = 'none';

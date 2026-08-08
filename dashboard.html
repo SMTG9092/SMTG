@@ -15,10 +15,8 @@
             --sidebar-bg: #070c10;
             --card-bg: #111b24;
             --card-border: rgba(16, 185, 129, 0.15);
-            --card-border-hover: rgba(16, 185, 129, 0.4);
             --primary-glow: #10b981;
             --danger-glow: #ef4444;
-            --warning-glow: #f59e0b;
             --text-main: #f8fafc;
             --text-muted: #8a99ad;
         }
@@ -98,7 +96,7 @@
             padding: 12px 10px;
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 3px;
             overflow-y: auto;
             flex: 1;
             max-height: calc(100vh - 140px);
@@ -112,21 +110,11 @@
             border-radius: 4px;
         }
 
-        .nav-section-title {
-            font-size: 9px;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            letter-spacing: 1px;
-            margin: 12px 0 6px 10px;
-            font-weight: 700;
-            display: block !important;
-        }
-
         .nav-link {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 8px 10px;
+            padding: 9px 12px;
             color: var(--text-muted);
             text-decoration: none;
             border-radius: 8px;
@@ -217,7 +205,7 @@
             display: none;
         }
 
-        /* --- USER PROFILE CONTAINER & DROPDOWN --- */
+        /* --- USER PROFILE WRAPPER & DROPDOWN --- */
         .user-profile-wrapper {
             position: relative;
         }
@@ -337,10 +325,10 @@
 
             <nav class="sidebar-nav">
                 <!-- RECHERCHE GLOBALE -->
-                <div style="padding: 6px 10px 10px 10px;">
+                <div style="padding: 6px 4px 10px 4px;">
                     <div style="position: relative;">
                         <i class="fas fa-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 11px;"></i>
-                        <input type="text" id="sidebarSearchInput" placeholder="Rechercher dans le menu..." style="width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--card-border); padding: 6px 8px 6px 28px; border-radius: 6px; color: #fff; font-size: 10px; outline: none;">
+                        <input type="text" id="sidebarSearchInput" placeholder="Rechercher dans le menu..." style="width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--card-border); padding: 7px 8px 7px 28px; border-radius: 6px; color: #fff; font-size: 10px; outline: none;">
                     </div>
                 </div>
 
@@ -349,47 +337,39 @@
                 <a href="#" class="nav-link" data-page="dashboard/dashboard-stock.html" data-roles="ADMIN, GESTION_STOCK, MAGASINIER"><i class="fas fa-chart-line"></i> Tableau de bord Stock</a>
                 <a href="#" class="nav-link" data-page="dashboard/dashboard-audit.html" data-roles="ADMIN, AUDIT_DIR, CONTROLE_GESTION"><i class="fas fa-chart-bar"></i> Direction & Audit</a>
                 
-                <!-- 📦 GESTION DE STOCK -->
-                <div class="nav-section-title">Gestion de stock</div>
+                <!-- GESTION DE STOCK -->
                 <a href="#" class="nav-link" data-page="Modules/produits.html" data-roles="ADMIN, GESTION_STOCK, MAGASINIER, QUALITE_VET"><i class="fas fa-box"></i> Produits</a>
                 <a href="#" class="nav-link" data-page="Modules/mouvements.html" data-roles="ADMIN, GESTION_STOCK, MAGASINIER"><i class="fas fa-exchange-alt"></i> Mouvements de stock</a>
                 <a href="#" class="nav-link" data-page="Modules/ab10.html" data-roles="ADMIN, GESTION_STOCK, MAGASINIER, QUALITE_VET, AUDIT_DIR"><i class="fas fa-tags"></i> Stock par article / lot</a>
                 
-                <!-- 🛒 GESTION DE COMMANDES & ACHATS -->
-                <div class="nav-section-title">Commandes & Achats</div>
+                <!-- COMMANDES & ACHATS -->
                 <a href="#" class="nav-link" data-page="Modules/commandes.html" data-roles="ADMIN, ACHAT, COMMERCIAL"><i class="fas fa-file-invoice"></i> Commandes (KG / Pièces)</a>
                 <a href="#" class="nav-link" data-page="Modules/reservations.html" data-roles="ADMIN, GESTION_STOCK, COMMERCIAL"><i class="fas fa-bookmark"></i> Réservations</a>
                 <a href="#" class="nav-link" data-page="Modules/achats.html" data-roles="ADMIN, ACHAT"><i class="fas fa-shopping-cart"></i> Gestion des Achats</a>
 
-                <!-- 🏭 PRODUCTION (ABS & ACH) -->
-                <div class="nav-section-title">Production</div>
+                <!-- PRODUCTION -->
                 <a href="#" class="nav-link" data-page="Modules/lancer.html" data-roles="ADMIN, PRODUCTION_ABS, PRODUCTION_ACH"><i class="fas fa-play-circle"></i> Lancements de Production</a>
                 <a href="#" class="nav-link" data-page="Modules/production-abs.html" data-roles="ADMIN, PRODUCTION_ABS"><i class="fas fa-industry"></i> Suivi Production ABS</a>
                 <a href="#" class="nav-link" data-page="Modules/production-ach.html" data-roles="ADMIN, PRODUCTION_ACH"><i class="fas fa-cogs"></i> Suivi Production ACH</a>
 
-                <!-- 🏢 INFRASTRUCTURE & CHAMBRES -->
-                <div class="nav-section-title">Infrastructure</div>
+                <!-- INFRASTRUCTURE -->
                 <a href="#" class="nav-link" data-page="Modules/magasins.html" data-roles="ADMIN"><i class="fas fa-warehouse"></i> Chambres & Dépôts</a>
                 <a href="#" class="nav-link" data-page="Modules/grille-emplacements.html" data-roles="ADMIN, GESTION_STOCK, MAGASINIER"><i class="fas fa-th"></i> Tunnels & Grilles</a>
                 <a href="#" class="nav-link" data-page="Modules/emplacements.html" data-roles="ADMIN, GESTION_STOCK, MAGASINIER"><i class="fas fa-map-marker-alt"></i> Emplacements</a>
                 
-                <!-- 🚚 EXPÉDITIONS & LOGISTIQUE -->
-                <div class="nav-section-title">Expéditions & Logistique</div>
+                <!-- EXPÉDITIONS & LOGISTIQUE -->
                 <a href="#" class="nav-link" data-page="Modules/picking.html" data-roles="ADMIN, PREPARATEUR, EXPEDITION, LOGISTIQUE"><i class="fas fa-dolly"></i> Picking</a>
                 <a href="#" class="nav-link" data-page="Modules/expeditions.html" data-roles="ADMIN, EXPEDITION, LOGISTIQUE"><i class="fas fa-truck"></i> Expéditions & Chargement</a>
                 <a href="#" class="nav-link" data-page="Modules/logistique-flux.html" data-roles="ADMIN, LOGISTIQUE"><i class="fas fa-route"></i> Logistique Globale & Flux</a>
                 <a href="#" class="nav-link" data-page="Modules/retours.html" data-roles="ADMIN, EXPEDITION, LOGISTIQUE"><i class="fas fa-undo"></i> Retours</a>
                 
-                <!-- 🩺 CONTRÔLE QUALITÉ & VÉTÉRINAIRE -->
-                <div class="nav-section-title">Qualité & Vétérinaire</div>
+                <!-- QUALITÉ & VÉTÉRINAIRE -->
                 <a href="#" class="nav-link" data-page="Modules/qualite-vet.html" data-roles="ADMIN, QUALITE_VET"><i class="fas fa-shield-alt"></i> Validation Sanitaire & Lots</a>
 
-                <!-- 🛠️ MAINTENANCE & TECHNIQUE -->
-                <div class="nav-section-title">Maintenance</div>
+                <!-- MAINTENANCE -->
                 <a href="#" class="nav-link" data-page="Modules/maintenance.html" data-roles="ADMIN, MAINTENANCE"><i class="fas fa-tools"></i> Service Technique & Équipements</a>
 
-                <!-- 📊 CONTRÔLE DE GESTION & AUDIT -->
-                <div class="nav-section-title">Contrôle & Audit</div>
+                <!-- CONTRÔLE & AUDIT -->
                 <a href="#" class="nav-link" data-page="Modules/inventaire.html" data-roles="ADMIN, GESTION_STOCK, CONTROLE_GESTION, AUDIT_DIR"><i class="fas fa-clipboard-list"></i> Inventaire Journalier</a>
                 <a href="#" class="nav-link" data-page="Modules/controle-gestion.html" data-roles="ADMIN, CONTROLE_GESTION, AUDIT_DIR"><i class="fas fa-chart-pie"></i> Analyse de Performance</a>
             </nav>
@@ -456,9 +436,7 @@
             </header>
 
             <!-- 🔄 DYNAMIC CONTENT CONTAINER -->
-            <div id="main-screen-content" style="width: 100%;">
-                <!-- Load pages dynamically here -->
-            </div>
+            <div id="main-screen-content" style="width: 100%;"></div>
         </div>
 
         <!-- FOOTER STATUS BAR -->
@@ -519,12 +497,11 @@
     });
 </script>
 
-<!-- SIDEBAR FILTER SCRIPT (KEEP SECTION TITLES VISIBLE) -->
+<!-- SIDEBAR FILTER SCRIPT -->
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const searchInput = document.getElementById('sidebarSearchInput');
         const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
-        const sectionTitles = document.querySelectorAll('.sidebar-nav .nav-section-title');
 
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
@@ -537,10 +514,6 @@
                     } else {
                         link.style.display = 'none';
                     }
-                });
-
-                sectionTitles.forEach(title => {
-                    title.style.display = 'block';
                 });
             });
         }
@@ -701,7 +674,6 @@
             });
         });
 
-        // تحميل الصفحة الافتراضية فوراً بعد التأكد من جاهزية الجلسة والصلاحيات
         setTimeout(async () => {
             let defaultPage = 'dashboard/dashboard-admin.html';
             const targetLink = document.querySelector(`.sidebar-nav .nav-link[data-page="${defaultPage}"]`) || 
@@ -712,14 +684,6 @@
         }, 350);
     });
 </script>
-
-<!-- CORE MODULES -->
-<script type="module" src="./assets/js/core/session.js"></script>
-<script type="module" src="./assets/js/core/profile-dropdown.js"></script>
-<script type="module" src="./assets/js/core/settings-modal.js"></script>
-<script type="module" src="./assets/js/core/notifications.js"></script>
-<script type="module" src="./assets/js/core/user_menu_preferences.js"></script>
-<script type="module" src="./assets/js/core/permissions-page.js"></script>
 
 </body>
 </html>

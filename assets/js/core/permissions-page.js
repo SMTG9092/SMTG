@@ -25,10 +25,7 @@ export function canAccessPage(pageFile) {
     // استخراج اسم الصفحة من المسار (مثال: dashboard/dashboard-admin.html -> dashboard-admin)
     const cleanName = pageFile.split('/').pop().replace('.html', '');
     
-    // إذا لم يتم تحميل الدور بعد، نسمح مؤقتاً بالمرور لتفادي الشاشة الحمراء، وإلا نتحقق من الصلاحيات العادية
-    if (!roleCode) return true;
-    
-    // التحقق عبر دوال الصلاحيات الأساسية
+    // التحقق الصارم عبر دوال الصلاحيات الأساسية
     return canPage(cleanName) || can(cleanName);
 }
 

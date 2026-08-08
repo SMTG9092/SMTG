@@ -570,8 +570,6 @@
 
 <!-- PROFILE & ROLES ROBUST INTEGRATION -->
 <script type="module">
-    import { applySidebarPermissions, applyDeletePermissionsUI } from './assets/js/core/permissions.js';
-
     document.addEventListener('DOMContentLoaded', async () => {
         setTimeout(async () => {
             const fullNameEl = document.getElementById('userFullName');
@@ -642,9 +640,6 @@
                     avatarEl.textContent = initials || 'SM';
                 }
 
-                applySidebarPermissions(roleCode);
-                applyDeletePermissionsUI(roleCode);
-
             } catch (err) {
                 console.error("Erreur chargement profil & rôle:", err);
             }
@@ -652,10 +647,8 @@
     });
 </script>
 
-<!-- SPA ROUTER & PERMISSIONS GUARD -->
+<!-- SPA ROUTER & DYNAMIC LOADER -->
 <script type="module">
-    import { canAccessPage, applyDeletePermissionsUI } from './assets/js/core/permissions.js';
-
     document.addEventListener('DOMContentLoaded', () => {
         const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
         const mainScreen = document.getElementById('main-screen-content');
@@ -663,19 +656,12 @@
         async function loadPage(pageFile, linkElement) {
             if (!pageFile) return;
 
-            const currentRole = window.currentUserRoleCode || '';
-            if (currentRole && !canAccessPage(currentRole, pageFile)) {
-                mainScreen.innerHTML = '<div style="color: var(--danger-glow); text-align: center; padding: 50px; font-size: 12px;">Accès refusé : Vous n\'avez pas les permissions requises pour consulter cette page.</div>';
-                return;
-            }
-
             navLinks.forEach(l => l.classList.remove('active'));
             if (linkElement) linkElement.classList.add('active');
 
             mainScreen.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 50px; font-size: 12px;">Chargement en cours...</div>';
 
             try {
-                // تنظيف مسار الملف باش يتجَنب أي مشاكل فوق Vercel
                 let cleanPath = pageFile.startsWith('/') ? pageFile.substring(1) : pageFile;
                 
                 const response = await fetch(cleanPath);
@@ -699,8 +685,6 @@
                     document.body.appendChild(newScript);
                 });
 
-                applyDeletePermissionsUI(currentRole);
-
                 if (pageFile.includes('dashboard')) {
                     document.dispatchEvent(new CustomEvent('dashboardLoaded'));
                 }
@@ -721,57 +705,21 @@
 
         setTimeout(async () => {
             let defaultPage = 'dashboard/dashboard-admin.html';
-
-            try {
-                if (window.supabase) {
-                    const { data: { session } } = await window.supabase.auth.getSession();
-                    if (session) {
-                        const userId = session.user.id;
-                        const { data: profile } = await window.supabase
-                            .from('user_profiles')
-                            .select('*')
-                            .eq('id', userId)
-                            .maybeSingle();
-
-                        if (profile && profile.role_id) {
-                            const { data: roleData } = await window.supabase
-                                .from('roles')
-                                .select('code')
-                                .eq('id', profile.role_id)
-                                .maybeSingle();
-
-                            if (roleData) {
-                                const roleCode = (roleData.code || '').trim().toUpperCase();
-                                if (roleCode === 'ADMIN') {
-                                    defaultPage = 'dashboard/dashboard-admin.html';
-                                } else {
-                                    defaultPage = 'dashboard/dashboard-stock.html';
-                                }
-                            }
-                        }
-                    }
-                }
-            } catch (e) {
-                console.error("Erreur détection rôle dashboard:", e);
-            }
-
-            const targetLink = document.querySelector(`.sidebar-nav .nav-link[data-page="${defaultPage}"]:not([style*="display: none"])`) || 
-                                     document.querySelector('.sidebar-nav .nav-link:not([style*="display: none"])');
+            const targetLink = document.querySelector(`.sidebar-nav .nav-link[data-page="${defaultPage}"]`) || 
+                                     document.querySelector('.sidebar-nav .nav-link');
             if (targetLink) {
                 loadPage(targetLink.getAttribute('data-page'), targetLink);
             }
-
         }, 400);
     });
 </script>
 
 <!-- CORE MODULES -->
-<script type="module" src="assets/js/core/session.js"></script>
-<script type="module" src="assets/js/core/profile-dropdown.js"></script>
-<script type="module" src="assets/js/core/settings-modal.js"></script>
-<script type="module" src="assets/js/core/notifications.js"></script>
-<script type="module" src="assets/js/core/admin-dashboard-controller.js"></script>
-<script type="module" src="assets/js/core/user_menu_preferences.js"></script>
+<script type="module" src="./assets/js/core/session.js"></script>
+<script type="module" src="./assets/js/core/profile-dropdown.js"></script>
+<script type="module" src="./assets/js/core/settings-modal.js"></script>
+<script type="module" src="./assets/js/core/notifications.js"></script>
+<script type="module" src="./assets/js/core/user_menu_preferences.js"></script>
 
 </body>
 </html>

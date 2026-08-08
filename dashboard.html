@@ -647,14 +647,25 @@
     });
 </script>
 
-<!-- SPA ROUTER & DYNAMIC LOADER -->
+<!-- SPA ROUTER & DYNAMIC LOADER WITH PERMISSIONS INTEGRATION -->
 <script type="module">
+    import { canAccessPage, applyDeletePermissionsUI } from './assets/js/core/permissions-page.js';
+
     document.addEventListener('DOMContentLoaded', () => {
         const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
         const mainScreen = document.getElementById('main-screen-content');
 
         async function loadPage(pageFile, linkElement) {
             if (!pageFile) return;
+
+            // التحقق من الصلاحية عبر permissions-page.js
+            if (!canAccessPage(pageFile)) {
+                mainScreen.innerHTML = `<div style="color: var(--danger-glow); text-align: center; padding: 60px; font-size: 13px;">
+                    <i class="fas fa-lock" style="font-size: 32px; margin-bottom: 15px; display: block;"></i>
+                    Accès refusé : Vous n'avez pas les permissions nécessaires pour accéder à cette page.
+                </div>`;
+                return;
+            }
 
             navLinks.forEach(l => l.classList.remove('active'));
             if (linkElement) linkElement.classList.add('active');
@@ -673,6 +684,9 @@
                 const targetContent = doc.querySelector('main') || doc.body;
 
                 mainScreen.innerHTML = targetContent.innerHTML;
+
+                // تطبيق قيود الحذف على الواجهة المحملة بناءً على رتبة المستخدم
+                applyDeletePermissionsUI(window.currentUserRoleCode);
 
                 const scripts = targetContent.querySelectorAll('script');
                 scripts.forEach(oldScript => {
@@ -720,6 +734,7 @@
 <script type="module" src="./assets/js/core/settings-modal.js"></script>
 <script type="module" src="./assets/js/core/notifications.js"></script>
 <script type="module" src="./assets/js/core/user_menu_preferences.js"></script>
+<script type="module" src="./assets/js/core/permissions-page.js"></script>
 
 </body>
 </html>

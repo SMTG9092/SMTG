@@ -22,18 +22,22 @@ export function canAccessPage(pageFile) {
     // إذا كان الأدمن، فله حق الوصول الكامل مباشرة
     if (roleCode === 'ADMIN') return true;
     
-    // استخراج اسم الصفحة من المسار (مثال: dashboard/dashboard-admin.html -> dashboard-admin)
+    // استخراج اسم الصفحة من المسار
     const cleanName = pageFile.split('/').pop().replace('.html', '');
     
-    // جلب الصلاحيات المحملة من جدول role_page_permissions و user_page_actions
     const currentPerms = getPermissions();
     
-    // إذا لم يتم العثور على أي صلاحيات للدور في الجدول أو كانت القائمة فارغة، تُمنع جميع الصفحات من الظهور فوراً
+    // إذا لم تنتهِ عملية الجلب بعد من قاعدة البيانات، ننتظر لحظة ولا نحظر مباشرة لكي لا يتم إغلاق كل شيء خطأً
+    if (!window.permissionsLoaded) {
+        return true; 
+    }
+    
+    // إذا انتهى التحميل ولم يتم العثور على صلاحيات نهائياً في الجدول لهذا الدور، تُمنع الصفحة
     if (!currentPerms || currentPerms.length === 0) {
         return false;
     }
     
-    // التحقق الصارم: هل الصفحة مسجلة ضمن الصلاحيات المسموحة (can_view = true)؟
+    // التحقق الصارم من الجدول
     return canPage(cleanName) || can(cleanName);
 }
 
@@ -43,9 +47,8 @@ export function canAccessPage(pageFile) {
  */
 export function applyDeletePermissionsUI(roleCode) {
     const currentRole = (roleCode || window.currentUserRoleCode || '').trim().toUpperCase();
-    if (currentRole === 'ADMIN') return; // الأدمن عنده كل الصلاحيات
+    if (currentRole === 'ADMIN') return;
 
-    // إخفاء أو تعطيل أزرار الحذف للمستخدمين العاديين إذا لم تكن لديهم صلاحية
     const deleteButtons = document.querySelectorAll('.btn-danger, [data-action="delete"], .delete-action-btn');
     deleteButtons.forEach(btn => {
         btn.style.display = 'none';

@@ -1,6 +1,6 @@
 /**
  * ============================================================
- * SoufStock Enterprise ERP/WMS
+ * SMTG Enterprise ERP/WMS
  * File : assets/js/core/permissions.js
  * ============================================================
  */
@@ -36,7 +36,7 @@ export async function loadPermissions() {
     const userId = profile.id;
 
     try {
-        // 1. Njibo les enregistrements dyal user_page_actions b dabet
+        // 1. جلب الصلاحيات الفردية الخاصة بالمستخدم من user_page_actions
         const { data: userPerms, error } = await supabase
             .from("user_page_actions")
             .select(`
@@ -84,7 +84,42 @@ export async function loadPermissions() {
                 });
         }
 
-        // 2. Njibo les pages actifs mn public.pages bash n-s-hlo l-filter dyal sidebar w l-accès
+        // 2. جلب صلاحيات الصفحات العامة الخاصة بدور المستخدم من جدول role_page_permissions الجديد
+        if (role) {
+            const { data: rolePerms, error: rolePermsError } = await supabase
+                .from("role_page_permissions")
+                .select(`
+                    can_view,
+                    pages (
+                        code,
+                        url,
+                        module,
+                        nom
+                    )
+                `)
+                .eq("role_id", role)
+                .eq("can_view", true);
+
+            if (!rolePermsError && rolePerms) {
+                const rolePagePermissions = rolePerms
+                    .filter(item => item.can_view && item.pages)
+                    .map(item => {
+                        const page = item.pages;
+                        const pageCode = page.code || '';
+                        return {
+                            code: pageCode,
+                            module: page.module,
+                            page: pageCode,
+                            action: ''
+                        };
+                    });
+                
+                // دمج صلاحيات الدور مع الصلاحيات الفردية
+                permissions = [...permissions, ...rolePagePermissions];
+            }
+        }
+
+        // 3. جلب جميع الصفحات النشطة من public.pages
         const { data: pagesData } = await supabase
             .from("pages")
             .select("code, url, nom, module")
@@ -116,13 +151,13 @@ export function getPermissions() {
 export function can(code) {
     if (!code) return true;
 
-    // 1. Wach l-user 3ndo permission explicit f user_page_actions?
+    // 1. التحقق مما إذا كانت الصلاحية موجودة في permissions (الفردية أو الخاصة بالدور)
     const hasPerm = permissions.some(
         permission => permission.code === code || permission.page === code
     );
     if (hasPerm) return true;
 
-    // 2. Fallback flexible: Ila kant la page mojoda w actif f public.pages, n-khalliwha t-ban
+    // 2. Fallback: التحقق مما إذا كانت الصفحة موجودة ونشطة
     const pageExists = activePagesCache.some(p => p.code === code);
     if (pageExists) {
         return true; 

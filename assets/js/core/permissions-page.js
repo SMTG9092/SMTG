@@ -19,13 +19,16 @@ export function canAccessPage(pageFile) {
     
     const roleCode = (window.currentUserRoleCode || '').trim().toUpperCase();
     
-    // إذا كان الأدمن، فله حق الوصول الكامل
+    // إذا كان الأدمن، فله حق الوصول الكامل مباشرة
     if (roleCode === 'ADMIN') return true;
     
     // استخراج اسم الصفحة من المسار (مثال: dashboard/dashboard-admin.html -> dashboard-admin)
     const cleanName = pageFile.split('/').pop().replace('.html', '');
     
-    // التحقق عبر دوال الصلاحيات الأساسية (إذا لم يتم تحميل الدور بعد، نعتمد على دالة canPage الافتراضية)
+    // إذا لم يتم تحميل الدور بعد، نسمح مؤقتاً بالمرور لتفادي الشاشة الحمراء، وإلا نتحقق من الصلاحيات العادية
+    if (!roleCode) return true;
+    
+    // التحقق عبر دوال الصلاحيات الأساسية
     return canPage(cleanName) || can(cleanName);
 }
 

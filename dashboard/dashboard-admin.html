@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Admin - SMTG</title>
+</head>
+<body>
+<main style="width: 100%; box-sizing: border-box;">
+    <!-- PAGE HEADER -->
+    <div style="margin-bottom: 20px;">
+        <h1 style="font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 4px 0;">Tableau de bord Administrateur</h1>
+        <p style="font-size: 11px; color: #8a99ad; margin: 0;">Accueil &bull; Tableau de bord &bull; Admin</p>
+    </div>
+
+    <!-- STATS CARDS (USERS) -->
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 15px;">
+        <!-- Card 1 -->
+        <div style="flex: 1; min-width: 160px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Utilisateurs Totals</span>
+                <div style="width: 28px; height: 28px; border-radius: 6px; background: #10b981; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px;"><i class="fas fa-users"></i></div>
+            </div>
+            <div style="font-size: 20px; font-weight: 700; color: #fff;" id="totalUsersVal">--</div>
+            <div style="font-size: 9px; color: #10b981; margin-top: 4px;"><i class="fas fa-check-circle"></i> Enregistrés</div>
+        </div>
+
+        <!-- Card 2 -->
+        <div style="flex: 1; min-width: 160px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Actifs</span>
+                <div style="width: 28px; height: 28px; border-radius: 6px; background: #3b82f6; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px;"><i class="fas fa-user-check"></i></div>
+            </div>
+            <div style="font-size: 20px; font-weight: 700; color: #fff;" id="activeUsersVal">--</div>
+            <div style="font-size: 9px; color: #3b82f6; margin-top: 4px;"><i class="fas fa-arrow-up"></i> Actif (true)</div>
+        </div>
+
+        <!-- Card 3 -->
+        <div style="flex: 1; min-width: 160px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Inactifs</span>
+                <div style="width: 28px; height: 28px; border-radius: 6px; background: #f59e0b; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px;"><i class="fas fa-user-slash"></i></div>
+            </div>
+            <div style="font-size: 20px; font-weight: 700; color: #fff;" id="inactiveUsersVal">--</div>
+            <div style="font-size: 9px; color: #f59e0b; margin-top: 4px;"><i class="fas fa-ban"></i> Désactivés</div>
+        </div>
+
+        <!-- Card Stock Total -->
+        <div style="flex: 1; min-width: 160px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Stock total</span>
+                <div style="width: 28px; height: 28px; border-radius: 6px; background: #06b6d4; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px;"><i class="fas fa-boxes"></i></div>
+            </div>
+            <div style="font-size: 20px; font-weight: 700; color: #fff;">1 248.75</div>
+            <div style="font-size: 9px; color: #10b981; margin-top: 4px;"><i class="fas fa-arrow-up"></i> +3.2% vs hier</div>
+        </div>
+
+        <!-- Card Alertes -->
+        <div style="flex: 1; min-width: 160px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Alertes</span>
+                <div style="width: 28px; height: 28px; border-radius: 6px; background: #ef4444; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px;"><i class="fas fa-exclamation-triangle"></i></div>
+            </div>
+            <div style="font-size: 20px; font-weight: 700; color: #ef4444;">14</div>
+            <div style="font-size: 9px; color: #ef4444; margin-top: 4px;"><i class="fas fa-arrow-up"></i> 2 nouvelles</div>
+        </div>
+    </div>
+
+    <!-- STATS CARDS (PAGES - TABLE PAGES) -->
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+        <!-- Pages Totals -->
+        <div style="flex: 1; min-width: 160px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Pages Totals</span>
+                <div style="width: 28px; height: 28px; border-radius: 6px; background: #8b5cf6; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px;"><i class="fas fa-file-alt"></i></div>
+            </div>
+            <div style="font-size: 20px; font-weight: 700; color: #fff;" id="totalPagesVal">--</div>
+            <div style="font-size: 9px; color: #8b5cf6; margin-top: 4px;"><i class="fas fa-database"></i> Table pages</div>
+        </div>
+
+        <!-- Pages Actives -->
+        <div style="flex: 1; min-width: 160px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Pages Actives</span>
+                <div style="width: 28px; height: 28px; border-radius: 6px; background: #10b981; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px;"><i class="fas fa-check"></i></div>
+            </div>
+            <div style="font-size: 20px; font-weight: 700; color: #fff;" id="activePagesVal">--</div>
+            <div style="font-size: 9px; color: #10b981; margin-top: 4px;"><i class="fas fa-arrow-up"></i> Actif (true)</div>
+        </div>
+
+        <!-- Pages Inactives -->
+        <div style="flex: 1; min-width: 160px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Pages Inactives</span>
+                <div style="width: 28px; height: 28px; border-radius: 6px; background: #ef4444; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px;"><i class="fas fa-times"></i></div>
+            </div>
+            <div style="font-size: 20px; font-weight: 700; color: #fff;" id="inactivePagesVal">--</div>
+            <div style="font-size: 9px; color: #ef4444; margin-top: 4px;"><i class="fas fa-ban"></i> Désactivées</div>
+        </div>
+    </div>
+
+    <!-- ROW 1 (Charts & List) -->
+    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+        <!-- Card Donut -->
+        <div style="flex: 1; min-width: 280px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Stock par emplacement</h3>
+                <span style="font-size: 9px; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; color: #8a99ad;">KG / Pièce</span>
+            </div>
+            <div style="height: 150px; position: relative;">
+                <canvas id="stockEmplacementDonut"></canvas>
+            </div>
+        </div>
+
+        <!-- Card Line Chart -->
+        <div style="flex: 1.5; min-width: 300px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Mouvements (7 derniers jours)</h3>
+            </div>
+            <div style="height: 150px; position: relative;">
+                <canvas id="mouvements7DaysChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Card Users List -->
+        <div style="flex: 1; min-width: 280px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Liste des Utilisateurs</h3>
+                <span style="font-size: 9px; color: #8a99ad;" id="userListCount">0 membres</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px; max-height: 150px; overflow-y: auto;" id="usersListContainer">
+                <!-- Loading state -->
+                <div style="font-size: 11px; color: #8a99ad; text-align: center; padding: 20px;">Chargement...</div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- SCRIPT JS MODULE -->
+<script type="module" src="/assets/js/core/dashboard-admin.js"></script>
+</body>
+</html>

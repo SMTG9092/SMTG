@@ -34,6 +34,7 @@ export async function loadPermissions() {
 
     role = profile.role_id;
     const userId = profile.id;
+    const roleCode = (window.currentUserRoleCode || '').trim().toUpperCase();
 
     try {
         // 1. جلب الصلاحيات الفردية الخاصة بالمستخدم من user_page_actions
@@ -84,7 +85,7 @@ export async function loadPermissions() {
                 });
         }
 
-        // 2. جلب صلاحيات الصفحات العامة الخاصة بدور المستخدم من جدول role_page_permissions الجديد
+        // 2. جلب صلاحيات الدور بصرامة من جدول role_page_permissions الجديد
         if (role) {
             const { data: rolePerms, error: rolePermsError } = await supabase
                 .from("role_page_permissions")
@@ -114,12 +115,11 @@ export async function loadPermissions() {
                         };
                     });
                 
-                // دمج صلاحيات الدور مع الصلاحيات الفردية
                 permissions = [...permissions, ...rolePagePermissions];
             }
         }
 
-        // 3. جلب جميع الصفحات النشطة من public.pages
+        // 3. جلب الصفحات النشطة فقط للمقارنة العامة
         const { data: pagesData } = await supabase
             .from("pages")
             .select("code, url, nom, module")
@@ -151,19 +151,16 @@ export function getPermissions() {
 export function can(code) {
     if (!code) return true;
 
-    // 1. التحقق مما إذا كانت الصلاحية موجودة في permissions (الفردية أو الخاصة بالدور)
+    // إذا كان المستخدم ADMIN، فلديه الصلاحية المطلقة
+    const roleCode = (window.currentUserRoleCode || '').trim().toUpperCase();
+    if (roleCode === 'ADMIN') return true;
+
+    // التحقق الصارم هل الصلاحية موجودة ضمن صلاحيات الدور أو الفردية الخاصة بالمستخدم
     const hasPerm = permissions.some(
         permission => permission.code === code || permission.page === code
     );
-    if (hasPerm) return true;
-
-    // 2. Fallback: التحقق مما إذا كانت الصفحة موجودة ونشطة
-    const pageExists = activePagesCache.some(p => p.code === code);
-    if (pageExists) {
-        return true; 
-    }
-
-    return false;
+    
+    return hasPerm;
 }
 
 /* ============================================================
@@ -171,9 +168,12 @@ export function can(code) {
 ============================================================ */
 
 export function canModule(module) {
+    const roleCode = (window.currentUserRoleCode || '').trim().toUpperCase();
+    if (roleCode === 'ADMIN') return true;
+
     return permissions.some(
         permission => permission.module === module
-    ) || activePagesCache.some(p => p.module === module);
+    );
 }
 
 /* ============================================================
@@ -181,9 +181,12 @@ export function canModule(module) {
 ============================================================ */
 
 export function canPage(page) {
+    const roleCode = (window.currentUserRoleCode || '').trim().toUpperCase();
+    if (roleCode === 'ADMIN') return true;
+
     return permissions.some(
-        permission => permission.page === page
-    ) || activePagesCache.some(p => p.code === page);
+        permission => permission.page === page || permission.code === page
+    );
 }
 
 /* ============================================================
@@ -191,6 +194,9 @@ export function canPage(page) {
 ============================================================ */
 
 export function canAction(action) {
+    const roleCode = (window.currentUserRoleCode || '').trim().toUpperCase();
+    if (roleCode === 'ADMIN') return true;
+
     return permissions.some(
         permission => permission.action === action
     );
@@ -241,9 +247,11 @@ export function requirePermission(code) {
 ============================================================ */
 
 export function visibleMenus() {
-    return activePagesCache.map(
-        item => item.module
-    );
+    const roleCode = (window.currentUserRoleCode || '').trim().toUpperCase();
+    if (roleCode === 'ADMIN') {
+        return activePagesCache.map(item => item.module);
+    }
+    return permissions.map(item => item.module);
 }
 
 /* ============================================================

@@ -675,7 +675,10 @@
             mainScreen.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 50px; font-size: 12px;">Chargement en cours...</div>';
 
             try {
-                const response = await fetch(pageFile);
+                // تنظيف مسار الملف باش يتجَنب أي مشاكل فوق Vercel
+                let cleanPath = pageFile.startsWith('/') ? pageFile.substring(1) : pageFile;
+                
+                const response = await fetch(cleanPath);
                 if (!response.ok) throw new Error("Erreur de chargement (Fichier introuvable)");
 
                 const htmlText = await response.text();
@@ -703,8 +706,8 @@
                 }
 
             } catch (err) {
-                console.error(err);
-                mainScreen.innerHTML = '<div style="color: var(--danger-glow); text-align: center; padding: 50px; font-size: 12px;">Erreur: Impossible de charger cette page (Vérifiez le chemin du fichier).</div>';
+                console.error("Erreur Router Fetch:", err);
+                mainScreen.innerHTML = `<div style="color: var(--danger-glow); text-align: center; padding: 50px; font-size: 12px;">Erreur: Impossible de charger la page (${pageFile}). Vérifiez le déploiement.</div>`;
             }
         }
 

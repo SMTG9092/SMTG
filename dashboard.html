@@ -486,7 +486,6 @@
         function applySidebarPermissions() {
             const roleCode = (window.currentUserRoleCode || '').trim().toUpperCase();
             
-            // إذا كان المسؤول الأول، نعرض كل شيء فوراً
             if (roleCode === 'ADMIN') {
                 navLinks.forEach(link => {
                     link.style.display = 'flex';
@@ -495,7 +494,6 @@
                 return;
             }
 
-            // إذا لم يتم جلب الدور بعد، ننتظر ولا نخفي شيئاً عشوائياً
             if (!roleCode && !window.permissionsLoaded) {
                 return; 
             }

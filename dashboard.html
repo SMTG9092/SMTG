@@ -335,11 +335,11 @@
             </div>
 
             <nav class="sidebar-nav">
-                <!-- RECHERCHE GLOBALE FI L-FA9 -->
+                <!-- RECHERCHE GLOBALE FI L-FA9 (FILTRAGE 9AIMA) -->
                 <div style="padding: 6px 10px 10px 10px;">
                     <div style="position: relative;">
                         <i class="fas fa-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 11px;"></i>
-                        <input type="text" placeholder="Rechercher..." style="width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--card-border); padding: 6px 8px 6px 28px; border-radius: 6px; color: #fff; font-size: 10px; outline: none;">
+                        <input type="text" id="sidebarSearchInput" placeholder="Rechercher dans le menu..." style="width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--card-border); padding: 6px 8px 6px 28px; border-radius: 6px; color: #fff; font-size: 10px; outline: none;">
                     </div>
                 </div>
 
@@ -513,6 +513,48 @@
                 if (!profileBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
                     dropdownMenu.style.display = 'none';
                 }
+            });
+        }
+    });
+</script>
+
+<!-- SIDEBAR FILTER SCRIPT -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('sidebarSearchInput');
+        const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
+        const sectionTitles = document.querySelectorAll('.sidebar-nav .nav-section-title');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase().trim();
+
+                navLinks.forEach(link => {
+                    const text = link.textContent.toLowerCase();
+                    if (text.includes(term)) {
+                        link.style.display = 'flex';
+                    } else {
+                        link.style.display = 'none';
+                    }
+                });
+
+                // Hide section titles if all items underneath are hidden or if searching
+                sectionTitles.forEach(title => {
+                    if (term === '') {
+                        title.style.display = 'block';
+                        return;
+                    }
+                    let nextEl = title.nextElementSibling;
+                    let hasVisibleChild = false;
+                    while (nextEl && !nextEl.classList.contains('nav-section-title')) {
+                        if (nextEl.classList.contains('nav-link') && nextEl.style.display !== 'none') {
+                            hasVisibleChild = true;
+                            break;
+                        }
+                        nextEl = nextEl.nextElementSibling;
+                    }
+                    title.style.display = hasVisibleChild ? 'block' : 'none';
+                });
             });
         }
     });

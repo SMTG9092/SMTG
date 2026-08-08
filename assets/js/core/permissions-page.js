@@ -17,11 +17,15 @@ import { canPage, can } from './permissions.js';
 export function canAccessPage(pageFile) {
     if (!pageFile) return true;
     
+    // إذا كان المستخدم الحالي مديراً عاماً، فله حق الوصول الكامل مباشرة
+    const roleCode = (window.currentUserRoleCode || '').trim().toUpperCase();
+    if (roleCode === 'ADMIN') return true;
+    
     // استخراج اسم الصفحة من المسار (مثال: dashboard/dashboard-admin.html -> dashboard-admin)
     const cleanName = pageFile.split('/').pop().replace('.html', '');
     
     // التحقق عبر دوال الصلاحيات الأساسية
-    return canPage(cleanName) || can(cleanName) || window.currentUserRoleCode === 'ADMIN';
+    return canPage(cleanName) || can(cleanName);
 }
 
 /**
@@ -29,9 +33,10 @@ export function canAccessPage(pageFile) {
  * @param {string} roleCode 
  */
 export function applyDeletePermissionsUI(roleCode) {
-    if (roleCode === 'ADMIN') return; // الأدمن عنده كل الصلاحيات
+    const currentRole = (roleCode || window.currentUserRoleCode || '').trim().toUpperCase();
+    if (currentRole === 'ADMIN') return; // الأدمن عنده كل الصلاحيات
 
-    // إخفاء أزرار الحذف للمستخدمين العاديين إذا لم تكن لديهم صلاحية
+    // إخفاء أو تعطيل أزرار الحذف للمستخدمين العاديين إذا لم تكن لديهم صلاحية
     const deleteButtons = document.querySelectorAll('.btn-danger, [data-action="delete"], .delete-action-btn');
     deleteButtons.forEach(btn => {
         btn.style.display = 'none';

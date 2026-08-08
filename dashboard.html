@@ -518,7 +518,7 @@
     });
 </script>
 
-<!-- SIDEBAR FILTER SCRIPT -->
+<!-- SIDEBAR FILTER SCRIPT (UPDATED TO KEEP SECTION TITLES VISIBLE) -->
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const searchInput = document.getElementById('sidebarSearchInput');
@@ -538,21 +538,9 @@
                     }
                 });
 
+                // تأكيد بقاء العناوين دائماً ظاهرة لكي تظل القائمة منظمة وثابتة
                 sectionTitles.forEach(title => {
-                    if (term === '') {
-                        title.style.display = 'block';
-                        return;
-                    }
-                    let nextEl = title.nextElementSibling;
-                    let hasVisibleChild = false;
-                    while (nextEl && !nextEl.classList.contains('nav-section-title')) {
-                        if (nextEl.classList.contains('nav-link') && nextEl.style.display !== 'none') {
-                            hasVisibleChild = true;
-                            break;
-                        }
-                        nextEl = nextEl.nextElementSibling;
-                    }
-                    title.style.display = hasVisibleChild ? 'block' : 'none';
+                    title.style.display = 'block';
                 });
             });
         }
@@ -658,7 +646,6 @@
         async function loadPage(pageFile, linkElement) {
             if (!pageFile) return;
 
-            // التحقق من الصلاحية عبر permissions-page.js
             if (!canAccessPage(pageFile)) {
                 mainScreen.innerHTML = `<div style="color: var(--danger-glow); text-align: center; padding: 60px; font-size: 13px;">
                     <i class="fas fa-lock" style="font-size: 32px; margin-bottom: 15px; display: block;"></i>
@@ -685,7 +672,6 @@
 
                 mainScreen.innerHTML = targetContent.innerHTML;
 
-                // تطبيق قيود الحذف على الواجهة المحملة بناءً على رتبة المستخدم
                 applyDeletePermissionsUI(window.currentUserRoleCode);
 
                 const scripts = targetContent.querySelectorAll('script');

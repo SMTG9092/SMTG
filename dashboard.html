@@ -179,7 +179,8 @@
 
         .search-bar-box {
             position: relative;
-            width: 320px;
+            flex: 1;
+            max-width: 320px;
         }
 
         .search-bar-box i {
@@ -256,7 +257,7 @@
 
         /* --- USER PROFILE CONTAINER & DROPDOWN --- */
         .user-profile-wrapper {
-            position: relative; /* Ktehli l-mjal bash l-menu y-kon absolute ghir 3la l-container dyalo */
+            position: relative;
         }
 
         .user-profile-pill {
@@ -298,7 +299,6 @@
             color: var(--text-muted);
         }
 
-        /* DROPDOWN MENU DIRECTEMENT TAHT L-PILL */
         .user-dropdown-menu {
             display: none;
             position: absolute;
@@ -748,7 +748,7 @@
             }
 
             const targetLink = document.querySelector(`.sidebar-nav .nav-link[data-page="${defaultPage}"]:not([style*="display: none"])`) || 
-                                       document.querySelector('.sidebar-nav .nav-link:not([style*="display: none"])');
+                                     document.querySelector('.sidebar-nav .nav-link:not([style*="display: none"])');
             if (targetLink) {
                 loadPage(targetLink.getAttribute('data-page'), targetLink);
             }

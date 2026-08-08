@@ -475,28 +475,6 @@
     document.addEventListener('DOMContentLoaded', initHeaderClock);
 </script>
 
-<!-- DROPDOWN TOGGLE SCRIPT -->
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const profileBtn = document.getElementById('userProfileBtn');
-        const dropdownMenu = document.getElementById('userDropdownMenu');
-
-        if (profileBtn && dropdownMenu) {
-            profileBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isVisible = dropdownMenu.style.display === 'block';
-                dropdownMenu.style.display = isVisible ? 'none' : 'block';
-            });
-
-            document.addEventListener('click', (e) => {
-                if (!profileBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
-                    dropdownMenu.style.display = 'none';
-                }
-            });
-        }
-    });
-</script>
-
 <!-- SIDEBAR FILTER SCRIPT -->
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -527,83 +505,6 @@
 <script type="module">
     import supabase from './assets/js/core/supabase.js';
     window.supabase = supabase;
-</script>
-
-<!-- PROFILE & ROLES ROBUST INTEGRATION -->
-<script type="module">
-    document.addEventListener('DOMContentLoaded', async () => {
-        const fullNameEl = document.getElementById('userFullName');
-        const roleEl = document.getElementById('userRoleName');
-        const avatarEl = document.getElementById('userAvatarInitials');
-
-        if (!window.supabase) return;
-
-        try {
-            const { data: { session }, error: sessionError } = await window.supabase.auth.getSession();
-            if (sessionError || !session || !session.user) return;
-
-            const userId = session.user.id;
-
-            let profile = null;
-            let res = await window.supabase
-                .from('user_profiles')
-                .select('*')
-                .eq('id', userId)
-                .maybeSingle();
-
-            if (!res.data) {
-                res = await window.supabase
-                    .from('user_profiles')
-                    .select('*')
-                    .eq('user_id', userId)
-                    .maybeSingle();
-            }
-
-            profile = res.data;
-            if (!profile) return;
-
-            let roleCode = 'ADMIN';
-            let displayRole = 'Administrateur';
-
-            if (profile.role_id) {
-                const roleRes = await window.supabase
-                    .from('roles')
-                    .select('code, nom')
-                    .eq('id', profile.role_id)
-                    .maybeSingle();
-
-                if (roleRes.data) {
-                    roleCode = roleRes.data.code ? roleRes.data.code.trim().toUpperCase() : 'ADMIN';
-                    displayRole = roleRes.data.nom || displayRole;
-                }
-            }
-
-            const displayName = profile.nom_complet || 
-                                `${profile.prenom || ''} ${profile.nom || ''}`.trim() || 
-                                profile.full_name || 
-                                profile.username || 
-                                'Utilisateur';
-
-            if (fullNameEl) fullNameEl.textContent = displayName;
-            if (roleEl) roleEl.textContent = displayRole;
-
-            window.currentUserRoleCode = roleCode;
-
-            if (avatarEl) {
-                const initials = displayName
-                    .split(' ')
-                    .filter(Boolean)
-                    .map(n => n[0])
-                    .join('')
-                    .toUpperCase()
-                    .substring(0, 2);
-                avatarEl.textContent = initials || 'SM';
-            }
-
-        } catch (err) {
-            console.error("Erreur chargement profil & rôle:", err);
-        }
-    });
 </script>
 
 <!-- SPA ROUTER & DYNAMIC LOADER WITH PERMISSIONS INTEGRATION -->
@@ -684,6 +585,14 @@
         }, 350);
     });
 </script>
+
+<!-- CORE MODULES -->
+<script type="module" src="./assets/js/core/session.js"></script>
+<script type="module" src="./assets/js/core/profile-dropdown.js"></script>
+<script type="module" src="./assets/js/core/settings-modal.js"></script>
+<script type="module" src="./assets/js/core/notifications.js"></script>
+<script type="module" src="./assets/js/core/user_menu_preferences.js"></script>
+<script type="module" src="./assets/js/core/permissions-page.js"></script>
 
 </body>
 </html>

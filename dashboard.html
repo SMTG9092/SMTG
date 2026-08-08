@@ -475,17 +475,42 @@
     document.addEventListener('DOMContentLoaded', initHeaderClock);
 </script>
 
-<!-- SIDEBAR FILTER SCRIPT -->
-<script>
+<!-- SIDEBAR FILTER SCRIPT WITH PERMISSIONS INTEGRATION -->
+<script type="module">
+    import { canPage } from './assets/js/core/permissions.js';
+
     document.addEventListener('DOMContentLoaded', () => {
         const searchInput = document.getElementById('sidebarSearchInput');
         const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
+
+        function applySidebarPermissions() {
+            const roleCode = (window.currentUserRoleCode || '').trim().toUpperCase();
+            
+            navLinks.forEach(link => {
+                const pageFile = link.getAttribute('data-page');
+                if (pageFile) {
+                    const cleanName = pageFile.split('/').pop().replace('.html', '');
+                    
+                    if (roleCode !== 'ADMIN' && !canPage(cleanName)) {
+                        link.style.display = 'none';
+                        link.classList.add('permission-hidden');
+                    } else {
+                        link.style.display = 'flex';
+                        link.classList.remove('permission-hidden');
+                    }
+                }
+            });
+        }
+
+        setTimeout(applySidebarPermissions, 600);
 
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 const term = e.target.value.toLowerCase().trim();
 
                 navLinks.forEach(link => {
+                    if (link.classList.contains('permission-hidden')) return;
+
                     const text = link.textContent.toLowerCase();
                     if (text.includes(term)) {
                         link.style.display = 'flex';

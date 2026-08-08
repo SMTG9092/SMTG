@@ -335,7 +335,7 @@
             </div>
 
             <nav class="sidebar-nav">
-                <!-- RECHERCHE GLOBALE FI L-FA9 (FILTRAGE 9AIMA) -->
+                <!-- RECHERCHE GLOBALE -->
                 <div style="padding: 6px 10px 10px 10px;">
                     <div style="position: relative;">
                         <i class="fas fa-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 11px;"></i>
@@ -402,7 +402,7 @@
     <!-- MAIN WRAPPER -->
     <main class="main">
         <div>
-            <!-- TOP NAVBAR (WITHOUT SEARCH BAR) -->
+            <!-- TOP NAVBAR -->
             <header class="top-navbar">
                 <div id="liveClockContainer" style="display: flex; align-items: center; gap: 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); padding: 6px 14px; border-radius: 30px; font-size: 12px; color: #94a3b8;">
                     <div style="display: flex; align-items: center; gap: 6px;">
@@ -538,7 +538,6 @@
                     }
                 });
 
-                // Hide section titles if all items underneath are hidden or if searching
                 sectionTitles.forEach(title => {
                     if (term === '') {
                         title.style.display = 'block';
@@ -569,9 +568,9 @@
     window.supabase = supabase;
 </script>
 
-<!-- PROFILE & CENTRALIZED PERMISSIONS INTEGRATION -->
+<!-- PROFILE & ROLES ROBUST INTEGRATION -->
 <script type="module">
-    import { applySidebarPermissions, applyDeletePermissionsUI, canAccessPage } from './assets/js/core/permissions.js';
+    import { applySidebarPermissions, applyDeletePermissionsUI } from './assets/js/core/permissions.js';
 
     document.addEventListener('DOMContentLoaded', async () => {
         setTimeout(async () => {
@@ -588,47 +587,44 @@
                 const userId = session.user.id;
 
                 let profile = null;
-                const res1 = await window.supabase
+                let res = await window.supabase
                     .from('user_profiles')
-                    .select(`*, roles (id, code, nom)`)
+                    .select('*')
                     .eq('id', userId)
                     .maybeSingle();
 
-                if (res1.data) {
-                    profile = res1.data;
-                } else {
-                    const res2 = await window.supabase
+                if (!res.data) {
+                    res = await window.supabase
                         .from('user_profiles')
-                        .select(`*, roles (id, code, nom)`)
+                        .select('*')
                         .eq('user_id', userId)
                         .maybeSingle();
-                    if (res2.data) profile = res2.data;
                 }
 
+                profile = res.data;
                 if (!profile) return;
+
+                let roleCode = 'ADMIN';
+                let displayRole = 'Administrateur';
+
+                if (profile.role_id) {
+                    const roleRes = await window.supabase
+                        .from('roles')
+                        .select('code, nom')
+                        .eq('id', profile.role_id)
+                        .maybeSingle();
+
+                    if (roleRes.data) {
+                        roleCode = roleRes.data.code ? roleRes.data.code.trim().toUpperCase() : 'ADMIN';
+                        displayRole = roleRes.data.nom || displayRole;
+                    }
+                }
 
                 const displayName = profile.nom_complet || 
                                     `${profile.prenom || ''} ${profile.nom || ''}`.trim() || 
                                     profile.full_name || 
                                     profile.username || 
                                     'Utilisateur';
-
-                let displayRole = 'Collaborateur';
-                let roleCode = 'COLLABORATEUR';
-                
-                if (profile.roles && profile.roles.code) {
-                    displayRole = profile.roles.nom;
-                    roleCode = profile.roles.code;
-                } else if (profile.role_id === 1) {
-                    displayRole = 'Administrateur';
-                    roleCode = 'ADMIN';
-                } else if (profile.role_id === 2) {
-                    displayRole = 'Gestion Stock';
-                    roleCode = 'GESTION_STOCK';
-                } else if (profile.role_id === 3) {
-                    displayRole = 'Préparateur';
-                    roleCode = 'PREPARATEUR';
-                }
 
                 if (fullNameEl) fullNameEl.textContent = displayName;
                 if (roleEl) roleEl.textContent = displayRole;
@@ -656,7 +652,7 @@
     });
 </script>
 
-<!-- SPA ROUTER & CENTRALIZED PERMISSIONS GUARD -->
+<!-- SPA ROUTER & PERMISSIONS GUARD -->
 <script type="module">
     import { canAccessPage, applyDeletePermissionsUI } from './assets/js/core/permissions.js';
 
@@ -721,7 +717,7 @@
         });
 
         setTimeout(async () => {
-            let defaultPage = 'dashboard/dashboard-stock.html';
+            let defaultPage = 'dashboard/dashboard-admin.html';
 
             try {
                 if (window.supabase) {
@@ -730,20 +726,24 @@
                         const userId = session.user.id;
                         const { data: profile } = await window.supabase
                             .from('user_profiles')
-                            .select('*, roles(code, nom)')
+                            .select('*')
                             .eq('id', userId)
-                            .maybeSingle() || await window.supabase
-                            .from('user_profiles')
-                            .select('*, roles(code, nom)')
-                            .eq('user_id', userId)
                             .maybeSingle();
 
-                        if (profile) {
-                            const roleCode = (profile.roles?.code || '').trim().toUpperCase();
-                            if (roleCode === 'ADMIN' || profile.role_id === 1) {
-                                defaultPage = 'dashboard/dashboard-admin.html';
-                            } else {
-                                defaultPage = 'dashboard/dashboard-stock.html';
+                        if (profile && profile.role_id) {
+                            const { data: roleData } = await window.supabase
+                                .from('roles')
+                                .select('code')
+                                .eq('id', profile.role_id)
+                                .maybeSingle();
+
+                            if (roleData) {
+                                const roleCode = (roleData.code || '').trim().toUpperCase();
+                                if (roleCode === 'ADMIN') {
+                                    defaultPage = 'dashboard/dashboard-admin.html';
+                                } else {
+                                    defaultPage = 'dashboard/dashboard-stock.html';
+                                }
                             }
                         }
                     }

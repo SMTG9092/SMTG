@@ -119,6 +119,7 @@
             letter-spacing: 1px;
             margin: 12px 0 6px 10px;
             font-weight: 700;
+            display: block !important;
         }
 
         .nav-link {
@@ -518,7 +519,7 @@
     });
 </script>
 
-<!-- SIDEBAR FILTER SCRIPT (UPDATED TO KEEP SECTION TITLES VISIBLE) -->
+<!-- SIDEBAR FILTER SCRIPT (KEEP SECTION TITLES VISIBLE) -->
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const searchInput = document.getElementById('sidebarSearchInput');
@@ -538,7 +539,6 @@
                     }
                 });
 
-                // تأكيد بقاء العناوين دائماً ظاهرة لكي تظل القائمة منظمة وثابتة
                 sectionTitles.forEach(title => {
                     title.style.display = 'block';
                 });
@@ -559,79 +559,77 @@
 <!-- PROFILE & ROLES ROBUST INTEGRATION -->
 <script type="module">
     document.addEventListener('DOMContentLoaded', async () => {
-        setTimeout(async () => {
-            const fullNameEl = document.getElementById('userFullName');
-            const roleEl = document.getElementById('userRoleName');
-            const avatarEl = document.getElementById('userAvatarInitials');
+        const fullNameEl = document.getElementById('userFullName');
+        const roleEl = document.getElementById('userRoleName');
+        const avatarEl = document.getElementById('userAvatarInitials');
 
-            if (!window.supabase) return;
+        if (!window.supabase) return;
 
-            try {
-                const { data: { session }, error: sessionError } = await window.supabase.auth.getSession();
-                if (sessionError || !session || !session.user) return;
+        try {
+            const { data: { session }, error: sessionError } = await window.supabase.auth.getSession();
+            if (sessionError || !session || !session.user) return;
 
-                const userId = session.user.id;
+            const userId = session.user.id;
 
-                let profile = null;
-                let res = await window.supabase
+            let profile = null;
+            let res = await window.supabase
+                .from('user_profiles')
+                .select('*')
+                .eq('id', userId)
+                .maybeSingle();
+
+            if (!res.data) {
+                res = await window.supabase
                     .from('user_profiles')
                     .select('*')
-                    .eq('id', userId)
+                    .eq('user_id', userId)
+                    .maybeSingle();
+            }
+
+            profile = res.data;
+            if (!profile) return;
+
+            let roleCode = 'ADMIN';
+            let displayRole = 'Administrateur';
+
+            if (profile.role_id) {
+                const roleRes = await window.supabase
+                    .from('roles')
+                    .select('code, nom')
+                    .eq('id', profile.role_id)
                     .maybeSingle();
 
-                if (!res.data) {
-                    res = await window.supabase
-                        .from('user_profiles')
-                        .select('*')
-                        .eq('user_id', userId)
-                        .maybeSingle();
+                if (roleRes.data) {
+                    roleCode = roleRes.data.code ? roleRes.data.code.trim().toUpperCase() : 'ADMIN';
+                    displayRole = roleRes.data.nom || displayRole;
                 }
-
-                profile = res.data;
-                if (!profile) return;
-
-                let roleCode = 'ADMIN';
-                let displayRole = 'Administrateur';
-
-                if (profile.role_id) {
-                    const roleRes = await window.supabase
-                        .from('roles')
-                        .select('code, nom')
-                        .eq('id', profile.role_id)
-                        .maybeSingle();
-
-                    if (roleRes.data) {
-                        roleCode = roleRes.data.code ? roleRes.data.code.trim().toUpperCase() : 'ADMIN';
-                        displayRole = roleRes.data.nom || displayRole;
-                    }
-                }
-
-                const displayName = profile.nom_complet || 
-                                    `${profile.prenom || ''} ${profile.nom || ''}`.trim() || 
-                                    profile.full_name || 
-                                    profile.username || 
-                                    'Utilisateur';
-
-                if (fullNameEl) fullNameEl.textContent = displayName;
-                if (roleEl) roleEl.textContent = displayRole;
-
-                window.currentUserRoleCode = roleCode;
-
-                if (avatarEl) {
-                    const initials = displayName
-                        .split(' ')
-                        .filter(Boolean)
-                        .map(n => n[0])
-                        .join('')
-                        .toUpperCase()
-                        .substring(0, 2);
-                    avatarEl.textContent = initials || 'SM';
-                }
-
-            } catch (err) {
-                console.error("Erreur chargement profil & rôle:", err);
             }
-        }, 300);
+
+            const displayName = profile.nom_complet || 
+                                `${profile.prenom || ''} ${profile.nom || ''}`.trim() || 
+                                profile.full_name || 
+                                profile.username || 
+                                'Utilisateur';
+
+            if (fullNameEl) fullNameEl.textContent = displayName;
+            if (roleEl) roleEl.textContent = displayRole;
+
+            window.currentUserRoleCode = roleCode;
+
+            if (avatarEl) {
+                const initials = displayName
+                    .split(' ')
+                    .filter(Boolean)
+                    .map(n => n[0])
+                    .join('')
+                    .toUpperCase()
+                    .substring(0, 2);
+                avatarEl.textContent = initials || 'SM';
+            }
+
+        } catch (err) {
+            console.error("Erreur chargement profil & rôle:", err);
+        }
     });
 </script>
 
@@ -703,6 +701,7 @@
             });
         });
 
+        // تحميل الصفحة الافتراضية فوراً بعد التأكد من جاهزية الجلسة والصلاحيات
         setTimeout(async () => {
             let defaultPage = 'dashboard/dashboard-admin.html';
             const targetLink = document.querySelector(`.sidebar-nav .nav-link[data-page="${defaultPage}"]`) || 
@@ -710,7 +709,7 @@
             if (targetLink) {
                 loadPage(targetLink.getAttribute('data-page'), targetLink);
             }
-        }, 400);
+        }, 350);
     });
 </script>
 

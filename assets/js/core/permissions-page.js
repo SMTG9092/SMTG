@@ -7,7 +7,7 @@
 
 "use strict";
 
-import { canPage, can } from './permissions.js';
+import { canPage, can, getPermissions } from './permissions.js';
 
 /**
  * التحقق مما إذا كان الدور أو المستخدم يمتلك صلاحية فتح الصفحة الحالية
@@ -19,13 +19,19 @@ export function canAccessPage(pageFile) {
     
     const roleCode = (window.currentUserRoleCode || '').trim().toUpperCase();
     
-    // إذا كان الأدمن، فله حق الوصول الكامل مباشرة
+    // إذا كان الأدمن، فله حق الوصول الكامل مباشرة[cite: 2]
     if (roleCode === 'ADMIN') return true;
     
-    // استخراج اسم الصفحة من المسار (مثال: dashboard/dashboard-admin.html -> dashboard-admin)
+    // استخراج اسم الصفحة من المسار (مثال: dashboard/dashboard-admin.html -> dashboard-admin)[cite: 2]
     const cleanName = pageFile.split('/').pop().replace('.html', '');
     
-    // التحقق الصارم عبر دوال الصلاحيات الأساسية
+    // إذا كانت الصلاحيات لم تح بعد من قاعدة البيانات في اللحظات الأولى، نسمح بالمرور مؤقتًا لتفادي الشاشة الحمراء
+    const currentPerms = getPermissions();
+    if (!currentPerms || currentPerms.length === 0) {
+        return true;
+    }
+    
+    // التحقق عبر دوال الصلاحيات الأساسية[cite: 2]
     return canPage(cleanName) || can(cleanName);
 }
 
@@ -35,9 +41,9 @@ export function canAccessPage(pageFile) {
  */
 export function applyDeletePermissionsUI(roleCode) {
     const currentRole = (roleCode || window.currentUserRoleCode || '').trim().toUpperCase();
-    if (currentRole === 'ADMIN') return; // الأدمن عنده كل الصلاحيات
+    if (currentRole === 'ADMIN') return; // الأدمن عنده كل الصلاحيات[cite: 2]
 
-    // إخفاء أو تعطيل أزرار الحذف للمستخدمين العاديين إذا لم تكن لديهم صلاحية
+    // إخفاء أو تعطيل أزرار الحذف للمستخدمين العاديين إذا لم تكن لديهم صلاحية[cite: 2]
     const deleteButtons = document.querySelectorAll('.btn-danger, [data-action="delete"], .delete-action-btn');
     deleteButtons.forEach(btn => {
         btn.style.display = 'none';

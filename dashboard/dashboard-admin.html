@@ -5,137 +5,407 @@
     <title>Dashboard Admin - SMTG</title>
 </head>
 <body>
-<main style="width: 100%; box-sizing: border-box;">
+<main style="width: 100%; box-sizing: border-box; font-family: 'Inter', sans-serif;">
     <!-- PAGE HEADER -->
-    <div style="margin-bottom: 20px;">
-        <h1 style="font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 4px 0;">Tableau de bord Administrateur</h1>
-        <p style="font-size: 11px; color: #8a99ad; margin: 0;">Accueil &bull; Tableau de bord &bull; Admin</p>
-    </div>
-
-    <!-- STATS CARDS (USERS) -->
-    <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 15px;">
-        <!-- Card 1 -->
-        <div style="flex: 1; min-width: 160px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Utilisateurs Totals</span>
-                <div style="width: 28px; height: 28px; border-radius: 6px; background: #10b981; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px;"><i class="fas fa-users"></i></div>
-            </div>
-            <div style="font-size: 20px; font-weight: 700; color: #fff;" id="totalUsersVal">--</div>
-            <div style="font-size: 9px; color: #10b981; margin-top: 4px;"><i class="fas fa-check-circle"></i> Enregistrés</div>
+    <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 style="font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 4px 0;">Tableau de bord Administrateur</h1>
+            <p style="font-size: 11px; color: #8a99ad; margin: 0;">Accueil &bull; Tableau de bord &bull; Administration générale SMTG</p>
         </div>
-
-        <!-- Card 2 -->
-        <div style="flex: 1; min-width: 160px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Actifs</span>
-                <div style="width: 28px; height: 28px; border-radius: 6px; background: #3b82f6; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px;"><i class="fas fa-user-check"></i></div>
-            </div>
-            <div style="font-size: 20px; font-weight: 700; color: #fff;" id="activeUsersVal">--</div>
-            <div style="font-size: 9px; color: #3b82f6; margin-top: 4px;"><i class="fas fa-arrow-up"></i> Actif (true)</div>
-        </div>
-
-        <!-- Card 3 -->
-        <div style="flex: 1; min-width: 160px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Inactifs</span>
-                <div style="width: 28px; height: 28px; border-radius: 6px; background: #f59e0b; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px;"><i class="fas fa-user-slash"></i></div>
-            </div>
-            <div style="font-size: 20px; font-weight: 700; color: #fff;" id="inactiveUsersVal">--</div>
-            <div style="font-size: 9px; color: #f59e0b; margin-top: 4px;"><i class="fas fa-ban"></i> Désactivés</div>
-        </div>
-
-        <!-- Card Stock Total -->
-        <div style="flex: 1; min-width: 160px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Stock total</span>
-                <div style="width: 28px; height: 28px; border-radius: 6px; background: #06b6d4; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px;"><i class="fas fa-boxes"></i></div>
-            </div>
-            <div style="font-size: 20px; font-weight: 700; color: #fff;">1 248.75</div>
-            <div style="font-size: 9px; color: #10b981; margin-top: 4px;"><i class="fas fa-arrow-up"></i> +3.2% vs hier</div>
-        </div>
-
-        <!-- Card Alertes -->
-        <div style="flex: 1; min-width: 160px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Alertes</span>
-                <div style="width: 28px; height: 28px; border-radius: 6px; background: #ef4444; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px;"><i class="fas fa-exclamation-triangle"></i></div>
-            </div>
-            <div style="font-size: 20px; font-weight: 700; color: #ef4444;">14</div>
-            <div style="font-size: 9px; color: #ef4444; margin-top: 4px;"><i class="fas fa-arrow-up"></i> 2 nouvelles</div>
+        <div style="display: flex; gap: 8px;">
+            <button style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #10b981; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-sync-alt"></i> Actualiser
+            </button>
         </div>
     </div>
 
-    <!-- STATS CARDS (PAGES - TABLE PAGES) -->
-    <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
-        <!-- Pages Totals -->
-        <div style="flex: 1; min-width: 160px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
+    <!-- TOP STATS GRID (6 CARDS) -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px;">
+        <!-- Utilisateurs -->
+        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Pages Totals</span>
-                <div style="width: 28px; height: 28px; border-radius: 6px; background: #8b5cf6; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px;"><i class="fas fa-file-alt"></i></div>
+                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Utilisateurs</span>
+                <div style="width: 28px; height: 28px; border-radius: 6px; background: rgba(16,185,129,0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 11px;"><i class="fas fa-users"></i></div>
             </div>
-            <div style="font-size: 20px; font-weight: 700; color: #fff;" id="totalPagesVal">--</div>
-            <div style="font-size: 9px; color: #8b5cf6; margin-top: 4px;"><i class="fas fa-database"></i> Table pages</div>
+            <div style="font-size: 20px; font-weight: 700; color: #fff;" id="totalUsersVal">24</div>
+            <div style="font-size: 9px; color: #8a99ad; margin-top: 4px;">Total utilisateurs <span style="color: #10b981; font-weight: 600;">↑ 2 ce mois-ci</span></div>
         </div>
 
-        <!-- Pages Actives -->
-        <div style="flex: 1; min-width: 160px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
+        <!-- Rôles -->
+        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Pages Actives</span>
-                <div style="width: 28px; height: 28px; border-radius: 6px; background: #10b981; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px;"><i class="fas fa-check"></i></div>
+                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Rôles</span>
+                <div style="width: 28px; height: 28px; border-radius: 6px; background: rgba(16,185,129,0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 11px;"><i class="fas fa-shield-alt"></i></div>
             </div>
-            <div style="font-size: 20px; font-weight: 700; color: #fff;" id="activePagesVal">--</div>
-            <div style="font-size: 9px; color: #10b981; margin-top: 4px;"><i class="fas fa-arrow-up"></i> Actif (true)</div>
+            <div style="font-size: 20px; font-weight: 700; color: #fff;" id="totalRolesVal">6</div>
+            <div style="font-size: 9px; color: #8a99ad; margin-top: 4px;">Total rôles <span style="color: #8a99ad; font-weight: 600;">↑ 0 ce mois-ci</span></div>
         </div>
 
-        <!-- Pages Inactives -->
-        <div style="flex: 1; min-width: 160px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
+        <!-- Pages -->
+        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Pages Inactives</span>
-                <div style="width: 28px; height: 28px; border-radius: 6px; background: #ef4444; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px;"><i class="fas fa-times"></i></div>
+                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Pages</span>
+                <div style="width: 28px; height: 28px; border-radius: 6px; background: rgba(16,185,129,0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 11px;"><i class="fas fa-file-alt"></i></div>
             </div>
-            <div style="font-size: 20px; font-weight: 700; color: #fff;" id="inactivePagesVal">--</div>
-            <div style="font-size: 9px; color: #ef4444; margin-top: 4px;"><i class="fas fa-ban"></i> Désactivées</div>
+            <div style="font-size: 20px; font-weight: 700; color: #fff;" id="totalPagesVal">42</div>
+            <div style="font-size: 9px; color: #8a99ad; margin-top: 4px;">Pages disponibles <span style="color: #10b981; font-weight: 600;">↑ 5 ce mois-ci</span></div>
+        </div>
+
+        <!-- Modules -->
+        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Modules</span>
+                <div style="width: 28px; height: 28px; border-radius: 6px; background: rgba(16,185,129,0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 11px;"><i class="fas fa-cubes"></i></div>
+            </div>
+            <div style="font-size: 20px; font-weight: 700; color: #fff;" id="totalModulesVal">12</div>
+            <div style="font-size: 9px; color: #8a99ad; margin-top: 4px;">Modules système <span style="color: #10b981; font-weight: 600;">↑ 1 ce mois-ci</span></div>
+        </div>
+
+        <!-- Permissions -->
+        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Permissions</span>
+                <div style="width: 28px; height: 28px; border-radius: 6px; background: rgba(16,185,129,0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 11px;"><i class="fas fa-lock"></i></div>
+            </div>
+            <div style="font-size: 20px; font-weight: 700; color: #fff;" id="totalPermissionsVal">128</div>
+            <div style="font-size: 9px; color: #8a99ad; margin-top: 4px;">Total permissions <span style="color: #10b981; font-weight: 600;">↑ 8 ce mois-ci</span></div>
+        </div>
+
+        <!-- Connexions aujourd'hui -->
+        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Connexions</span>
+                <div style="width: 28px; height: 28px; border-radius: 6px; background: rgba(16,185,129,0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 11px;"><i class="fas fa-heartbeat"></i></div>
+            </div>
+            <div style="font-size: 20px; font-weight: 700; color: #fff;">37</div>
+            <div style="font-size: 9px; color: #10b981; margin-top: 4px;"><i class="fas fa-arrow-up"></i> +15.8% vs hier</div>
         </div>
     </div>
 
-    <!-- ROW 1 (Charts & List) -->
-    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-        <!-- Card Donut -->
-        <div style="flex: 1; min-width: 280px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Stock par emplacement</h3>
-                <span style="font-size: 9px; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; color: #8a99ad;">KG / Pièce</span>
+    <!-- MIDDLE ROW: DONUT, LINE CHART, LAST LOGINS -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-bottom: 15px;">
+        <!-- Donut: Utilisateurs par rôle -->
+        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Utilisateurs par rôle</h3>
             </div>
-            <div style="height: 150px; position: relative;">
-                <canvas id="stockEmplacementDonut"></canvas>
+            <div style="display: flex; align-items: center; justify-content: space-around; height: 180px;">
+                <div style="width: 140px; height: 140px; position: relative;">
+                    <canvas id="stockEmplacementDonut"></canvas>
+                </div>
+                <div style="font-size: 10px; display: flex; flex-direction: column; gap: 6px;">
+                    <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span><span style="color: #8a99ad;">Administrateurs</span> <strong style="color:#fff;">4 (16.7%)</strong></div>
+                    <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #3b82f6;"></span><span style="color: #8a99ad;">Gestionnaires</span> <strong style="color:#fff;">6 (25.0%)</strong></div>
+                    <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span><span style="color: #8a99ad;">Opérateurs</span> <strong style="color:#fff;">10 (41.7%)</strong></div>
+                    <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #8b5cf6;"></span><span style="color: #8a99ad;">Consultation</span> <strong style="color:#fff;">3 (12.5%)</strong></div>
+                    <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #06b6d4;"></span><span style="color: #8a99ad;">Autres</span> <strong style="color:#fff;">1 (4.1%)</strong></div>
+                </div>
             </div>
         </div>
 
-        <!-- Card Line Chart -->
-        <div style="flex: 1.5; min-width: 300px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Mouvements (7 derniers jours)</h3>
+        <!-- Line Chart: Activité des connexions -->
+        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Activité des connexions (7 derniers jours)</h3>
+                <span style="font-size: 9px; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; color: #8a99ad;">Sessions <i class="fas fa-chevron-down" style="font-size: 8px;"></i></span>
             </div>
-            <div style="height: 150px; position: relative;">
+            <div style="height: 180px; position: relative;">
                 <canvas id="mouvements7DaysChart"></canvas>
             </div>
         </div>
 
-        <!-- Card Users List -->
-        <div style="flex: 1; min-width: 280px; background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Liste des Utilisateurs</h3>
-                <span style="font-size: 9px; color: #8a99ad;" id="userListCount">0 membres</span>
+        <!-- Dernières connexions -->
+        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Dernières connexions</h3>
+                <a href="#" style="font-size: 9px; color: #10b981; text-decoration: none;">Voir tout</a>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 6px; max-height: 150px; overflow-y: auto;" id="usersListContainer">
-                <!-- Loading state -->
-                <div style="font-size: 11px; color: #8a99ad; text-align: center; padding: 20px;">Chargement...</div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 6px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 26px; height: 26px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #000;">YS</div>
+                        <div>
+                            <div style="font-size: 11px; color: #fff; font-weight: 600;">Yahya Soufiane <span style="font-size: 8px; background: rgba(16,185,129,0.2); color: #10b981; padding: 1px 4px; border-radius: 3px;">Administrateur</span></div>
+                            <div style="font-size: 9px; color: #8a99ad;">192.168.1.10 &bull; Chrome / Windows</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right; font-size: 10px; color: #fff;">08:42:15<br><span style="font-size: 8px; color: #8a99ad;">Aujourd'hui</span></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 6px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 26px; height: 26px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff;">HA</div>
+                        <div>
+                            <div style="font-size: 11px; color: #fff; font-weight: 600;">Hicham A. <span style="font-size: 8px; background: rgba(59,130,246,0.2); color: #3b82f6; padding: 1px 4px; border-radius: 3px;">Gestionnaire</span></div>
+                            <div style="font-size: 9px; color: #8a99ad;">192.168.1.15 &bull; Firefox / Windows</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right; font-size: 10px; color: #fff;">08:31:47<br><span style="font-size: 8px; color: #8a99ad;">Aujourd'hui</span></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 6px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 26px; height: 26px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff;">MB</div>
+                        <div>
+                            <div style="font-size: 11px; color: #fff; font-weight: 600;">Mohamed B. <span style="font-size: 8px; background: rgba(59,130,246,0.2); color: #3b82f6; padding: 1px 4px; border-radius: 3px;">Gestionnaire</span></div>
+                            <div style="font-size: 9px; color: #8a99ad;">192.168.1.22 &bull; Chrome / Windows</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right; font-size: 10px; color: #fff;">08:21:03<br><span style="font-size: 8px; color: #8a99ad;">Aujourd'hui</span></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 6px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 26px; height: 26px; background: #f59e0b; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #000;">SA</div>
+                        <div>
+                            <div style="font-size: 11px; color: #fff; font-weight: 600;">Souad A. <span style="font-size: 8px; background: rgba(245,158,11,0.2); color: #f59e0b; padding: 1px 4px; border-radius: 3px;">Opérateur</span></div>
+                            <div style="font-size: 9px; color: #8a99ad;">192.168.1.35 &bull; Chrome / Android</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right; font-size: 10px; color: #fff;">08:12:44<br><span style="font-size: 8px; color: #8a99ad;">Aujourd'hui</span></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 26px; height: 26px; background: #8b5cf6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff;">YA</div>
+                        <div>
+                            <div style="font-size: 11px; color: #fff; font-weight: 600;">Youssef A. <span style="font-size: 8px; background: rgba(139,92,246,0.2); color: #8b5cf6; padding: 1px 4px; border-radius: 3px;">Consultation</span></div>
+                            <div style="font-size: 9px; color: #8a99ad;">192.168.1.42 &bull; Edge / Windows</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right; font-size: 10px; color: #fff;">07:58:31<br><span style="font-size: 8px; color: #8a99ad;">Aujourd'hui</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- THIRD ROW: PAGES, MODULES, SYSTEM INFO -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-bottom: 15px;">
+        <!-- Pages les plus utilisées -->
+        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Pages les plus utilisées</h3>
+                <a href="#" style="font-size: 9px; color: #10b981; text-decoration: none;">Voir tout</a>
+            </div>
+            <table style="width: 100%; font-size: 10px; border-collapse: collapse; color: #8a99ad;">
+                <thead>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); text-align: left;">
+                        <th style="padding: 4px; color: #fff;">Page</th>
+                        <th style="padding: 4px; color: #fff; text-align: right;">Vues</th>
+                        <th style="padding: 4px; color: #fff; text-align: right;">Utilisateurs</th>
+                        <th style="padding: 4px; color: #fff; text-align: right;">Taux</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                        <td style="padding: 6px 4px; color: #fff;">Tableau de bord</td>
+                        <td style="padding: 6px 4px; text-align: right;">1,248</td>
+                        <td style="padding: 6px 4px; text-align: right;">24</td>
+                        <td style="padding: 6px 4px; text-align: right;"><span style="color: #10b981;">100%</span></td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                        <td style="padding: 6px 4px; color: #fff;">Stock par emplacement</td>
+                        <td style="padding: 6px 4px; text-align: right;">856</td>
+                        <td style="padding: 6px 4px; text-align: right;">18</td>
+                        <td style="padding: 6px 4px; text-align: right;">75%</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                        <td style="padding: 6px 4px; color: #fff;">Mouvements de stock</td>
+                        <td style="padding: 6px 4px; text-align: right;">674</td>
+                        <td style="padding: 6px 4px; text-align: right;">16</td>
+                        <td style="padding: 6px 4px; text-align: right;">66%</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                        <td style="padding: 6px 4px; color: #fff;">Commandes (KG)</td>
+                        <td style="padding: 6px 4px; text-align: right;">512</td>
+                        <td style="padding: 6px 4px; text-align: right;">14</td>
+                        <td style="padding: 6px 4px; text-align: right;">58%</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 6px 4px; color: #fff;">Expéditions</td>
+                        <td style="padding: 6px 4px; text-align: right;">398</td>
+                        <td style="padding: 6px 4px; text-align: right;">12</td>
+                        <td style="padding: 6px 4px; text-align: right;">50%</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Modules du système -->
+        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Modules du système</h3>
+                <a href="#" style="font-size: 9px; color: #10b981; text-decoration: none;">Voir tout</a>
+            </div>
+            <table style="width: 100%; font-size: 10px; border-collapse: collapse; color: #8a99ad;">
+                <thead>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); text-align: left;">
+                        <th style="padding: 4px; color: #fff;">Module</th>
+                        <th style="padding: 4px; color: #fff; text-align: center;">Pages</th>
+                        <th style="padding: 4px; color: #fff; text-align: center;">Statut</th>
+                        <th style="padding: 4px; color: #fff; text-align: right;">Activité</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                        <td style="padding: 6px 4px; color: #fff;"><i class="fas fa-boxes" style="color: #10b981; margin-right: 4px;"></i> Gestion des stocks</td>
+                        <td style="padding: 6px 4px; text-align: center;">12</td>
+                        <td style="padding: 6px 4px; text-align: center;"><span style="background: rgba(16,185,129,0.15); color: #10b981; padding: 2px 6px; border-radius: 4px;">Actif</span></td>
+                        <td style="padding: 6px 4px; text-align: right;">Aujourd'hui 08:40</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                        <td style="padding: 6px 4px; color: #fff;"><i class="fas fa-industry" style="color: #3b82f6; margin-right: 4px;"></i> Production</td>
+                        <td style="padding: 6px 4px; text-align: center;">8</td>
+                        <td style="padding: 6px 4px; text-align: center;"><span style="background: rgba(16,185,129,0.15); color: #10b981; padding: 2px 6px; border-radius: 4px;">Actif</span></td>
+                        <td style="padding: 6px 4px; text-align: right;">Aujourd'hui 08:35</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                        <td style="padding: 6px 4px; color: #fff;"><i class="fas fa-truck" style="color: #f59e0b; margin-right: 4px;"></i> Expéditions</td>
+                        <td style="padding: 6px 4px; text-align: center;">6</td>
+                        <td style="padding: 6px 4px; text-align: center;"><span style="background: rgba(16,185,129,0.15); color: #10b981; padding: 2px 6px; border-radius: 4px;">Actif</span></td>
+                        <td style="padding: 6px 4px; text-align: right;">Aujourd'hui 08:30</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                        <td style="padding: 6px 4px; color: #fff;"><i class="fas fa-shield-alt" style="color: #8b5cf6; margin-right: 4px;"></i> Qualité</td>
+                        <td style="padding: 6px 4px; text-align: center;">5</td>
+                        <td style="padding: 6px 4px; text-align: center;"><span style="background: rgba(16,185,129,0.15); color: #10b981; padding: 2px 6px; border-radius: 4px;">Actif</span></td>
+                        <td style="padding: 6px 4px; text-align: right;">Aujourd'hui 08:25</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 6px 4px; color: #fff;"><i class="fas fa-cogs" style="color: #06b6d4; margin-right: 4px;"></i> Administration</td>
+                        <td style="padding: 6px 4px; text-align: center;">7</td>
+                        <td style="padding: 6px 4px; text-align: center;"><span style="background: rgba(16,185,129,0.15); color: #10b981; padding: 2px 6px; border-radius: 4px;">Actif</span></td>
+                        <td style="padding: 6px 4px; text-align: right;">Aujourd'hui 08:15</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Informations système -->
+        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Informations système</h3>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 10px; color: #8a99ad;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 5px;">
+                    <span><i class="fas fa-code-branch" style="color: #10b981; margin-right: 4px;"></i> Version de l'application</span>
+                    <strong style="color: #fff;">2.0.0</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 5px;">
+                    <span><i class="fas fa-server" style="color: #3b82f6; margin-right: 4px;"></i> Environnement</span>
+                    <strong style="color: #fff;">Production</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 5px;">
+                    <span><i class="fas fa-database" style="color: #f59e0b; margin-right: 4px;"></i> Base de données</span>
+                    <strong style="color: #fff;">PostgreSQL</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 5px;">
+                    <span><i class="fas fa-hdd" style="color: #8b5cf6; margin-right: 4px;"></i> Espace disque utilisé</span>
+                    <strong style="color: #fff;">128.7 GB / 500 GB</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 5px;">
+                    <span><i class="fas fa-memory" style="color: #06b6d4; margin-right: 4px;"></i> Mémoire utilisée</span>
+                    <strong style="color: #fff;">2.4 GB / 8 GB</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 5px;">
+                    <span><i class="fas fa-clock" style="color: #10b981; margin-right: 4px;"></i> Uptime du serveur</span>
+                    <strong style="color: #fff;">15 jours, 6 heures</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span><i class="fas fa-shield-alt" style="color: #10b981; margin-right: 4px;"></i> Dernière sauvegarde</span>
+                    <strong style="color: #10b981;">20 Mai 2026 à 02:15 (Succès)</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOURTH ROW: JOURNAUX, ACTIONS RAPIDES, RÉSUMÉ UTILISATEUR -->
+    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px; flex-wrap: wrap;">
+        <!-- Journaux système récents -->
+        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Journaux système récents</h3>
+                <a href="#" style="font-size: 9px; color: #10b981; text-decoration: none;">Voir tout</a>
+            </div>
+            <table style="width: 100%; font-size: 9px; border-collapse: collapse; color: #8a99ad;">
+                <thead>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); text-align: left;">
+                        <th style="padding: 4px; color: #fff;">Niveau</th>
+                        <th style="padding: 4px; color: #fff;">Message</th>
+                        <th style="padding: 4px; color: #fff;">Utilisateur</th>
+                        <th style="padding: 4px; color: #fff;">Date & Heure</th>
+                        <th style="padding: 4px; color: #fff; text-align: right;">IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                        <td style="padding: 5px 4px;"><span style="color: #10b981; font-weight: 700;">INFO</span></td>
+                        <td style="padding: 5px 4px; color: #fff;">Connexion utilisateur réussie</td>
+                        <td style="padding: 5px 4px;">Yahya Soufiane</td>
+                        <td style="padding: 5px 4px;">20/05/2026 08:42:15</td>
+                        <td style="padding: 5px 4px; text-align: right;">192.168.1.10</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                        <td style="padding: 5px 4px;"><span style="color: #10b981; font-weight: 700;">INFO</span></td>
+                        <td style="padding: 5px 4px; color: #fff;">Export rapport stock</td>
+                        <td style="padding: 5px 4px;">Hicham A.</td>
+                        <td style="padding: 5px 4px;">20/05/2026 08:31:22</td>
+                        <td style="padding: 5px 4px; text-align: right;">192.168.1.15</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                        <td style="padding: 5px 4px;"><span style="color: #f59e0b; font-weight: 700;">WARN</span></td>
+                        <td style="padding: 5px 4px; color: #fff;">Tentative d'accès page non autorisée</td>
+                        <td style="padding: 5px 4px;">Mohamed B.</td>
+                        <td style="padding: 5px 4px;">20/05/2026 08:21:03</td>
+                        <td style="padding: 5px 4px; text-align: right;">192.168.1.22</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                        <td style="padding: 5px 4px;"><span style="color: #ef4444; font-weight: 700;">ERROR</span></td>
+                        <td style="padding: 5px 4px; color: #fff;">Échec de connexion</td>
+                        <td style="padding: 5px 4px;">Inconnu</td>
+                        <td style="padding: 5px 4px;">20/05/2026 07:58:11</td>
+                        <td style="padding: 5px 4px; text-align: right;">192.168.1.99</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 5px 4px;"><span style="color: #10b981; font-weight: 700;">INFO</span></td>
+                        <td style="padding: 5px 4px; color: #fff;">Mise à jour des données stock</td>
+                        <td style="padding: 5px 4px;">Souad A.</td>
+                        <td style="padding: 5px 4px;">20/05/2026 07:45:33</td>
+                        <td style="padding: 5px 4px; text-align: right;">192.168.1.35</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Actions rapides -->
+        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+            <h3 style="font-size: 12px; color: #fff; margin: 0 0 10px 0; font-weight: 600;">Actions rapides</h3>
+            <div style="display: grid; grid-template-columns: 1fr; gap: 8px;">
+                <button style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #10b981; padding: 8px 10px; border-radius: 6px; font-size: 10px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 8px;"><i class="fas fa-user-plus"></i> Nouvel utilisateur</button>
+                <button style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #10b981; padding: 8px 10px; border-radius: 6px; font-size: 10px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 8px;"><i class="fas fa-shield-alt"></i> Nouveau rôle</button>
+                <button style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #10b981; padding: 8px 10px; border-radius: 6px; font-size: 10px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 8px;"><i class="fas fa-file-medical"></i> Nouvelle page</button>
+                <button style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #10b981; padding: 8px 10px; border-radius: 6px; font-size: 10px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 8px;"><i class="fas fa-database"></i> Sauvegarde DB</button>
+                <button style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #10b981; padding: 8px 10px; border-radius: 6px; font-size: 10px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 8px;"><i class="fas fa-trash-alt"></i> Vider le cache</button>
+                <button style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #10b981; padding: 8px 10px; border-radius: 6px; font-size: 10px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 8px;"><i class="fas fa-sliders-h"></i> Paramètres système</button>
+            </div>
+        </div>
+
+        <!-- Résumé utilisateur connecté -->
+        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+            <h3 style="font-size: 12px; color: #fff; margin: 0 0 10px 0; font-weight: 600;">Résumé utilisateur connecté</h3>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <div style="width: 36px; height: 36px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #000;">YS</div>
+                <div>
+                    <div style="font-size: 12px; color: #fff; font-weight: 700;">Yahya Soufiane</div>
+                    <div style="font-size: 9px; color: #10b981; font-weight: 600;">Administrateur</div>
+                </div>
+            </div>
+            <div style="font-size: 10px; color: #8a99ad; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 8px;">
+                <div style="display: flex; justify-content: space-between;"><span>Dernière connexion:</span> <strong style="color: #fff;">08:42</strong></div>
+                <div style="display: flex; justify-content: space-between;"><span>IP actuelle:</span> <strong style="color: #fff;">192.168.1.10</strong></div>
+                <div style="display: flex; justify-content: space-between;"><span>Session démarrée:</span> <strong style="color: #fff;">08:15:27</strong></div>
+                <div style="display: flex; justify-content: space-between;"><span>Permissions:</span> <strong style="color: #10b981;">Toutes les permissions</strong></div>
             </div>
         </div>
     </div>
 </main>
 
-<!-- SCRIPT JS MODULE -->
 <script type="module" src="/assets/js/core/dashboard-admin.js"></script>
 </body>
 </html>

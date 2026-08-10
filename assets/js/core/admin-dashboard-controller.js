@@ -55,7 +55,7 @@ export async function loadAdminDashboardData() {
         if (pagesRes.error) console.error("Erreur pages:", pagesRes.error.message);
         if (permissionsRes.error) console.error("Erreur permissions:", permissionsRes.error.message);
         if (hubModulesRes.error) console.error("Erreur hub_modules:", hubModulesRes.error.message);
-        if (logsRes.error) console.error("Erreurnotifications:", logsRes.error.message);
+        if (logsRes.error) console.error("Erreur notifications:", logsRes.error.message);
 
         const users = usersRes.data || [];
         const roles = rolesRes.data || [];
@@ -128,17 +128,16 @@ function renderSystemLogs(logs) {
     const tbody = document.getElementById('systemLogsTableBody');
     if (!tbody) return;
 
-    if (logs.length === 0) {
+    if (!logs || logs.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="padding: 8px; text-align: center; color: #8a99ad;">Aucun journal en base de données</td></tr>';
         return;
     }
 
     tbody.innerHTML = '';
-    logs.slice(0, 5).log = logs.forEach(log => {
+    logs.slice(0, 5).forEach(log => {
         const level = (log.type || 'INFO').toUpperCase();
         const color = level === 'ERROR' ? '#ef4444' : level === 'WARN' ? '#f59e0b' : '#10b981';
         
-        // Jib smit l'utilisateur b tariqa s-hiha mn relation `user_profiles` li jato b join
         const profile = log.user_profiles;
         const userName = profile ? (profile.nom_complet || `${profile.nom || ''} ${profile.prenom || ''}`.trim() || profile.username) : 'Système SMTG';
 

@@ -2,12 +2,45 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Admin - SMTG</title>
+    <!-- FontAwesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-main: #0b1118;
+            --bg-card: #131b26;
+            --border-color: rgba(255, 255, 255, 0.06);
+            --text-main: #fff;
+            --text-muted: #8a99ad;
+            --accent-green: #10b981;
+            --accent-green-bg: rgba(16, 185, 129, 0.15);
+        }
+        
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* Classes utilitaires pour s'assurer que tout s'affiche parfaitement */
+        .card-smg {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .text-muted-smg {
+            color: var(--text-muted);
+        }
+    </style>
 </head>
 <body>
 <main style="width: 100%; box-sizing: border-box; font-family: 'Inter', sans-serif;">
     <!-- PAGE HEADER -->
-    <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+    <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
         <div>
             <h1 style="font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 4px 0;">Tableau de bord Administrateur</h1>
             <p style="font-size: 11px; color: #8a99ad; margin: 0;">Accueil &bull; Tableau de bord &bull; Administration générale SMTG</p>
@@ -22,7 +55,7 @@
     <!-- TOP STATS GRID (6 CARDS) -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px;">
         <!-- Utilisateurs -->
-        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
+        <div class="card-smg">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Utilisateurs</span>
                 <div style="width: 28px; height: 28px; border-radius: 6px; background: rgba(16,185,129,0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 11px;"><i class="fas fa-users"></i></div>
@@ -32,7 +65,7 @@
         </div>
 
         <!-- Rôles -->
-        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
+        <div class="card-smg">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Rôles</span>
                 <div style="width: 28px; height: 28px; border-radius: 6px; background: rgba(16,185,129,0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 11px;"><i class="fas fa-shield-alt"></i></div>
@@ -42,7 +75,7 @@
         </div>
 
         <!-- Pages -->
-        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
+        <div class="card-smg">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Pages</span>
                 <div style="width: 28px; height: 28px; border-radius: 6px; background: rgba(16,185,129,0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 11px;"><i class="fas fa-file-alt"></i></div>
@@ -52,7 +85,7 @@
         </div>
 
         <!-- Modules -->
-        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
+        <div class="card-smg">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Modules</span>
                 <div style="width: 28px; height: 28px; border-radius: 6px; background: rgba(16,185,129,0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 11px;"><i class="fas fa-cubes"></i></div>
@@ -62,7 +95,7 @@
         </div>
 
         <!-- Permissions -->
-        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
+        <div class="card-smg">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Permissions</span>
                 <div style="width: 28px; height: 28px; border-radius: 6px; background: rgba(16,185,129,0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 11px;"><i class="fas fa-lock"></i></div>
@@ -72,7 +105,7 @@
         </div>
 
         <!-- Connexions aujourd'hui -->
-        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px;">
+        <div class="card-smg">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Connexions</span>
                 <div style="width: 28px; height: 28px; border-radius: 6px; background: rgba(16,185,129,0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 11px;"><i class="fas fa-heartbeat"></i></div>
@@ -85,11 +118,11 @@
     <!-- MIDDLE ROW: DONUT, LINE CHART, LAST LOGINS -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-bottom: 15px;">
         <!-- Donut: Utilisateurs par rôle -->
-        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="card-smg" style="display: flex; flex-direction: column; justify-content: space-between;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Utilisateurs par rôle</h3>
             </div>
-            <div style="display: flex; align-items: center; justify-content: space-around; height: 180px;">
+            <div style="display: flex; align-items: center; justify-content: space-around; height: 180px; flex-wrap: wrap;">
                 <div style="width: 140px; height: 140px; position: relative;">
                     <canvas id="stockEmplacementDonut"></canvas>
                 </div>
@@ -104,7 +137,7 @@
         </div>
 
         <!-- Line Chart: Activité des connexions -->
-        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
+        <div class="card-smg">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Activité des connexions (7 derniers jours)</h3>
                 <span style="font-size: 9px; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; color: #8a99ad;">Sessions <i class="fas fa-chevron-down" style="font-size: 8px;"></i></span>
@@ -115,12 +148,12 @@
         </div>
 
         <!-- Dernières connexions -->
-        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
+        <div class="card-smg">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Dernières connexions</h3>
                 <a href="#" style="font-size: 9px; color: #10b981; text-decoration: none;">Voir tout</a>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div id="lastLoginsContainer" style="display: flex; flex-direction: column; gap: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 6px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <div style="width: 26px; height: 26px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #000;">YS</div>
@@ -141,7 +174,7 @@
                     </div>
                     <div style="text-align: right; font-size: 10px; color: #fff;">08:31:47<br><span style="font-size: 8px; color: #8a99ad;">Aujourd'hui</span></div>
                 </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 6px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <div style="width: 26px; height: 26px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff;">MB</div>
                         <div>
@@ -151,26 +184,6 @@
                     </div>
                     <div style="text-align: right; font-size: 10px; color: #fff;">08:21:03<br><span style="font-size: 8px; color: #8a99ad;">Aujourd'hui</span></div>
                 </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 6px;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <div style="width: 26px; height: 26px; background: #f59e0b; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #000;">SA</div>
-                        <div>
-                            <div style="font-size: 11px; color: #fff; font-weight: 600;">Souad A. <span style="font-size: 8px; background: rgba(245,158,11,0.2); color: #f59e0b; padding: 1px 4px; border-radius: 3px;">Opérateur</span></div>
-                            <div style="font-size: 9px; color: #8a99ad;">192.168.1.35 &bull; Chrome / Android</div>
-                        </div>
-                    </div>
-                    <div style="text-align: right; font-size: 10px; color: #fff;">08:12:44<br><span style="font-size: 8px; color: #8a99ad;">Aujourd'hui</span></div>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <div style="width: 26px; height: 26px; background: #8b5cf6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff;">YA</div>
-                        <div>
-                            <div style="font-size: 11px; color: #fff; font-weight: 600;">Youssef A. <span style="font-size: 8px; background: rgba(139,92,246,0.2); color: #8b5cf6; padding: 1px 4px; border-radius: 3px;">Consultation</span></div>
-                            <div style="font-size: 9px; color: #8a99ad;">192.168.1.42 &bull; Edge / Windows</div>
-                        </div>
-                    </div>
-                    <div style="text-align: right; font-size: 10px; color: #fff;">07:58:31<br><span style="font-size: 8px; color: #8a99ad;">Aujourd'hui</span></div>
-                </div>
             </div>
         </div>
     </div>
@@ -178,7 +191,7 @@
     <!-- THIRD ROW: PAGES, MODULES, SYSTEM INFO -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-bottom: 15px;">
         <!-- Pages les plus utilisées -->
-        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
+        <div class="card-smg">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Pages les plus utilisées</h3>
                 <a href="#" style="font-size: 9px; color: #10b981; text-decoration: none;">Voir tout</a>
@@ -211,24 +224,18 @@
                         <td style="padding: 6px 4px; text-align: right;">16</td>
                         <td style="padding: 6px 4px; text-align: right;">66%</td>
                     </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                    <tr>
                         <td style="padding: 6px 4px; color: #fff;">Commandes (KG)</td>
                         <td style="padding: 6px 4px; text-align: right;">512</td>
                         <td style="padding: 6px 4px; text-align: right;">14</td>
                         <td style="padding: 6px 4px; text-align: right;">58%</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 6px 4px; color: #fff;">Expéditions</td>
-                        <td style="padding: 6px 4px; text-align: right;">398</td>
-                        <td style="padding: 6px 4px; text-align: right;">12</td>
-                        <td style="padding: 6px 4px; text-align: right;">50%</td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
         <!-- Modules du système -->
-        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
+        <div class="card-smg">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Modules du système</h3>
                 <a href="#" style="font-size: 9px; color: #10b981; text-decoration: none;">Voir tout</a>
@@ -255,30 +262,18 @@
                         <td style="padding: 6px 4px; text-align: center;"><span style="background: rgba(16,185,129,0.15); color: #10b981; padding: 2px 6px; border-radius: 4px;">Actif</span></td>
                         <td style="padding: 6px 4px; text-align: right;">Aujourd'hui 08:35</td>
                     </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                    <tr>
                         <td style="padding: 6px 4px; color: #fff;"><i class="fas fa-truck" style="color: #f59e0b; margin-right: 4px;"></i> Expéditions</td>
                         <td style="padding: 6px 4px; text-align: center;">6</td>
                         <td style="padding: 6px 4px; text-align: center;"><span style="background: rgba(16,185,129,0.15); color: #10b981; padding: 2px 6px; border-radius: 4px;">Actif</span></td>
                         <td style="padding: 6px 4px; text-align: right;">Aujourd'hui 08:30</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
-                        <td style="padding: 6px 4px; color: #fff;"><i class="fas fa-shield-alt" style="color: #8b5cf6; margin-right: 4px;"></i> Qualité</td>
-                        <td style="padding: 6px 4px; text-align: center;">5</td>
-                        <td style="padding: 6px 4px; text-align: center;"><span style="background: rgba(16,185,129,0.15); color: #10b981; padding: 2px 6px; border-radius: 4px;">Actif</span></td>
-                        <td style="padding: 6px 4px; text-align: right;">Aujourd'hui 08:25</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 6px 4px; color: #fff;"><i class="fas fa-cogs" style="color: #06b6d4; margin-right: 4px;"></i> Administration</td>
-                        <td style="padding: 6px 4px; text-align: center;">7</td>
-                        <td style="padding: 6px 4px; text-align: center;"><span style="background: rgba(16,185,129,0.15); color: #10b981; padding: 2px 6px; border-radius: 4px;">Actif</span></td>
-                        <td style="padding: 6px 4px; text-align: right;">Aujourd'hui 08:15</td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
         <!-- Informations système -->
-        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
+        <div class="card-smg">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Informations système</h3>
             </div>
@@ -295,30 +290,18 @@
                     <span><i class="fas fa-database" style="color: #f59e0b; margin-right: 4px;"></i> Base de données</span>
                     <strong style="color: #fff;">PostgreSQL</strong>
                 </div>
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 5px;">
-                    <span><i class="fas fa-hdd" style="color: #8b5cf6; margin-right: 4px;"></i> Espace disque utilisé</span>
-                    <strong style="color: #fff;">128.7 GB / 500 GB</strong>
-                </div>
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 5px;">
-                    <span><i class="fas fa-memory" style="color: #06b6d4; margin-right: 4px;"></i> Mémoire utilisée</span>
-                    <strong style="color: #fff;">2.4 GB / 8 GB</strong>
-                </div>
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 5px;">
+                <div style="display: flex; justify-content: space-between;">
                     <span><i class="fas fa-clock" style="color: #10b981; margin-right: 4px;"></i> Uptime du serveur</span>
                     <strong style="color: #fff;">15 jours, 6 heures</strong>
-                </div>
-                <div style="display: flex; justify-content: space-between;">
-                    <span><i class="fas fa-shield-alt" style="color: #10b981; margin-right: 4px;"></i> Dernière sauvegarde</span>
-                    <strong style="color: #10b981;">20 Mai 2026 à 02:15 (Succès)</strong>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- FOURTH ROW: JOURNAUX, ACTIONS RAPIDES, RÉSUMÉ UTILISATEUR -->
-    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px; flex-wrap: wrap;">
+    <!-- FOURTH ROW: JOURNAUX, ACTIONS RAPIDES -->
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; flex-wrap: wrap;">
         <!-- Journaux système récents -->
-        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
+        <div class="card-smg">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Journaux système récents</h3>
                 <a href="#" style="font-size: 9px; color: #10b981; text-decoration: none;">Voir tout</a>
@@ -329,83 +312,42 @@
                         <th style="padding: 4px; color: #fff;">Niveau</th>
                         <th style="padding: 4px; color: #fff;">Message</th>
                         <th style="padding: 4px; color: #fff;">Utilisateur</th>
-                        <th style="padding: 4px; color: #fff;">Date & Heure</th>
                         <th style="padding: 4px; color: #fff; text-align: right;">IP</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="systemLogsTableBody">
                     <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
                         <td style="padding: 5px 4px;"><span style="color: #10b981; font-weight: 700;">INFO</span></td>
                         <td style="padding: 5px 4px; color: #fff;">Connexion utilisateur réussie</td>
                         <td style="padding: 5px 4px;">Yahya Soufiane</td>
-                        <td style="padding: 5px 4px;">20/05/2026 08:42:15</td>
                         <td style="padding: 5px 4px; text-align: right;">192.168.1.10</td>
                     </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
-                        <td style="padding: 5px 4px;"><span style="color: #10b981; font-weight: 700;">INFO</span></td>
-                        <td style="padding: 5px 4px; color: #fff;">Export rapport stock</td>
-                        <td style="padding: 5px 4px;">Hicham A.</td>
-                        <td style="padding: 5px 4px;">20/05/2026 08:31:22</td>
-                        <td style="padding: 5px 4px; text-align: right;">192.168.1.15</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                    <tr>
                         <td style="padding: 5px 4px;"><span style="color: #f59e0b; font-weight: 700;">WARN</span></td>
                         <td style="padding: 5px 4px; color: #fff;">Tentative d'accès page non autorisée</td>
                         <td style="padding: 5px 4px;">Mohamed B.</td>
-                        <td style="padding: 5px 4px;">20/05/2026 08:21:03</td>
                         <td style="padding: 5px 4px; text-align: right;">192.168.1.22</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
-                        <td style="padding: 5px 4px;"><span style="color: #ef4444; font-weight: 700;">ERROR</span></td>
-                        <td style="padding: 5px 4px; color: #fff;">Échec de connexion</td>
-                        <td style="padding: 5px 4px;">Inconnu</td>
-                        <td style="padding: 5px 4px;">20/05/2026 07:58:11</td>
-                        <td style="padding: 5px 4px; text-align: right;">192.168.1.99</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 5px 4px;"><span style="color: #10b981; font-weight: 700;">INFO</span></td>
-                        <td style="padding: 5px 4px; color: #fff;">Mise à jour des données stock</td>
-                        <td style="padding: 5px 4px;">Souad A.</td>
-                        <td style="padding: 5px 4px;">20/05/2026 07:45:33</td>
-                        <td style="padding: 5px 4px; text-align: right;">192.168.1.35</td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
         <!-- Actions rapides -->
-        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="card-smg" style="display: flex; flex-direction: column; justify-content: space-between;">
             <h3 style="font-size: 12px; color: #fff; margin: 0 0 10px 0; font-weight: 600;">Actions rapides</h3>
             <div style="display: grid; grid-template-columns: 1fr; gap: 8px;">
-                <button style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #10b981; padding: 8px 10px; border-radius: 6px; font-size: 10px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 8px;"><i class="fas fa-user-plus"></i> Nouvel utilisateur</button>
-                <button style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #10b981; padding: 8px 10px; border-radius: 6px; font-size: 10px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 8px;"><i class="fas fa-shield-alt"></i> Nouveau rôle</button>
-                <button style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #10b981; padding: 8px 10px; border-radius: 6px; font-size: 10px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 8px;"><i class="fas fa-file-medical"></i> Nouvelle page</button>
-                <button style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #10b981; padding: 8px 10px; border-radius: 6px; font-size: 10px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 8px;"><i class="fas fa-database"></i> Sauvegarde DB</button>
-                <button style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #10b981; padding: 8px 10px; border-radius: 6px; font-size: 10px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 8px;"><i class="fas fa-trash-alt"></i> Vider le cache</button>
-                <button style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #10b981; padding: 8px 10px; border-radius: 6px; font-size: 10px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 8px;"><i class="fas fa-sliders-h"></i> Paramètres système</button>
-            </div>
-        </div>
-
-        <!-- Résumé utilisateur connecté -->
-        <div style="background: #131b26; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
-            <h3 style="font-size: 12px; color: #fff; margin: 0 0 10px 0; font-weight: 600;">Résumé utilisateur connecté</h3>
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                <div style="width: 36px; height: 36px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #000;">YS</div>
-                <div>
-                    <div style="font-size: 12px; color: #fff; font-weight: 700;">Yahya Soufiane</div>
-                    <div style="font-size: 9px; color: #10b981; font-weight: 600;">Administrateur</div>
-                </div>
-            </div>
-            <div style="font-size: 10px; color: #8a99ad; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 8px;">
-                <div style="display: flex; justify-content: space-between;"><span>Dernière connexion:</span> <strong style="color: #fff;">08:42</strong></div>
-                <div style="display: flex; justify-content: space-between;"><span>IP actuelle:</span> <strong style="color: #fff;">192.168.1.10</strong></div>
-                <div style="display: flex; justify-content: space-between;"><span>Session démarrée:</span> <strong style="color: #fff;">08:15:27</strong></div>
-                <div style="display: flex; justify-content: space-between;"><span>Permissions:</span> <strong style="color: #10b981;">Toutes les permissions</strong></div>
+                <button style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #10b981; padding: 8px 10px; border-radius: 6px; font-size: 10px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-user-plus"></i> Ajouter un utilisateur
+                </button>
+                <button style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #3b82f6; padding: 8px 10px; border-radius: 6px; font-size: 10px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-shield-alt"></i> Gérer les rôles & permissions
+                </button>
+                <button style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #f59e0b; padding: 8px 10px; border-radius: 6px; font-size: 10px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-database"></i> Lancer une sauvegarde manuelle
+                </button>
             </div>
         </div>
     </div>
 </main>
-
-<script type="module" src="/assets/js/core/dashboard-admin.js"></script>
 </body>
 </html>

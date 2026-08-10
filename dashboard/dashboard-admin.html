@@ -6,6 +6,7 @@
     <title>Dashboard Admin - SMTG</title>
     <!-- FontAwesome pour les icônes -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --bg-main: #0b1118;
@@ -22,23 +23,19 @@
             color: var(--text-main);
             margin: 0;
             padding: 20px;
+            font-family: 'Inter', sans-serif;
         }
 
-        /* Classes utilitaires pour s'assurer que tout s'affiche parfaitement */
         .card-smg {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 10px;
             padding: 16px;
         }
-
-        .text-muted-smg {
-            color: var(--text-muted);
-        }
     </style>
 </head>
 <body>
-<main style="width: 100%; box-sizing: border-box; font-family: 'Inter', sans-serif;">
+<main style="width: 100%; box-sizing: border-box;">
     <!-- PAGE HEADER -->
     <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
         <div>
@@ -46,7 +43,7 @@
             <p style="font-size: 11px; color: #8a99ad; margin: 0;">Accueil &bull; Tableau de bord &bull; Administration générale SMTG</p>
         </div>
         <div style="display: flex; gap: 8px;">
-            <button style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #10b981; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <button id="refreshBtn" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #10b981; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
                 <i class="fas fa-sync-alt"></i> Actualiser
             </button>
         </div>
@@ -110,18 +107,16 @@
                 <span style="font-size: 10px; color: #8a99ad; font-weight: 600; text-transform: uppercase;">Connexions</span>
                 <div style="width: 28px; height: 28px; border-radius: 6px; background: rgba(16,185,129,0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 11px;"><i class="fas fa-heartbeat"></i></div>
             </div>
-            <div style="font-size: 20px; font-weight: 700; color: #fff;">37</div>
+            <div style="font-size: 20px; font-weight: 700; color: #fff;" id="todayConnectionsVal">37</div>
             <div style="font-size: 9px; color: #10b981; margin-top: 4px;"><i class="fas fa-arrow-up"></i> +15.8% vs hier</div>
         </div>
     </div>
 
-    <!-- MIDDLE ROW: DONUT, LINE CHART, LAST LOGINS -->
+    <!-- MIDDLE ROW: CHARTS & LOGINS -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-bottom: 15px;">
-        <!-- Donut: Utilisateurs par rôle -->
+        <!-- Donut Chart -->
         <div class="card-smg" style="display: flex; flex-direction: column; justify-content: space-between;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Utilisateurs par rôle</h3>
-            </div>
+            <h3 style="font-size: 12px; color: #fff; margin: 0 0 10px 0; font-weight: 600;">Utilisateurs par rôle</h3>
             <div style="display: flex; align-items: center; justify-content: space-around; height: 180px; flex-wrap: wrap;">
                 <div style="width: 140px; height: 140px; position: relative;">
                     <canvas id="stockEmplacementDonut"></canvas>
@@ -136,11 +131,10 @@
             </div>
         </div>
 
-        <!-- Line Chart: Activité des connexions -->
+        <!-- Line Chart -->
         <div class="card-smg">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Activité des connexions (7 derniers jours)</h3>
-                <span style="font-size: 9px; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; color: #8a99ad;">Sessions <i class="fas fa-chevron-down" style="font-size: 8px;"></i></span>
             </div>
             <div style="height: 180px; position: relative;">
                 <canvas id="mouvements7DaysChart"></canvas>
@@ -153,12 +147,12 @@
                 <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Dernières connexions</h3>
                 <a href="#" style="font-size: 9px; color: #10b981; text-decoration: none;">Voir tout</a>
             </div>
-            <div id="lastLoginsContainer" style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; flex-direction: column; gap: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 6px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <div style="width: 26px; height: 26px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #000;">YS</div>
+                        <div style="width: 26px; height: 26px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #000;">SY</div>
                         <div>
-                            <div style="font-size: 11px; color: #fff; font-weight: 600;">Yahya Soufiane <span style="font-size: 8px; background: rgba(16,185,129,0.2); color: #10b981; padding: 1px 4px; border-radius: 3px;">Administrateur</span></div>
+                            <div style="font-size: 11px; color: #fff; font-weight: 600;">Soufiane Yahya <span style="font-size: 8px; background: rgba(16,185,129,0.2); color: #10b981; padding: 1px 4px; border-radius: 3px;">Administrateur</span></div>
                             <div style="font-size: 9px; color: #8a99ad;">192.168.1.10 &bull; Chrome / Windows</div>
                         </div>
                     </div>
@@ -188,13 +182,12 @@
         </div>
     </div>
 
-    <!-- THIRD ROW: PAGES, MODULES, SYSTEM INFO -->
+    <!-- THIRD ROW: TABLES & SYSTEM INFO -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-bottom: 15px;">
         <!-- Pages les plus utilisées -->
         <div class="card-smg">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Pages les plus utilisées</h3>
-                <a href="#" style="font-size: 9px; color: #10b981; text-decoration: none;">Voir tout</a>
             </div>
             <table style="width: 100%; font-size: 10px; border-collapse: collapse; color: #8a99ad;">
                 <thead>
@@ -238,7 +231,6 @@
         <div class="card-smg">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Modules du système</h3>
-                <a href="#" style="font-size: 9px; color: #10b981; text-decoration: none;">Voir tout</a>
             </div>
             <table style="width: 100%; font-size: 10px; border-collapse: collapse; color: #8a99ad;">
                 <thead>
@@ -274,9 +266,7 @@
 
         <!-- Informations système -->
         <div class="card-smg">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Informations système</h3>
-            </div>
+            <h3 style="font-size: 12px; color: #fff; margin: 0 0 10px 0; font-weight: 600;">Informations système</h3>
             <div style="display: flex; flex-direction: column; gap: 8px; font-size: 10px; color: #8a99ad;">
                 <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 5px;">
                     <span><i class="fas fa-code-branch" style="color: #10b981; margin-right: 4px;"></i> Version de l'application</span>
@@ -298,9 +288,9 @@
         </div>
     </div>
 
-    <!-- FOURTH ROW: JOURNAUX, ACTIONS RAPIDES -->
+    <!-- FOURTH ROW: SYSTEM LOGS & QUICK ACTIONS -->
     <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; flex-wrap: wrap;">
-        <!-- Journaux système récents -->
+        <!-- Journaux système récents (Chargés dynamiquement depuis la BDD) -->
         <div class="card-smg">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h3 style="font-size: 12px; color: #fff; margin: 0; font-weight: 600;">Journaux système récents</h3>
@@ -316,17 +306,9 @@
                     </tr>
                 </thead>
                 <tbody id="systemLogsTableBody">
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
-                        <td style="padding: 5px 4px;"><span style="color: #10b981; font-weight: 700;">INFO</span></td>
-                        <td style="padding: 5px 4px; color: #fff;">Connexion utilisateur réussie</td>
-                        <td style="padding: 5px 4px;">Yahya Soufiane</td>
-                        <td style="padding: 5px 4px; text-align: right;">192.168.1.10</td>
-                    </tr>
+                    <!-- Les données s'injectent ici dynamiquement -->
                     <tr>
-                        <td style="padding: 5px 4px;"><span style="color: #f59e0b; font-weight: 700;">WARN</span></td>
-                        <td style="padding: 5px 4px; color: #fff;">Tentative d'accès page non autorisée</td>
-                        <td style="padding: 5px 4px;">Mohamed B.</td>
-                        <td style="padding: 5px 4px; text-align: right;">192.168.1.22</td>
+                        <td colspan="4" style="text-align: center; padding: 10px; color: #8a99ad;">Chargement des journaux...</td>
                     </tr>
                 </tbody>
             </table>
@@ -349,5 +331,131 @@
         </div>
     </div>
 </main>
+
+<script type="module">
+    // --- JavaScript ES Module ---
+    
+    // XSS Protection Helper
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>'"]/g, 
+            tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+        );
+    }
+
+    // Fonction pour charger les vrais logs depuis l'API SMTG (PostgreSQL + Dapper)
+    async function loadSystemLogs() {
+        const tbody = document.getElementById('systemLogsTableBody');
+        if (!tbody) return;
+
+        try {
+            const response = await fetch('/api/admin/system-logs?limit=5', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+            
+            if (result.success && result.data && result.data.length > 0) {
+                tbody.innerHTML = ''; // Nettoyer l'état de chargement
+                
+                result.data.forEach((log, index) => {
+                    const isLast = index === result.data.length - 1;
+                    const borderStyle = isLast ? '' : 'border-bottom: 1px solid rgba(255,255,255,0.03);';
+                    
+                    let levelColor = '#10b981'; // INFO
+                    if (log.level === 'WARN') levelColor = '#f59e0b';
+                    if (log.level === 'ERROR') levelColor = '#ef4444';
+
+                    const tr = document.createElement('tr');
+                    tr.style.cssText = borderStyle;
+                    tr.innerHTML = `
+                        <td style="padding: 5px 4px;"><span style="color: ${levelColor}; font-weight: 700;">${escapeHtml(log.level)}</span></td>
+                        <td style="padding: 5px 4px; color: #fff;">${escapeHtml(log.message)}</td>
+                        <td style="padding: 5px 4px;">${escapeHtml(log.userName)}</td>
+                        <td style="padding: 5px 4px; text-align: right;">${escapeHtml(log.ipAddress)}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 10px; color: #8a99ad;">Aucun journal récent trouvé</td></tr>`;
+            }
+        } catch (error) {
+            console.error('Erreur lors du chargement des journaux système :', error);
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 10px; color: #ef4444;">Erreur de connexion avec le serveur SMTG</td></tr>`;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. Initialisation Donut Chart
+        const ctxDonut = document.getElementById('stockEmplacementDonut').getContext('2d');
+        new Chart(ctxDonut, {
+            type: 'doughnut',
+            data: {
+                labels: ['Administrateurs', 'Gestionnaires', 'Opérateurs', 'Consultation', 'Autres'],
+                datasets: [{
+                    data: [4, 6, 10, 3, 1],
+                    backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#06b6d4'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                cutout: '70%'
+            }
+        });
+
+        // 2. Initialisation Line Chart
+        const ctxLine = document.getElementById('mouvements7DaysChart').getContext('2d');
+        new Chart(ctxLine, {
+            type: 'line',
+            data: {
+                labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+                datasets: [{
+                    label: 'Sessions',
+                    data: [22, 28, 31, 25, 34, 32, 37],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#8a99ad', font: { size: 9 } } },
+                    y: { grid: { color: 'rgba(255, 255, 255, 0.03)' }, ticks: { color: '#8a99ad', font: { size: 9 } } }
+                }
+            }
+        });
+
+        // 3. Charger les vrais logs au démarrage
+        loadSystemLogs();
+
+        // 4. Bouton Actualiser
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', async function() {
+                refreshBtn.style.opacity = '0.6';
+                refreshBtn.querySelector('i').classList.add('fa-spin');
+                
+                await loadSystemLogs();
+                
+                setTimeout(() => {
+                    refreshBtn.style.opacity = '1';
+                    refreshBtn.querySelector('i').classList.remove('fa-spin');
+                }, 500);
+            });
+        }
+    });
+</script>
 </body>
 </html>

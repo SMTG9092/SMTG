@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+**/appsettings.*.json
+
+# Logs
+*.log
+
+# Database backups
+Database/Backups/*
+!Database/Backups/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Temporary files
+*.tmp
+*.bak
+SMTG-Old-Backup/
